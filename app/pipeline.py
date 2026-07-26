@@ -101,6 +101,19 @@ def run(case_id: int, pdf_path: Path) -> None:
                       f"Digitisation failed: {str(exc)[:200]}")
         return
 
+    # digitise() reports a chunk that would not read as an UnreadChunk rather than
+    # raising — visible degradation, which is right when SOME of the document came
+    # back. When NONE of it did, that same non-raising path hands stage ② a
+    # zero-page document, and stage ②'s first check ("no table on any page") then
+    # refuses: it tells the advocate their certificate is not a certificate. That
+    # is a statement about the document we have no evidence for — the fault is
+    # ours, and the status has to say so. Same rule extract() already applies when
+    # every entry block fails to type.
+    if not dig.pages:
+        why = "; ".join(u.reason for u in dig.unread[:3]) or "no pages were returned"
+        db.set_status(case_id, "FAILED", f"Could not read this document: {why}"[:300])
+        return
+
     db.set_status(case_id, "READING", f"Read {len(dig.pages)} pages",
                   pages_done=pages)
 
