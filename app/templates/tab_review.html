@@ -1,0 +1,46 @@
+{% from "_macros.html" import outcome_badge %}
+{# The advocate's primary workflow: a checklist she works down to zero, not a
+   static findings list.
+
+   Every one of the ten rules appears, always. "Not applicable" is a first-class
+   row with its reason spelled out, because a checklist that shows nine items on
+   one case and four on another teaches the reader that absence means "fine" —
+   which is exactly the inversion the refusal screen already refuses to make. #}
+{% set counts = view.outcome_counts %}
+<section class="band">
+  <h2 class="band-title">
+    Review checklist
+    <span class="counts">
+      {% for o in OUTCOME_ORDER if counts[o] %}
+        {% if not loop.first %} · {% endif %}
+        <span class="{{ OUTCOME_UI[o].cls }}">
+          {{ OUTCOME_UI[o].glyph }} {{ counts[o] }} {{ OUTCOME_UI[o].word|lower }}
+        </span>
+      {% endfor %}
+    </span>
+    <span class="counts push">
+      {{ view.completeness.review_done }} of {{ view.completeness.review_total }}
+      reviewed
+    </span>
+  </h2>
+
+  {% if not view.runs %}
+    <p class="pane-empty">
+      The rulebook has not run yet — it runs once the first entry is typed.
+    </p>
+  {% endif %}
+
+  <ul class="checklist">
+    {% for r in view.runs_ranked %}
+      {% set run = r %}
+      {% set expanded = (focus_key == r.key) %}
+      {% include "_rule_row.html" %}
+    {% endfor %}
+  </ul>
+
+  <p class="meta checklist-foot">
+    Ten rules, rulebook {{ view.rulebook_version }}. Every outcome above was
+    produced by deterministic code, not by a language model. A rule that could not
+    run says so and says why — it is never reported as passing.
+  </p>
+</section>

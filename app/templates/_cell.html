@@ -1,7 +1,7 @@
 {# One correctable cell. A value we could not read renders as a "—" that is a
    BUTTON: absence becomes a task, not a blank. #}
 <button class="cell {{ 'cell-null' if not value }}" type="button"
-        hx-get="/entry/{{ entry_id }}/edit/{{ field }}"
+        hx-get="/entry/{{ entry_id }}/edit/{{ field }}?tab={{ tab or 'entries' }}"
         hx-target="closest td" hx-swap="innerHTML"
         title="{{ 'Not read — click to enter it' if not value else 'Click to correct' }}">
   {{ value if value else '—' }}

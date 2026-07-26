@@ -35,12 +35,18 @@
     <h2>Your cases</h2>
     <ul class="case-list">
       {% for c in cases %}
+      {% set s = summaries.get(c.id) %}
       <li>
         <a href="/case/{{ c.id }}">
           <span class="case-name">{{ c.property_key or 'Untitled case' }}</span>
+          {% if s %}
+            <span class="case-docs">{{ s.docs }}
+              EC{{ '' if s.docs == 1 else 's' }}</span>
+            <span class="case-pct">{{ s.chain_pct }}% chain</span>
+          {% endif %}
           <span class="case-state">
-            {% if c.status == 'READY' %}opened
-            {% elif c.status == 'FAILED' or c.status == 'REFUSED' %}needs attention
+            {% if c.status in ('FAILED', 'REFUSED') %}needs attention
+            {% elif s %}{{ s.state }}
             {% else %}{{ c.status_detail or c.status|lower }}{% endif %}
           </span>
         </a>

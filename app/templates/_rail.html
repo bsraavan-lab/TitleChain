@@ -1,0 +1,69 @@
+{# The rail. Sticky, always visible, and the same element in PROCESSING and READY
+   states. It carries four things and nothing else: the verdict sentence, the
+   completion meters, the readiness gate, and the coverage ruler.
+
+   It polls ONLY while processing: the READY fragment carries no hx-trigger, so
+   polling stops by itself and there is no client state to unwind. #}
+{% from "_macros.html" import meter %}
+{% set c = view.completeness %}
+<div id="rail"
+     {% if oob %}hx-swap-oob="true"{% endif %}
+     class="rail {{ 'v-bad' if view.coverage and view.coverage.sufficient is false
+                    else ('v-good' if view.readiness.ready else
+                          ('v-wait' if processing else 'v-open')) }}"
+     {% if processing %}
+       hx-get="/case/{{ case.id }}/rail?tab={{ tab }}"
+       hx-trigger="every 1500ms" hx-swap="outerHTML"
+     {% endif %}>
+
+  <div class="rail-verdict">
+    {% if processing %}
+      <span class="spinner" aria-hidden="true"></span>
+      <strong>{{ case.status_detail or 'Working' }}</strong>
+      {% if case.pages_total %}
+        <span class="meta">page {{ case.pages_done }} of {{ case.pages_total }}</span>
+      {% endif %}
+    {% else %}
+      <strong>{{ view.verdict }}</strong>
+    {% endif %}
+    <span class="rail-actions">
+      <a class="btn-quiet" href="/report/{{ case.id }}" target="_blank"
+         rel="noopener">export</a>
+    </span>
+  </div>
+
+  {% if view.docs %}
+    {# Meters are counts, never scores. Each one prints its own arithmetic beside
+       it, and none of them ever renders without the gate line below — 82% next to
+       two unexamined deeds must not read as "82% good". #}
+    <div class="rail-meters">
+      {% if processing and not entries %}
+        <p class="meta rail-waiting">Counting parent documents as entries are typed…</p>
+      {% else %}
+        {{ meter('Chain', c.chain_pct, c.chain_arithmetic, 'documents') }}
+        {{ meter('Coverage', c.coverage_pct, c.coverage_arithmetic, 'documents') }}
+        {{ meter('Reviewed', c.review_pct,
+                 c.review_done ~ ' of ' ~ c.review_total ~ ' items reviewed',
+                 'review') }}
+      {% endif %}
+    </div>
+
+    {% if not processing %}
+      {# Never a percentage. A file is signable or it is not, and the five gates
+         say exactly which condition is in the way. #}
+      <p class="rail-gate {{ 'gate-ok' if view.readiness.ready else 'gate-open' }}">
+        <span class="glyph" aria-hidden="true">{{ '✓' if view.readiness.ready else '▲' }}</span>
+        <span class="gate-label">{{ view.readiness.label }}</span>
+        <span class="gate-rest">
+          {% for g in view.readiness.gates %}
+            <span class="chip {{ 'chip-ok' if g.passed else 'chip-open' }}"
+                  title="{{ 'met' if g.passed else 'not met' }}">
+              {{ '✓' if g.passed else '·' }} {{ g.label }}
+            </span>
+          {% endfor %}
+        </span>
+      </p>
+    {% endif %}
+
+  {% endif %}
+</div>

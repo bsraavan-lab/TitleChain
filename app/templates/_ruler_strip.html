@@ -1,0 +1,17 @@
+{# The ruler is visible on every tab but does not sit in the sticky header: open,
+   it is 140px tall, and a pinned header that eats a third of the viewport is worse
+   than one the advocate scrolls past. The verdict and the meters stay pinned; the
+   argument for them scrolls. #}
+<details id="ruler-strip" class="band ruler-strip"
+         {% if ruler_oob %}hx-swap-oob="true"{% endif %}
+         {{ 'open' if tab in ('documents', 'chain') or docs|length > 1 }}>
+  <summary>
+    <span class="band-title">Coverage</span>
+    <span class="meta">{{ view.completeness.coverage_arithmetic }}</span>
+  </summary>
+  {% if view.coverage and view.coverage.bands %}
+    {% include "_ruler.html" %}
+  {% else %}
+    <p class="pane-empty">No search window has been read from this case yet.</p>
+  {% endif %}
+</details>

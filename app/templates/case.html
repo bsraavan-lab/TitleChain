@@ -1,21 +1,42 @@
 {% extends "base.html" %}
 {% block title %}{{ case.property_key or 'Case' }} — TitleChain{% endblock %}
 {% block topbar %}
-  <span class="meta">{{ header.sro ~ ' SRO · ' ~ header.village if header else case.property_key }}</span>
+  <span class="meta">
+    {{ header.sro ~ ' SRO · ' ~ header.village if header else case.property_key }}
+    {% if docs|length > 1 %} · {{ docs|length }} certificates{% endif %}
+  </span>
 {% endblock %}
 
 {% block content %}
 {# Processing and results are the SAME screen in two states. The user never
    watches a page they will have to leave, and closing the tab loses nothing —
-   the job is server-side and every state is in SQLite. #}
-<div class="case-grid">
-  {% include "_body.html" %}
+   the job is server-side and every state is in SQLite.
 
-  <aside id="evidence" class="pane">
-    <h2 class="band-title">Source</h2>
-    <p class="pane-empty">
-      Select a finding or an entry to see the region of the certificate it came from.
-    </p>
-  </aside>
+   The rail sits above the tabs and is never hidden, so the 30-second answer is
+   inherited by every tab. Each tab label carries its own count: a tab can be
+   closed, but its contents can never be silent. #}
+<div class="case">
+  {% if case.status in ('FAILED', 'REFUSED') %}
+    {% include "_refusal.html" %}
+  {% else %}
+    <div class="case-head">
+      {% include "_rail.html" %}
+      {% include "_tabs.html" %}
+    </div>
+
+    {% include "_ruler_strip.html" %}
+
+    <div class="case-grid">
+      <div id="tab-body">{% include "_tab_body.html" %}</div>
+
+      <aside id="evidence" class="pane">
+        <h2 class="band-title">Source</h2>
+        <p class="pane-empty">
+          Select a finding, a rule input or an entry to see the region of the
+          certificate it came from.
+        </p>
+      </aside>
+    </div>
+  {% endif %}
 </div>
 {% endblock %}

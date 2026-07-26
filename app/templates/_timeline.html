@@ -1,0 +1,34 @@
+{# Chronological. An entry whose date could not be read is NOT placed at a guessed
+   position — a guessed date on a timeline is an invented fact. It goes in the
+   UNDATED lane, where its absence is visible. #}
+{% set dated = [] %}{% set undated = [] %}
+{% for e in entries %}
+  {% if e.date_registration %}{% set _ = dated.append(e) %}
+  {% else %}{% set _ = undated.append(e) %}{% endif %}
+{% endfor %}
+<section class="band">
+  <h2 class="band-title">
+    Timeline
+    <span class="counts">{{ dated|length }} dated{% if undated %} ·
+      {{ undated|length }} undated{% endif %}</span>
+  </h2>
+  <ol class="timeline">
+    {% for e in dated %}
+      {% include "_timeline_row.html" %}
+    {% endfor %}
+  </ol>
+  {% if undated %}
+    <div class="timeline-undated">
+      <h3>Undated ({{ undated|length }})</h3>
+      <p class="meta">
+        The certificate's date cells for these entries could not be read. They are
+        shown here rather than placed at a guessed point on the line.
+      </p>
+      <ol class="timeline">
+        {% for e in undated %}
+          {% include "_timeline_row.html" %}
+        {% endfor %}
+      </ol>
+    </div>
+  {% endif %}
+</section>

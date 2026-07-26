@@ -44,6 +44,22 @@ PAGES_PER_JOB = 10          # hard API cap
 MIN_JOB_INTERVAL = 6.5      # 10 req/min, with headroom
 
 Progress = Callable[[int, str], None]   # (pages_done, detail)
+CallRecorder = Callable[[dict], None]
+
+_recorder: CallRecorder | None = None
+
+
+def set_recorder(fn: CallRecorder | None) -> None:
+    global _recorder
+    _recorder = fn
+
+
+def _record(**row) -> None:
+    if _recorder is not None:
+        try:
+            _recorder(row)
+        except Exception:            # telemetry must never break a digitisation
+            pass
 
 
 # ── what stage ① produces ────────────────────────────────────────────────────
@@ -218,6 +234,7 @@ def _throttle() -> None:
 def _run_job(client, src: Path, dest: Path, language: str) -> tuple[list[Page], str, int]:
     """One DI job, start → download → extract. Returns (pages, markdown, offset-less)."""
     _throttle()
+    started = time.monotonic()
     job = client.document_intelligence.create_job(language=language, output_format="md")
     job.upload_file(str(src))
     job.start()
@@ -232,6 +249,8 @@ def _run_job(client, src: Path, dest: Path, language: str) -> tuple[list[Page], 
     with zipfile.ZipFile(zip_path) as z:
         z.extractall(dest)
     pages, markdown = read_dir(dest)
+    _record(stage="digitise", model="document-intelligence", pages=len(pages),
+            cached=0, ms=int((time.monotonic() - started) * 1000))
     return pages, markdown, 0
 
 
@@ -245,6 +264,10 @@ def digitise(path: Path, *, pages_total: int, language: str = LANGUAGE,
     if cached:
         pages, markdown = read_dir(cached)
         say(len(pages), f"Reading {len(pages)} pages (cached digitisation)")
+        # Recorded as a call that cost nothing. A cache hit is the most interesting
+        # number on the cost panel, and it can only be shown if it is logged.
+        _record(stage="digitise", model="document-intelligence",
+                pages=len(pages), cached=1, ms=0)
         return Digitised(pages=pages, markdown=markdown, source_dir=cached,
                          from_cache=True)
 
@@ -298,6 +321,21 @@ def digitise(path: Path, *, pages_total: int, language: str = LANGUAGE,
     return Digitised(pages=sorted(all_pages, key=lambda p: p.page_num),
                      markdown="\n\n".join(md_parts), source_dir=dest_root,
                      from_cache=False, unread=unread)
+
+
+def slice_pages(dig: Digitised, page_from: int, page_to: int) -> Digitised:
+    """One certificate's pages out of a bundle, provenance untouched.
+
+    Page numbers are NOT re-based: an entry on page 4 of the file is reported on
+    page 4, because that is the page the advocate will be looking at.
+    """
+    return Digitised(
+        pages=[p for p in dig.pages if page_from <= p.page_num <= page_to],
+        markdown=dig.markdown, source_dir=dig.source_dir,
+        from_cache=dig.from_cache,
+        unread=[u for u in dig.unread
+                if u.page_from <= page_to and u.page_to >= page_from],
+    )
 
 
 def cleanup_chunks() -> None:

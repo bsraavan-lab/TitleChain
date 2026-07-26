@@ -1,0 +1,50 @@
+{# NOT a confidence heatmap. Sarvam's block confidence scores whether a layout
+   REGION was detected, not whether each cell inside it was transcribed — a
+   0.96-confidence block dropped three date cells in this very document. Painting
+   that as green would be the exact false reassurance R9 exists to prevent.
+
+   So every flagged cell below is something OUR code established, and the layout
+   confidence is a plain number in the last column, carrying no colour. #}
+{% if entries %}
+<section class="band">
+  <h2 class="band-title">
+    Where review is needed
+    <span class="counts">by entry, from our own checks</span>
+  </h2>
+  <div class="table-scroll">
+    <table class="matrix grid">
+      <thead>
+        <tr>
+          <th>Entry</th><th>Fields read</th><th>Parents resolved</th>
+          <th>Inside a window</th><th>Corrected</th><th>Reviewed</th>
+          <th>Layout conf.</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for e in entries %}
+          {% set flags = grid[e.db_id] %}
+          <tr>
+            <th>{{ e.sr_no }} · {{ e.doc_no or 'no doc no.' }}</th>
+            <td class="{{ 'cell-flag' if flags.fields else 'cell-on' }}">
+              {{ '⚠ ' ~ flags.fields if flags.fields else '●' }}</td>
+            <td class="{{ 'cell-flag' if flags.parents else 'cell-on' }}">
+              {{ '⚠ ' ~ flags.parents if flags.parents else '●' }}</td>
+            <td class="{{ 'cell-flag' if flags.window else 'cell-on' }}">
+              {{ '⚠ ' ~ flags.window if flags.window else '●' }}</td>
+            <td class="cell-note">{{ '✎ ' ~ flags.corrected if flags.corrected else '·' }}</td>
+            <td class="cell-note">{{ '✓' if flags.reviewed else '·' }}</td>
+            <td class="cell-plain">{{ '%.3f'|format(e.source.confidence)
+                                      if e.source.confidence is not none else '—' }}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <p class="meta">
+    Every flag above comes from our own deterministic checks (R9, R4, R3), not from
+    the model's confidence. Layout confidence is Sarvam's score for the whole
+    block — it is shown unstyled because it is blind to dropped cells: a
+    0.96-confidence block lost three date cells in this document.
+  </p>
+</section>
+{% endif %}

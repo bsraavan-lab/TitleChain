@@ -1,0 +1,24 @@
+{# The audit surface, not the reading surface. Grouped by certificate once a case
+   holds more than one, so a document number present in two certificates is
+   visibly corroborated rather than silently deduplicated. #}
+{% include "_review_grid.html" %}
+
+{% for d in docs %}
+  <details class="band" {{ 'open' if docs|length == 1 or d.entries }}>
+    <summary class="band-title">
+      {{ d.label }} — entries ({{ d.entries|length }})
+      {% if d.header.declared_entry_count %}
+        <span class="meta">certificate declares
+          {{ d.header.declared_entry_count }}</span>
+      {% endif %}
+      <span class="meta">{{ d.window }}</span>
+    </summary>
+    {% set doc_entries = d.entries %}
+    {% set doc_unread = unread | selectattr('ec_id', 'equalto', d.ec_id) | list %}
+    {% include "_entries_table.html" %}
+  </details>
+{% endfor %}
+
+{% if corrections %}
+  {% include "_corrections.html" %}
+{% endif %}

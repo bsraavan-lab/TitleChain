@@ -1,0 +1,7 @@
+{# The polling response: the rail, the ruler strip, the active tab body and the tab
+   counts. One request keeps the whole page current — the alternative is four
+   pollers that can disagree with each other on screen. #}
+{% include "_rail.html" %}
+<div id="tab-body" hx-swap-oob="true">{% include "_tab_body.html" %}</div>
+{% include "_tabs_oob.html" %}
+{% include "_ruler_oob.html" %}

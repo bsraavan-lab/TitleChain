@@ -1,0 +1,26 @@
+<h2 class="band-title">Source</h2>
+{% if not ec %}
+  <p class="pane-empty">That certificate is no longer available.</p>
+{% else %}
+  <figure class="evidence-fig">
+    <img src="/page/{{ ec.id }}/{{ page_num }}.png"
+         alt="Page {{ page_num }} of {{ ec.filename or 'the certificate' }}.">
+    <figcaption class="meta">
+      {{ ec.filename or 'certificate' }} · page {{ page_num }} of
+      {{ ec.page_count or '?' }}
+    </figcaption>
+  </figure>
+  {% if ec.page_count %}
+    <p class="ec-pages">
+      {% for n in range(1, ec.page_count + 1) %}
+        <button class="btn-tiny {{ 'on' if n == page_num }}" type="button"
+                hx-get="/evidence/page/{{ ec.id }}/{{ n }}"
+                hx-target="#evidence" hx-swap="innerHTML">p{{ n }}</button>
+      {% endfor %}
+    </p>
+  {% endif %}
+  <p class="meta">
+    The whole page, unmarked. Rule inputs read from the certificate header have no
+    entry to crop, so this is where they are checked.
+  </p>
+{% endif %}

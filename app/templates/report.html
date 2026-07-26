@@ -3,7 +3,12 @@
 {% block content %}
 {# The only artifact that leaves the building. This is Ravi's entire UI.
    Written as HER record — "I checked what I checked, and I flagged what I could
-   not" — so it protects the name on the opinion rather than protecting us. #}
+   not" — so it protects the name on the opinion rather than protecting us.
+
+   The rules table is the most valuable thing added here: it turns "I checked what
+   I could" from a claim into a table, including the checks that did NOT run and
+   why. The graph prints as the nested list, because a 940px SVG on A4 is
+   unreadable and the list carries the same facts. #}
 <article class="report">
   {# The logo carries the letterhead on paper, where the topbar is display:none. #}
   <img class="report-logo" src="/static/logo.png" alt="TitleChain" width="150" height="106">
@@ -18,55 +23,126 @@
     <dt>SRO</dt><dd>{{ header.sro or '—' }}</dd>
     <dt>Village</dt><dd>{{ header.village or '—' }}</dd>
     <dt>Survey numbers</dt><dd>{{ header.survey_details | join(', ') or '—' }}</dd>
-    <dt>Certificate window</dt>
-    <dd>{{ header.search_period_start or '—' }} &rarr; {{ header.search_period_end or '—' }}</dd>
-    <dt>Issued</dt><dd>{{ header.issue_date or '—' }}</dd>
+    <dt>Certificates on this case</dt><dd>{{ docs|length }}</dd>
   </dl>
+
+  <h2>Readiness</h2>
+  <p class="strong">{{ view.readiness.headline }}</p>
+  <ul class="report-gates">
+    {% for g in view.readiness.gates %}
+      <li>{{ '✓' if g.passed else '✗' }} {{ g.label }}</li>
+    {% endfor %}
+  </ul>
+  <p>
+    Chain: {{ view.completeness.chain_arithmetic }}
+    ({{ view.completeness.chain_pct }}%).
+    Coverage: {{ view.completeness.coverage_arithmetic }}
+    ({{ view.completeness.coverage_pct }}%).
+    Both are counts, not scores — a numerator over a denominator, with no weighting
+    applied to either.
+  </p>
+
+  <h2>Certificates examined</h2>
+  <table class="entries">
+    <thead><tr><th></th><th>SRO · village</th><th>Search period</th>
+      <th>Issued</th><th>Entries</th><th>Pages</th><th>File</th></tr></thead>
+    <tbody>
+      {% for d in docs %}
+        <tr>
+          <td>{{ d.label }}</td>
+          <td>{{ d.header.sro or '—' }} · {{ d.header.village or '—' }}</td>
+          <td>{{ d.window }}</td>
+          <td>{{ d.header.issue_date or '—' }}</td>
+          <td>{{ d.entries|length }}</td>
+          <td>{{ d.page_count }}</td>
+          <td class="meta">{{ d.filename or '—' }}</td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
 
   <h2>What this search does not cover</h2>
   {% if view.coverage and view.coverage.sufficient is false %}
     <p class="strong">{{ view.coverage.headline }}</p>
     <p>{{ view.coverage.detail }}</p>
-    {% if view.order %}
-      <p>The certificate required to close this gap:
-        {{ view.order.sro }} SRO, {{ view.order.village }},
-        survey {{ view.order.survey_nos | join(', ') }},
-        {{ view.order.date_from }} to {{ view.order.date_to }}.</p>
-    {% endif %}
   {% elif view.coverage %}
     <p>{{ view.coverage.detail }}</p>
   {% endif %}
   <ul>
     {% for n in view.edges if n.edge_type == 'PR_PARENT' and not n.resolved_entry_id %}
-      <li>Parent document {{ n.to_doc_no }} is named in this certificate but is not
-          present in it. It has not been examined.</li>
+      <li>Parent document {{ n.to_doc_no }} is named on this case but is not present
+          in any certificate on it. It has not been examined.</li>
+    {% endfor %}
+    {% for u in unread %}
+      <li>Pages {{ u.page_from }}–{{ u.page_to }} could not be read
+          ({{ u.reason }}). Nothing on those pages is reflected above.</li>
     {% endfor %}
   </ul>
 
-  <h2>Findings</h2>
-  <ol class="report-findings">
-    {% for f in view.findings %}
-      <li><strong>{{ f.ui.word }}</strong> — {{ f.message }}
-        <span class="meta">({{ f.rule_id }}, rulebook {{ f.rulebook_version }})</span></li>
-    {% endfor %}
-  </ol>
-
-  <h2>Entries as read</h2>
-  <table class="entries">
-    <thead><tr><th>#</th><th>Document</th><th>Registered</th><th>Nature</th>
-      <th>Parent docs</th><th>Source</th></tr></thead>
+  <h2>Rules executed</h2>
+  <p class="meta">
+    All ten rules in rulebook {{ view.rulebook_version }}, with the outcome of each.
+    A rule that could not run says so and says why; it is never reported as passing.
+  </p>
+  <table class="entries report-rules">
+    <thead><tr><th>Rule</th><th>Outcome</th><th>Subject</th>
+      <th>Finding, or why nothing was concluded</th><th>Review</th></tr></thead>
     <tbody>
-      {% for e in entries %}
+      {% for r in view.runs_ranked %}
+        {% set rv = reviews.get(r.key) %}
         <tr>
-          <td>{{ e.sr_no }}</td><td>{{ e.doc_no or '—' }}</td>
-          <td>{{ e.date_registration or '— not read' }}</td>
-          <td>{{ e.nature or '—' }}</td>
-          <td>{{ e.pr_numbers | map(attribute='doc_no') | join(', ') or '—' }}</td>
-          <td class="meta">p{{ e.source.page_num }}</td>
+          <td>{{ r.rule_id }}<br><span class="meta">{{ RULEBOOK[r.rule_id][0] }}</span></td>
+          <td>{{ r.ui.glyph }} {{ r.ui.word }}</td>
+          <td>{{ r.title }}</td>
+          <td>{{ r.message }}{% if r.reason %} <em>{{ r.reason }}</em>{% endif %}</td>
+          <td>
+            {% if rv %}{{ REVIEW_STATES[rv.state] }}
+              {% if rv.note %}<br><span class="meta">{{ rv.note }}</span>{% endif %}
+            {% else %}—{% endif %}
+          </td>
         </tr>
       {% endfor %}
     </tbody>
   </table>
+
+  <h2>The chain</h2>
+  {% include "_chain_list.html" %}
+
+  <h2>Documents still required</h2>
+  {% if view.requests_live %}
+    <ol>
+      {% for r in view.requests_live %}
+        <li>
+          <strong>{{ r.title }}</strong>
+          {% if r.date_from %} · {{ r.date_from }} → {{ r.date_to }}{% endif %}
+          {% if r.survey_nos %}<br>Survey: {{ r.survey_nos | join(', ') }}{% endif %}
+          <br><span class="meta">{{ r.because }}</span>
+        </li>
+      {% endfor %}
+    </ol>
+  {% else %}
+    <p>None outstanding.</p>
+  {% endif %}
+
+  <h2>Entries as read</h2>
+  {% for d in docs %}
+    <h3>{{ d.label }} — {{ d.window }}</h3>
+    <table class="entries">
+      <thead><tr><th>#</th><th>Document</th><th>Registered</th><th>Nature</th>
+        <th>Parent docs</th><th>Source</th></tr></thead>
+      <tbody>
+        {% for e in d.entries %}
+          <tr>
+            <td>{{ e.sr_no }}</td><td>{{ e.doc_no or '—' }}</td>
+            <td>{{ e.date_registration or '— not read' }}</td>
+            <td>{{ e.nature or '—' }}</td>
+            <td>{{ e.pr_numbers | map(attribute='doc_no') | join(', ') or '—' }}</td>
+            <td class="meta">p{{ e.source.page_num }}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% endfor %}
 
   <h2>Corrections</h2>
   {% if corrections %}
@@ -79,6 +155,20 @@
     </ul>
   {% else %}
     <p>None. Every value above is as extracted.</p>
+  {% endif %}
+
+  <h2>Review log</h2>
+  {% if review_log %}
+    <ul>
+      {% for h in review_log %}
+        <li><strong>{{ REVIEW_STATES[h.state] }}</strong> — {{ h.finding_key }}
+          {% if h.note %}<br>{{ h.note }}{% endif %}
+          <span class="meta">{{ h.actor }} · {{ h.created_at }}</span></li>
+      {% endfor %}
+    </ul>
+    <p class="meta">Append-only. A review is never overwritten or deleted.</p>
+  {% else %}
+    <p>No item on this case has been marked reviewed.</p>
   {% endif %}
 
   <p class="meta report-foot">
