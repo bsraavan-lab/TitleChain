@@ -1,0 +1,178 @@
+{
+ "version": "e3",
+ "header": {
+  "sro": "Pollachi",
+  "village": "Puliyampatti",
+  "survey_details": [
+   "95/2",
+   "100/3A",
+   "101/3",
+   "116/A1",
+   "116/B3",
+   "113/1B"
+  ],
+  "search_period_start": "01-Jan-2018",
+  "search_period_end": "18-Jun-2023",
+  "issue_date": "19-Jun-2023",
+  "declared_entry_count": 2
+ },
+ "entries": [
+  {
+   "sr_no": 1,
+   "doc_no": "2520/2019",
+   "doc_year": 2019,
+   "date_execution": "12-Mar-2019",
+   "date_presentation": "12-Mar-2019",
+   "date_registration": "12-Mar-2019",
+   "nature": "Lease deed",
+   "executants": [
+    {
+     "name_native": "அருள்ஜோதி சாரிடபிள் டிரஸ்ட்",
+     "role_marker": "முத.",
+     "name_roman": null
+    },
+    {
+     "name_native": "அப்புக்குட்டி",
+     "role_marker": "முக.",
+     "name_roman": null
+    }
+   ],
+   "claimants": [
+    {
+     "name_native": "பி ஏ காலேஜ் ஆப் என்ஜினியரிங் அண்ட் டெக்னாலஜி",
+     "role_marker": "முத.",
+     "name_roman": null
+    },
+    {
+     "name_native": "அப்புக்குட்டி",
+     "role_marker": "முக.",
+     "name_roman": null
+    }
+   ],
+   "volume_page": "-",
+   "consideration_value": "-",
+   "market_value": "ரூ. 3,60,000/-",
+   "pr_numbers": [
+    {
+     "doc_no": "4451/2005",
+     "year": 2005
+    },
+    {
+     "doc_no": "4453/2005",
+     "year": 2005
+    },
+    {
+     "doc_no": "4581/2007",
+     "year": 2007
+    },
+    {
+     "doc_no": "4582/2007",
+     "year": 2007
+    },
+    {
+     "doc_no": "4755/2011",
+     "year": 2011
+    }
+   ],
+   "remarks": null,
+   "schedules": [
+    {
+     "property_type": null,
+     "extent": null,
+     "village_street": null,
+     "survey_nos": [
+      "100/3A",
+      "113/1B",
+      "116/A1",
+      "116/B1",
+      "95/2"
+     ],
+     "door_no": null,
+     "boundaries_native": null
+    }
+   ],
+   "source": {
+    "page_num": 1,
+    "block_id": "20260725_14a106f7-b9b8-4f8b-82de-a4f611e4652c_1_block_003",
+    "bbox": [
+     326.0,
+     1047.0,
+     3216.0,
+     2329.0
+    ],
+    "confidence": 0.9520919322967529
+   }
+  },
+  {
+   "sr_no": 2,
+   "doc_no": "8756/2020",
+   "doc_year": 2020,
+   "date_execution": null,
+   "date_presentation": null,
+   "date_registration": null,
+   "nature": "Cancellation Deed",
+   "executants": [
+    {
+     "name_native": "அருள்ஜோதி சாரிடபிள் டிரஸ்ட்",
+     "role_marker": "முத.",
+     "name_roman": null
+    },
+    {
+     "name_native": "அப்புக்குட்டி",
+     "role_marker": "முக.",
+     "name_roman": null
+    }
+   ],
+   "claimants": [
+    {
+     "name_native": "பி ஏ காலேஜ் ஆப் என்ஜினியரிங் அண்ட் டெக்னாலஜி",
+     "role_marker": "முத.",
+     "name_roman": null
+    },
+    {
+     "name_native": "அப்புக்குட்டி",
+     "role_marker": "முக.",
+     "name_roman": null
+    }
+   ],
+   "volume_page": null,
+   "consideration_value": "-",
+   "market_value": "ரூ. 12,000/-",
+   "pr_numbers": [
+    {
+     "doc_no": "2520/2019",
+     "year": 2019
+    }
+   ],
+   "remarks": "This document cancels the document R/பொள்ளாச்சி/புத்தகம் 1/2520/2019",
+   "schedules": [
+    {
+     "property_type": null,
+     "extent": null,
+     "village_street": null,
+     "survey_nos": [
+      "100/3A",
+      "113/1B",
+      "116/A1",
+      "116/B1",
+      "95/2"
+     ],
+     "door_no": null,
+     "boundaries_native": null
+    }
+   ],
+   "source": {
+    "page_num": 2,
+    "block_id": "20260725_14a106f7-b9b8-4f8b-82de-a4f611e4652c_2_block_000",
+    "bbox": [
+     308.0,
+     114.0,
+     3208.0,
+     1342.0
+    ],
+    "confidence": 0.9621813893318176
+   }
+  }
+ ],
+ "unread": []
+}

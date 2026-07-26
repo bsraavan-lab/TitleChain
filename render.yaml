@@ -1,0 +1,37 @@
+# Render Blueprint — the app runs here, as one process, exactly as it does
+# locally. Vercel sits in front of this and proxies (see vercel.json).
+#
+# One process is not incidental: pipeline.run() is a background thread that
+# outlives the request that started it, and the case page polls for its status.
+# A second instance would poll a thread it cannot see. Do not add workers, do
+# not enable autoscaling.
+services:
+  - type: web
+    name: titlechain
+    runtime: python
+    plan: free
+    region: singapore
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /
+    envVars:
+      - key: SARVAM_API_KEY
+        sync: false          # set in the Render dashboard; never committed
+      - key: PYTHON_VERSION
+        value: "3.12.7"
+
+    # ── persistence ──────────────────────────────────────────────────────────
+    # The free plan has no disk: the filesystem is ephemeral and the instance
+    # sleeps after 15 minutes idle. Cases created during a demo survive until
+    # the next restart, and the bundled sample digitisations are re-seeded on
+    # every boot, so the demo path is always warm.
+    #
+    # To make cases outlive restarts, move to the paid Starter plan and add a
+    # disk — change `plan: free` to `plan: starter` and uncomment:
+    #
+    # disk:
+    #   name: titlechain-data
+    #   mountPath: /var/data
+    #   sizeGB: 1
+    #
+    # ...then also set TITLECHAIN_DATA_DIR=/var/data in envVars above.

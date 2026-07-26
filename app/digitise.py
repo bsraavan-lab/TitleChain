@@ -37,8 +37,8 @@ from typing import Callable
 
 import pypdfium2 as pdfium
 
-ROOT = Path(__file__).resolve().parent.parent
-OUTPUT = ROOT / "output"
+from .paths import OUTPUT, ROOT     # OUTPUT follows TITLECHAIN_DATA_DIR
+
 LANGUAGE = "ta-IN"
 PAGES_PER_JOB = 10          # hard API cap
 MIN_JOB_INTERVAL = 6.5      # 10 req/min, with headroom
