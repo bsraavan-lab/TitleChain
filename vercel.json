@@ -4,6 +4,6 @@
   "buildCommand": null,
   "outputDirectory": "public",
   "rewrites": [
-    { "source": "/:path*", "destination": "https://titlechain.onrender.com/:path*" }
+    { "source": "/(.*)", "destination": "https://titlechain.onrender.com/$1" }
   ]
 }
