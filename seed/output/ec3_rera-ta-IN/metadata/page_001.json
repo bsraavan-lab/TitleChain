@@ -1,0 +1,73 @@
+{
+  "page_num": 1,
+  "image_width": 3509,
+  "image_height": 2480,
+  "created_at": "2026-07-25T19:06:51.866213+00:00",
+  "blocks": [
+    {
+      "block_id": "20260725_dbad2d9a-5703-4326-8f4e-41ff0b5f55aa_1_block_000",
+      "coordinates": {
+        "x1": 201.493359375,
+        "y1": 124.39130859375001,
+        "x2": 2840.096875,
+        "y2": 697.687890625
+      },
+      "layout_tag": "header",
+      "confidence": 0.410888671875,
+      "reading_order": 1,
+      "text": "GOVERNMENT OF TAMILNADU\nREGISTRATION DEPARTMENT\nதமிழ்நாடு அரசு\nபதிவுத்துறை\n\nCertificate of Encumbrance on Property\nசொத்து தொடர்பான வில்லங்கச் சான்று"
+    },
+    {
+      "block_id": "20260725_dbad2d9a-5703-4326-8f4e-41ff0b5f55aa_1_block_001",
+      "coordinates": {
+        "x1": 268.65781250000003,
+        "y1": 704.54140625,
+        "x2": 3221.15234375,
+        "y2": 875.1939453125001
+      },
+      "layout_tag": "table",
+      "confidence": 0.80712890625,
+      "reading_order": 2,
+      "text": "<table>\n<tbody>\n<tr>\n<td>S.R.O /சா.ப.அ: Pollachi</td>\n<td>Date / நாள்: 12-Jul-2025</td>\n</tr>\n<tr>\n<td>Village /கிராமம்:Uthukuli</td>\n<td>Survey Details /சர்வே விவரம்: 332/18A1, 332/18B, 332/18C</td>\n</tr>\n</tbody>\n</table>"
+    },
+    {
+      "block_id": "20260725_dbad2d9a-5703-4326-8f4e-41ff0b5f55aa_1_block_002",
+      "coordinates": {
+        "x1": 287.0,
+        "y1": 919.0,
+        "x2": 1692.0,
+        "y2": 985.0
+      },
+      "layout_tag": "paragraph",
+      "confidence": 0.626284122467041,
+      "reading_order": 3,
+      "text": "Search Period /தேடுதல் காலம்: 30-Nov-2024 - 11-Jul-2025"
+    },
+    {
+      "block_id": "20260725_dbad2d9a-5703-4326-8f4e-41ff0b5f55aa_1_block_003",
+      "coordinates": {
+        "x1": 309.0,
+        "y1": 1045.0,
+        "x2": 3210.0,
+        "y2": 2350.0
+      },
+      "layout_tag": "table",
+      "confidence": 0.9560526609420776,
+      "reading_order": 4,
+      "text": "<table>\n<thead>\n<tr>\n<th>Sr.<br/>No./வ.<br/>எண்</th>\n<th>Document No.& Year/<br/>ஆவண எண் மற்றும்<br/>ஆண்டு</th>\n<th>Date of Execution & Date<br/>of Presentation & Date of<br/>Registration/எழுதிக் கொ<br/>டுத்த நாள் & தாக்க ல்<br/>நாள் & பதிவு நாள்</th>\n<th>Nature/தன்மை</th>\n<th>Name of Executant(s)/<br/>எழுதிக்கொடுத்தவர்பெயர்(கள்)</th>\n<th>Name of Claimant(s)/<br/>எழுதி வாங்கியவர்<br/>பெயர்கள்(கள்)</th>\n<th>Vol.No & Page. No/<br/>தொகுதி எண் மற்றும்<br/>பக்க எண்</th>\n</tr>\n</thead>\n<tbody>\n<tr>\n<td>1</td>\n<td>13698/2024</td>\n<td><br/><br/>30-Nov-2024<br/>30-Nov-2024<br/>30-Nov-2024</td>\n<td>Gift deed</td>\n<td><br/>1. முகமது அன்சாரி<br/>2. முகமது சேட்</td>\n<td>1. மேதகு ஆளுநர்<br/>தமிழ்நாடு அரசு சென்னை<br/>அவர்களின் நேரடி<br/>பிரதிநிதியான ஜமீன்<br/>ஊத்துக்குளி<br/>பேரூராட்சிக்காக அதன்<br/>தற்போதைய செயல்<br/>அலுவலர் அவர்களுக்கும்<br/>அவருக்கு பின்னிட்டு<br/>மேற்படி பொறுப்பை<br/>வகிப்பவர்களுக்கு</td>\n<td>-</td>\n</tr>\n<tr>\n<td colspan=\"3\">Consideration Value/கைமாற்றுத் தொகை:<br/>-<br/></td>\n<td colspan=\"2\">Market Value/சந்தை மதிப்பு:<br/>ரூ. 1,300/-</td>\n<td colspan=\"2\">PR Number/முந்தைய ஆவண எண்:<br/>14190/2023, 15002/2023, 8267/2024</td>\n</tr>\n<tr>\n<td colspan=\"3\">Schedule 1 Details:<br/>Property Type/சொத்தின் வகைப்பாடு: Pathway<br/>Village & Street/கிராமம் மற்றும் தெரு: Uthukuli</td>\n<td colspan=\"3\" rowspan=\"2\">Survey No-Extent/புல எண்-விஸ்தீர்ணம்: 332/18A1, 332/18B, 332/18C - 1903.0<br/>SQUARE METRE</td>\n</tr>\n<tr>\n<td colspan=\"3\"></td>\n</tr>\n<tr>\n<td colspan=\"3\">எல்லை விபரங்கள்:</td>\n<td colspan=\"3\">Schedule Remarks/சொத்து விவரம் தொடர்பான குறிப்புரை: இமல் 1903 சதுர மீட்டர்</td>\n</tr>\n</tbody>\n</table>"
+    },
+    {
+      "block_id": "20260725_dbad2d9a-5703-4326-8f4e-41ff0b5f55aa_1_block_004",
+      "coordinates": {
+        "x1": 1752.0,
+        "y1": 2367.0,
+        "x2": 1781.0,
+        "y2": 2401.0
+      },
+      "layout_tag": "page-number",
+      "confidence": 0.616503119468689,
+      "reading_order": 5,
+      "text": "1"
+    }
+  ]
+}

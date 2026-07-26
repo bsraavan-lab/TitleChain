@@ -12,7 +12,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Iterable
 
-DB_PATH = Path(__file__).resolve().parent.parent / "titlechain.db"
+from .paths import DB_PATH          # repo root locally, the mounted disk in prod
+
 SCHEMA = Path(__file__).resolve().parent / "schema.sql"
 
 

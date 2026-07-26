@@ -33,9 +33,8 @@ from .extract import Extraction, Refusal
 from .fixtures import SAMPLES
 from .models import ECHeader, Entry
 
-ROOT = Path(__file__).resolve().parent.parent
-UPLOADS = ROOT / "uploads"
-UPLOADS.mkdir(exist_ok=True)
+from .paths import ROOT, UPLOADS    # UPLOADS follows TITLECHAIN_DATA_DIR;
+                                    # created by paths.ensure() at startup
 
 
 def property_key(header: ECHeader) -> str:

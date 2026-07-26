@@ -1,0 +1,5 @@
+# Vercel hosts nothing but the proxy config — the app itself runs on Render.
+# Everything else is excluded so Vercel never tries to build the Python app.
+*
+!vercel.json
+!public/

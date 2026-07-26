@@ -16,7 +16,7 @@ from fastapi.responses import HTMLResponse, RedirectResponse, Response
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
-from . import crops, db, derive as derive_mod, pipeline, store
+from . import crops, db, derive as derive_mod, paths, pipeline, store
 from .fixtures import SAMPLES
 from .models import DerivedView
 
@@ -25,6 +25,8 @@ ROOT = Path(__file__).resolve().parent.parent
 
 @asynccontextmanager
 async def lifespan(_: FastAPI):
+    paths.ensure()     # creates uploads/ and output/ under the data dir
+    paths.seed_cache() # bundled digitisations, so the samples never wait on Sarvam
     db.init()          # idempotent; if the file is ever corrupted: rm titlechain.db
     yield
 

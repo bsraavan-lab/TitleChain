@@ -1,0 +1,73 @@
+{
+  "page_num": 1,
+  "image_width": 3509,
+  "image_height": 2480,
+  "created_at": "2026-07-25T19:06:26.208486+00:00",
+  "blocks": [
+    {
+      "block_id": "20260725_14a106f7-b9b8-4f8b-82de-a4f611e4652c_1_block_000",
+      "coordinates": {
+        "x1": 200.80800781250002,
+        "y1": 126.79003906250001,
+        "x2": 2949.753125,
+        "y2": 712.0802734375001
+      },
+      "layout_tag": "header",
+      "confidence": 0.4580078125,
+      "reading_order": 1,
+      "text": "GOVERNMENT OF TAMILNADU\nREGISTRATION DEPARTMENT\nதமிழ்நாடு அரசு\nபதிவுத்துறை\n\nCertificate of Encumbrance on Property\nசொத்து தொடர்பான வில்லங்கச் சான்று"
+    },
+    {
+      "block_id": "20260725_14a106f7-b9b8-4f8b-82de-a4f611e4652c_1_block_001",
+      "coordinates": {
+        "x1": 267.287109375,
+        "y1": 704.54140625,
+        "x2": 3221.15234375,
+        "y2": 876.5646484375001
+      },
+      "layout_tag": "table",
+      "confidence": 0.81005859375,
+      "reading_order": 2,
+      "text": "<table>\n<tbody>\n<tr>\n<td>S.R.O /சா.ப.அ: Pollachi</td>\n<td>Date / நாள்: 19-Jun-2023</td>\n</tr>\n<tr>\n<td>Village /கிராமம்:Puliyampatti</td>\n<td>Survey Details /சர்வே விவரம்: 95/2, 100/3A, 101/3, 116/A1, 116/B3, 113/1B</td>\n</tr>\n</tbody>\n</table>"
+    },
+    {
+      "block_id": "20260725_14a106f7-b9b8-4f8b-82de-a4f611e4652c_1_block_002",
+      "coordinates": {
+        "x1": 287.0,
+        "y1": 918.0,
+        "x2": 1698.0,
+        "y2": 985.0
+      },
+      "layout_tag": "paragraph",
+      "confidence": 0.6719700694084167,
+      "reading_order": 3,
+      "text": "Search Period /தேடுதல் காலம்: 01-Jan-2018 - 18-Jun-2023"
+    },
+    {
+      "block_id": "20260725_14a106f7-b9b8-4f8b-82de-a4f611e4652c_1_block_003",
+      "coordinates": {
+        "x1": 326.0,
+        "y1": 1047.0,
+        "x2": 3216.0,
+        "y2": 2329.0
+      },
+      "layout_tag": "table",
+      "confidence": 0.9520919322967529,
+      "reading_order": 4,
+      "text": "<table>\n<thead>\n<tr>\n<th>Sr.<br/>No./வ.<br/>எண்</th>\n<th>Document No.& Year/<br/>ஆவண எண் மற்றும்<br/>ஆண்டு</th>\n<th>Date of Execution & Date<br/>of Presentation & Date of<br/>Registration/எழுதிக் கொ<br/>டுத்த நாள் & தாக்க ல்<br/>நாள் & பதிவு நாள்</th>\n<th>Nature/தன்மை</th>\n<th>Name of Executant(s)/<br/>எழுதிக்கொடுத்தவர்பெயர்(கள்)</th>\n<th>Name of Claimant(s)/<br/>எழுதி வாங்கியவர்<br/>பெயர்(கள்)</th>\n<th>Vol.No & Page. No/<br/>தொகுதி எண் மற்றும்<br/>பக்க எண்</th>\n</tr>\n</thead>\n<tbody>\n<tr>\n<td>1</td>\n<td>2520/2019</td>\n<td>12-Mar-2019<br/>12-Mar-2019<br/>12-Mar-2019</td>\n<td>Lease deed</td>\n<td>1. அருள்ஜோதி சாரிடபிள்<br/>டிரஸ்ட்.(முத.)<br/>அப்புக்குட்டி.(முக.)</td>\n<td>1. பி ஏ காலேஜ் ஆப்<br/>என்ஜினியரிங் அண்ட்<br/>டெக்னாலஜி(முத.)<br/>அப்புக்குட்டி.(முக.)</td>\n<td>-</td>\n</tr>\n<tr>\n<td colspan=\"3\">Consideration Value/கைமாற்றுத் தொகை:<br/>-<br/>Document Remarks/<br/>ஆவணக் குறிப்புகள் :</td>\n<td colspan=\"2\">Market Value/சந்தை மதிப்பு:<br/>ரூ. 3,60,000/-</td>\n<td colspan=\"2\">PR Number/முந்தைய ஆவண எண்:<br/>4451/2005, 4453/2005, 4581/2007, 4582/2007,<br/>4755/2011</td>\n</tr>\n<tr>\n<td colspan=\"3\">Schedule 1 Details:<br/>Property Type/சொத்தின் வகைப்பாடு: Agriculture Land with Building</td>\n<td colspan=\"2\">Property Extent/சொத்தின் விஸ்தீர்ணம்: 10 ACRE, 18.0 CENTS</td>\n</tr>\n<tr>\n<td colspan=\"3\">Village & Street/கிராமம் மற்றும் தெரு: Puliyampatti</td>\n<td colspan=\"2\">Survey No./புல எண் : 100/3A, 113/1B, 116/A1, 116/B1, 95/2</td>\n</tr>\n<tr>\n<td colspan=\"3\">New Door No./புதிய கதவு எண்: 2/340A</td>\n<td colspan=\"2\"></td>\n</tr>\n<tr>\n<td colspan=\"3\">எல்லை விபரங்கள்:<br/>கிழக்கு - க,ச,101/3 அருள்ஜோதி சாரிடபிள் டிரஸ்ட் மீதி பூமி, மேற்கு -</td>\n<td colspan=\"2\">Schedule Remarks/சொத்து விவரம் தொடர்பான குறிப்புரை: இதன் மத்தியில் உள்ள<br/>பு,எ, 10.18 உள்ள பூமியும் மேற்படி பூமியில் உள்ள தார்சு கட்டிடங்களும் மேற்படி</td>\n</tr>\n</tbody>\n</table>"
+    },
+    {
+      "block_id": "20260725_14a106f7-b9b8-4f8b-82de-a4f611e4652c_1_block_004",
+      "coordinates": {
+        "x1": 1696.93046875,
+        "y1": 2338.41953125,
+        "x2": 1842.2250000000001,
+        "y2": 2442.59296875
+      },
+      "layout_tag": "page-number",
+      "confidence": 0.261474609375,
+      "reading_order": 5,
+      "text": "1"
+    }
+  ]
+}
