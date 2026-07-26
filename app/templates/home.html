@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="home">
+
+  <div class="home-brand">
+    <img src="/static/logo.png" alt="TitleChain" width="220" height="156">
+  </div>
+
+  <form class="dropzone" method="post" action="/upload" enctype="multipart/form-data"
+        id="dropform">
+    <label for="file">
+      <strong>Drop an Encumbrance Certificate here</strong>
+      <span class="dz-sub">PDF, JPEG or PNG · up to 50 MB</span>
+      <span class="btn">choose file</span>
+    </label>
+    <input id="file" type="file" name="file" accept=".pdf,.jpg,.jpeg,.png"
+           onchange="document.getElementById('dropform').submit()">
+  </form>
+
+  {% if rejected %}
+    <p class="reject" role="alert">⚠ {{ rejected }}</p>
+  {% endif %}
+
+  <p class="samples">
+    or open a sample:
+    {% for key, s in SAMPLES.items() %}
+      <form method="post" action="/sample/{{ key }}" class="inline">
+        <button class="btn-quiet" type="submit">{{ s.label }}</button>
+      </form>
+    {% endfor %}
+  </p>
+
+  {% if cases %}
+  <section class="cases">
+    <h2>Your cases</h2>
+    <ul class="case-list">
+      {% for c in cases %}
+      <li>
+        <a href="/case/{{ c.id }}">
+          <span class="case-name">{{ c.property_key or 'Untitled case' }}</span>
+          <span class="case-state">
+            {% if c.status == 'READY' %}opened
+            {% elif c.status == 'FAILED' or c.status == 'REFUSED' %}needs attention
+            {% else %}{{ c.status_detail or c.status|lower }}{% endif %}
+          </span>
+        </a>
+      </li>
+      {% endfor %}
+    </ul>
+    <p class="meta">Cases are read from disk. They survive a restart — that is the point.</p>
+  </section>
+  {% endif %}
+</div>
+{% endblock %}

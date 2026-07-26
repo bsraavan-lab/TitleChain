@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}{{ case.property_key or 'Case' }} — TitleChain{% endblock %}
+{% block topbar %}
+  <span class="meta">{{ header.sro ~ ' SRO · ' ~ header.village if header else case.property_key }}</span>
+{% endblock %}
+
+{% block content %}
+{# Processing and results are the SAME screen in two states. The user never
+   watches a page they will have to leave, and closing the tab loses nothing —
+   the job is server-side and every state is in SQLite. #}
+<div class="case-grid">
+  {% include "_body.html" %}
+
+  <aside id="evidence" class="pane">
+    <h2 class="band-title">Source</h2>
+    <p class="pane-empty">
+      Select a finding or an entry to see the region of the certificate it came from.
+    </p>
+  </aside>
+</div>
+{% endblock %}

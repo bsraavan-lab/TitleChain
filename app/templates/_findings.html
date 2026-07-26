@@ -1,0 +1,31 @@
+{% set counts = view.counts %}
+<section class="band">
+  <h2 class="band-title">
+    Findings
+    <span class="counts">
+      {% if counts.blocking %}{{ counts.blocking }} to resolve{% endif %}
+      {% if counts.material %} · {{ counts.material }} to check{% endif %}
+      {% if counts.confirmation %} · {{ counts.confirmation }} verified{% endif %}
+    </span>
+  </h2>
+
+  <ul class="findings">
+    {% for f in view.findings %}
+      {# Colour is never the only carrier: glyph + word + colour, every time. #}
+      <li class="finding {{ f.ui.cls }}">
+        <span class="sev"><span class="glyph" aria-hidden="true">{{ f.ui.glyph }}</span>
+          <span class="sev-word">{{ f.ui.word }}</span></span>
+        <p class="finding-msg">{{ f.message }}</p>
+        <p class="finding-foot">
+          <span class="meta">{{ f.rule_id }} · rulebook {{ f.rulebook_version }}</span>
+          {% for eid in f.evidence_entry_ids %}
+            <button class="link" type="button"
+                    hx-get="/evidence/{{ eid }}" hx-target="#evidence" hx-swap="innerHTML">
+              source
+            </button>
+          {% endfor %}
+        </p>
+      </li>
+    {% endfor %}
+  </ul>
+</section>

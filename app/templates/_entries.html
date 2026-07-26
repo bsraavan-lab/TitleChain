@@ -1,0 +1,72 @@
+{# The audit surface, not the reading surface. Collapsed by default: leading with
+   the table would restore her as the parser, which is the job we removed. #}
+<details class="band" {% if entries|length > 12 %}{% else %}{% endif %}>
+  <summary class="band-title">
+    Entries ({{ entries|length }})
+    {% if header and header.declared_entry_count %}
+      <span class="meta">certificate declares {{ header.declared_entry_count }}</span>
+    {% endif %}
+  </summary>
+
+  <div class="table-scroll">
+  <table class="entries">
+    <thead>
+      <tr>
+        <th>#</th><th>Document</th><th>Registered</th><th>Nature</th>
+        <th>Executants</th><th>Claimants</th><th>Parent docs</th><th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for e in entries %}
+      <tr>
+        <td>{{ e.sr_no }}</td>
+        {% for field in ('doc_no', 'date_registration', 'nature') %}
+          <td>
+            {% with entry_id = e.db_id, value = e[field] %}
+              {% include "_cell.html" %}
+            {% endwith %}
+          </td>
+        {% endfor %}
+        <td class="ta">
+          {% for p in e.executants %}<div>{{ p.name_native }}<span class="rm">{{ p.role_marker }}</span></div>{% endfor %}
+        </td>
+        <td class="ta">
+          {% for p in e.claimants %}<div>{{ p.name_native }}<span class="rm">{{ p.role_marker }}</span></div>{% endfor %}
+        </td>
+        <td>{{ e.pr_numbers | map(attribute='doc_no') | join(', ') or '—' }}</td>
+        <td>
+          <button class="link" type="button"
+                  hx-get="/evidence/{{ e.db_id }}" hx-target="#evidence" hx-swap="innerHTML">
+            source
+          </button>
+        </td>
+      </tr>
+      {% endfor %}
+
+      {% for u in unread %}
+      {# An unread page is a ROW, not a toast. A toast is dismissible; an unread
+         page must not be. #}
+      <tr class="row-unread">
+        <td colspan="8">pages {{ u.page_from }}–{{ u.page_to }} unread — {{ u.reason }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  </div>
+
+  {% if corrections %}
+  <div class="corrections">
+    <h3>Corrections</h3>
+    <ul>
+      {% for c in corrections %}
+        <li>
+          Entry {{ c.sr_no }} · {{ EDITABLE.get(c.field, c.field) }}:
+          <s>{{ c.old_value or '—' }}</s> → <strong>{{ c.new_value or '—' }}</strong>
+          <span class="meta">{{ c.actor }} · {{ c.created_at }}</span>
+        </li>
+      {% endfor %}
+    </ul>
+    <p class="meta">Append-only. A correction is never overwritten or deleted.</p>
+  </div>
+  {% endif %}
+</details>

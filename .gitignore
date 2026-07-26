@@ -1,0 +1,11 @@
+.env
+output/
+*.zip
+__pycache__/
+.DS_Store
+
+titlechain.db
+uploads/
+.venv/
+.pytest_cache/
+*.pyc

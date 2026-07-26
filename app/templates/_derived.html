@@ -1,0 +1,26 @@
+{# Everything derive() produced. Swapped whole on correction — that re-run IS the
+   memory proof. Band order is her question order, not the pipeline's:
+   can this answer my question → what do I do → what did you find → how does it
+   connect → show me the rows. #}
+<div id="derived" class="{{ 'flash' if just_corrected }}">
+
+  {% if view.coverage %}
+    {% include "_coverage.html" %}
+  {% endif %}
+
+  {% if view.order %}
+    {% include "_order.html" %}
+  {% endif %}
+
+  {% if view.findings %}
+    {% include "_findings.html" %}
+  {% endif %}
+
+  {% if view.chain %}
+    {% include "_chain.html" %}
+  {% endif %}
+
+  {% if entries %}
+    {% include "_entries.html" %}
+  {% endif %}
+</div>

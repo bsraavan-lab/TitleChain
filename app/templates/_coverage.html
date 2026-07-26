@@ -1,0 +1,35 @@
+{% set c = view.coverage %}
+<section class="band">
+  <h2 class="band-title">Coverage</h2>
+
+  {# A ruler, never a score. She will not trust a machine verdict on a question
+     she is liable for — she will trust arithmetic she can check in two seconds.
+     The ruler is decorative to assistive tech; the sentence below is the answer. #}
+  {# Parent documents sit ABOVE the line; the certificate's own window sits BELOW
+     it. Separating them is what makes the gap readable at a glance — and stops
+     a parent-year label from landing on top of the band. #}
+  <div class="ruler" aria-hidden="true">
+    {% for t in c.ticks %}
+      <span class="tick {{ 'inside' if t.inside else 'outside' }}"
+            style="left:{{ c.pct(t.year) }}%">
+        <em>{{ t.label }}</em><i></i>
+      </span>
+    {% endfor %}
+
+    <div class="ruler-axis"></div>
+
+    {% if c.start_year and c.end_year %}
+      <div class="ruler-band" style="left:{{ c.band_left }}%; width:{{ c.band_width }}%"></div>
+      <span class="band-edge" style="left:{{ c.band_left }}%">{{ c.start_year }}</span>
+      <span class="band-edge end"
+            style="left:{{ c.band_left + c.band_width }}%">{{ c.end_year }}</span>
+    {% endif %}
+  </div>
+
+  <p class="ruler-key" aria-hidden="true">
+    <span class="k-band"></span> covered by this certificate
+    {% if c.ticks %}<span class="k-tick"></span> parent document named in it{% endif %}
+  </p>
+
+  <p class="coverage-detail">{{ c.detail }}</p>
+</section>

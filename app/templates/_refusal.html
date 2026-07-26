@@ -1,0 +1,33 @@
+{# Refusing with reasons is on-message: the product's thesis is that it exposes
+   what it cannot establish rather than hiding it. Never hallucinate entries. #}
+<div class="refusal">
+  <h1>
+    {% if case.status == 'REFUSED' %}
+      Nothing was read from this certificate.
+    {% else %}
+      This certificate could not be processed.
+    {% endif %}
+  </h1>
+
+  <p class="refusal-why">{{ case.status_detail }}</p>
+
+  {# Only ever list checks that ACTUALLY ran. A refusal that invents its own
+     reasoning is the exact failure this product exists to refuse. #}
+  {% if refusal_checks %}
+    <p class="meta">We looked for:</p>
+    <ul class="refusal-checks">
+      {% for c in refusal_checks %}
+        <li><span class="x">✗</span> {{ c }}</li>
+      {% endfor %}
+    </ul>
+  {% endif %}
+
+  <p>
+    <a class="btn" href="/">upload a different file</a>
+    {% for key, s in SAMPLES.items() %}
+      <form method="post" action="/sample/{{ key }}" class="inline">
+        <button class="btn-quiet" type="submit">open {{ s.label }} instead</button>
+      </form>
+    {% endfor %}
+  </p>
+</div>

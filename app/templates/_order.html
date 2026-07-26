@@ -1,0 +1,23 @@
+{% set o = view.order %}
+{# Not a nicety. The moment she learns her evidence is short, her next thought is
+   "so what do I order?" — today that means reassembling SRO, village, every
+   survey number and a date range by hand. Pre-filling it is what converts bad
+   news into an action instead of a blown SLA. #}
+<section class="band band-order">
+  <h2 class="band-title">Next — order this certificate</h2>
+  <dl class="order">
+    <dt>SRO</dt><dd>{{ o.sro or '—' }}</dd>
+    <dt>Village</dt><dd>{{ o.village or '—' }}</dd>
+    <dt>Survey numbers</dt><dd>{{ o.survey_nos | join(', ') or '—' }}</dd>
+    <dt>Period</dt><dd class="strong">{{ o.date_from }} &rarr; {{ o.date_to }}</dd>
+  </dl>
+  <button class="btn" type="button"
+          data-copy="{{ o.as_text }}"
+          onclick="navigator.clipboard.writeText(this.dataset.copy).then(()=>{
+                     this.textContent='copied';
+                     setTimeout(()=>this.textContent='copy',1600);})">copy</button>
+  <p class="meta">
+    Period computed from the earliest parent document named here, less a 12-year
+    buffer, up to the day before this certificate's window opens.
+  </p>
+</section>
