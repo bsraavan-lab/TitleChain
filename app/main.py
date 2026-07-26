@@ -48,6 +48,23 @@ templates.env.globals["REVIEW_STATES"] = store.REVIEW_STATES
 
 PROCESSING = {"QUEUED", "READING", "TYPING", "DERIVING"}
 
+
+def _start_pipeline(case_id: int, path: Path,
+                    request_key: str | None = None) -> None:
+    """Inline when nothing needs the network, a background thread otherwise.
+
+    A daemon thread does not outlive the response on a serverless host, so a case
+    started in one there polls at "Queued" for ever. When the certificate is fully
+    cached the walk is about a second, so it runs inline and the page renders
+    complete on first paint — which is also the nicer local behaviour for a
+    re-opened sample.
+    """
+    if pipeline.is_fully_cached(path):
+        pipeline.run(case_id, path, request_key)
+        return
+    threading.Thread(target=pipeline.run, args=(case_id, path, request_key),
+                     daemon=True).start()
+
 # Order is her question order: what must I check → how does it connect → what am I
 # missing → is the extraction right → what did this cost.
 TABS = [
@@ -233,7 +250,7 @@ async def upload(file: UploadFile):
     if error:
         return RedirectResponse(f"/?rejected={error}", status_code=303)
     case_id = store.create_case(file.filename or "New case")
-    threading.Thread(target=pipeline.run, args=(case_id, path), daemon=True).start()
+    _start_pipeline(case_id, path)
     return RedirectResponse(f"/case/{case_id}", status_code=303)
 
 
@@ -243,7 +260,7 @@ def open_sample(key: str):
         return RedirectResponse("/?rejected=Unknown sample", status_code=303)
     path = pipeline.stage_sample(key)
     case_id = store.create_case(SAMPLES[key]["label"])
-    threading.Thread(target=pipeline.run, args=(case_id, path), daemon=True).start()
+    _start_pipeline(case_id, path)
     return RedirectResponse(f"/case/{case_id}", status_code=303)
 
 
@@ -290,9 +307,7 @@ async def add_document(case_id: int, file: UploadFile,
     if error:
         return RedirectResponse(f"/case/{case_id}?tab=documents&rejected={error}",
                                 status_code=303)
-    threading.Thread(target=pipeline.run,
-                     args=(case_id, path, request_key or None),
-                     daemon=True).start()
+    _start_pipeline(case_id, path, request_key or None)
     return RedirectResponse(f"/case/{case_id}?tab=documents", status_code=303)
 
 

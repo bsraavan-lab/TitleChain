@@ -12,7 +12,9 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Iterable
 
-DB_PATH = Path(__file__).resolve().parent.parent / "titlechain.db"
+from config import data_dir
+
+DB_PATH = data_dir() / "titlechain.db"
 SCHEMA = Path(__file__).resolve().parent / "schema.sql"
 
 

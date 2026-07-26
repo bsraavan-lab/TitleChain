@@ -9,3 +9,7 @@ uploads/
 .venv/
 .pytest_cache/
 *.pyc
+
+# Vercel CLI link (project/org ids)
+.vercel
+.env*
