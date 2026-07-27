@@ -45,15 +45,23 @@
           </td>
         {% endfor %}
         {# Tamil is content, English is chrome. Every *_native field renders
-           verbatim in a Tamil stack; no transform, no letter-spacing, ever. #}
+           verbatim in a Tamil stack; no transform, no letter-spacing, ever.
+
+           A party with no role marker is ordinary, not an error — Jinja renders
+           a bare None as the word "None", which is how a claimant came to be
+           named "…செயல் அலுவலர்None". The marker prints only when there is one. #}
         <td class="ta">
           {% for p in e.executants %}
-            <div>{{ p.name_native }}<span class="rm">{{ p.role_marker }}</span></div>
+            <div>{{ p.name_native }}
+              {%- if p.role_marker %}<span class="rm">{{ p.role_marker }}</span>{% endif -%}
+            </div>
           {% endfor %}
         </td>
         <td class="ta">
           {% for p in e.claimants %}
-            <div>{{ p.name_native }}<span class="rm">{{ p.role_marker }}</span></div>
+            <div>{{ p.name_native }}
+              {%- if p.role_marker %}<span class="rm">{{ p.role_marker }}</span>{% endif -%}
+            </div>
           {% endfor %}
         </td>
         <td class="mono">{{ e.pr_numbers | map(attribute='doc_no') | join(', ') or '—' }}</td>

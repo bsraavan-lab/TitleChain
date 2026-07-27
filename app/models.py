@@ -173,8 +173,38 @@ class Coverage(BaseModel):
         return max(self.pct(self.end_year) - self.pct(self.start_year), 1.5)
 
     # ── collision-free rendering ──────────────────────────────────────────────
+    # Two collisions, two fixes, both resolved in the DATA rather than left to CSS
+    # luck: the mark is the product's whole argument, and a label landing on top
+    # of another label destroys the only thing it exists to show.
 
-    MIN_GAP_PCT: ClassVar[float] = 7.0  # below this, two labels overlap at any width
+    # ① The window's own two labels. A band narrower than this cannot carry one
+    # at each end: both are translateX(-50%) from their edge, so at 1.5% they
+    # land on top of each other and a one-month certificate drew its window as
+    # "202025". Below the threshold the band gets ONE centred label — which loses
+    # nothing, because the range is stated in full in the sentence underneath.
+    NARROW_BAND_PCT: ClassVar[float] = 8.0
+
+    @property
+    def band_is_narrow(self) -> bool:
+        return self.band_width < self.NARROW_BAND_PCT
+
+    @property
+    def band_centre(self) -> float:
+        return round(self.band_left + self.band_width / 2, 2)
+
+    @property
+    def band_label(self) -> str:
+        """The whole window in one label, for a band too narrow to carry two."""
+        if self.start_year == self.end_year:
+            return str(self.start_year or "")
+        return f"{self.start_year}–{self.end_year}"
+
+    # ② The parent-year ticks above the axis. Same failure, different cause:
+    # 2005 and 2007 on a 1961→2024 axis sit 3% apart. Ticks close enough to
+    # collide are drawn once, under one label, carrying their own count.
+    # Ticks on opposite sides of the window are NEVER merged — "2023 · 2024"
+    # where one is outside and one inside would be a lie about the finding.
+    MIN_GAP_PCT: ClassVar[float] = 7.0
 
     @property
     def clusters(self) -> list["TickCluster"]:
@@ -187,11 +217,6 @@ class Coverage(BaseModel):
                 continue
             out.append(TickCluster(pct=p, years=[t.year], inside=t.inside))
         return out
-
-    @property
-    def band_labels_merge(self) -> bool:
-        """A window narrower than its own two labels gets one label, centred."""
-        return 0 < self.band_width < 14
 
     @property
     def outside_count(self) -> int:

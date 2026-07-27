@@ -51,8 +51,8 @@
     <p>{{ view.coverage.detail }}</p>
     {% if view.coverage.sufficient is false and view.order %}
       <p>The certificate required to close this gap:
-        {{ view.order.sro }} SRO, {{ view.order.village }},
-        survey {{ view.order.survey_nos | join(', ') }},
+        {{ view.order.sro or '—' }} SRO, {{ view.order.village or '—' }},
+        survey {{ view.order.survey_nos | join(', ') or '—' }},
         {{ view.order.date_from }} to {{ view.order.date_to }}.</p>
     {% endif %}
   {% endif %}

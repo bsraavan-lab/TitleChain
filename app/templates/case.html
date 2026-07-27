@@ -4,7 +4,12 @@
 {# The property is the identity of this screen, so it is the strongest thing in
    the bar — it used to be the smallest, set in 13px muted grey at the far right.
    It doubles as the case switcher: moving between files never routes through
-   the home screen. <details> gives click, keyboard and Escape for free. #}
+   the home screen. <details> gives click, keyboard and Escape for free.
+
+   Every part is guarded rather than concatenated: an unread SRO is a null, and
+   a bare `header.sro ~ ' SRO · ' ~ header.village` renders that as "None SRO ·
+   None". The village is not repeated here because property_key already carries
+   it ("Puliyampatti · S.No 95/2 +5"). #}
 {% block bar_context %}
 <details class="switcher">
   <summary>
