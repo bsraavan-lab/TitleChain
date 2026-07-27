@@ -73,3 +73,27 @@ def test_a_readable_document_is_not_short_circuited(statuses, monkeypatch):
     assert any(s == "TYPING" for s, _ in statuses)
     assert statuses[-1][0] == "FAILED"
     assert "stage ② reached" in statuses[-1][1]
+
+
+# ── a case id that no longer resolves ────────────────────────────────────────
+
+def test_no_route_500s_on_a_case_that_is_gone(tmp_path, monkeypatch):
+    """Render's free plan has an ephemeral disk: the instance restarts and takes
+    the case store with it, so a bookmarked /report/7 is an ordinary Tuesday.
+    Every route that takes a case id has to survive it — /report/ did not, and
+    returned a 500 in production the first time the instance recycled.
+    """
+    monkeypatch.setenv("TITLECHAIN_DATA_DIR", str(tmp_path))
+    import importlib
+    from fastapi.testclient import TestClient
+    import config as config_mod
+    from app import paths as paths_mod, db as db_mod, main as main_mod
+    for m in (config_mod, paths_mod, db_mod, main_mod):
+        importlib.reload(m)
+    main_mod.db.init()
+
+    client = TestClient(main_mod.app, follow_redirects=False)
+    for path in ("/case/999", "/case/999/status", "/case/999/tab/review",
+                 "/report/999", "/finding/999/detail?key=R3:gap=1-2"):
+        r = client.get(path)
+        assert r.status_code < 500, f"{path} returned {r.status_code}"
