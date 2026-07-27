@@ -257,6 +257,8 @@ details.band > summary { cursor: pointer; list-style: revert; }
 .refusal-why { color: var(--ink-2); max-width: 62ch; }
 .refusal-checks { list-style: none; padding: 0; margin: var(--s3) 0; }
 .refusal-checks .x { color: var(--resolve); font-weight: 700; margin-right: var(--s2); }
+.refusal-actions { display: flex; gap: var(--s2); align-items: center; flex-wrap: wrap;
+                   margin-top: var(--s4); }
 
 /* ── buttons ──────────────────────────────────────────────────────────────── */
 

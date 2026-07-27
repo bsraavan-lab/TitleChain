@@ -22,12 +22,14 @@
     </ul>
   {% endif %}
 
-  <p>
+  {# Same reason as home.html: a <form> start tag closes an open <p>, which put
+     these buttons outside the element that was meant to lay them out. #}
+  <div class="refusal-actions">
     <a class="btn" href="/">upload a different file</a>
     {% for key, s in SAMPLES.items() %}
       <form method="post" action="/sample/{{ key }}" class="inline">
         <button class="btn-quiet" type="submit">open {{ s.label }} instead</button>
       </form>
     {% endfor %}
-  </p>
+  </div>
 </div>

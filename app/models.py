@@ -11,7 +11,7 @@ are load-bearing (PIPELINE §②) — the type system enforces them, not the pro
 
 from __future__ import annotations
 
-from typing import Literal, Optional
+from typing import ClassVar, Literal, Optional
 
 from pydantic import BaseModel, Field
 
@@ -148,6 +148,28 @@ class Coverage(BaseModel):
         if not (self.start_year and self.end_year):
             return 0.0
         return max(self.pct(self.end_year) - self.pct(self.start_year), 1.5)
+
+    # A band narrower than this cannot carry a label at each end: both are
+    # translateX(-50%) from their edge, so at 1.5% they land on top of each other
+    # and a one-month certificate drew its window as "202025". Below the
+    # threshold the band gets ONE centred label instead — which loses nothing,
+    # because the range is still stated in full in the sentence underneath.
+    NARROW_BAND_PCT: ClassVar[float] = 8.0
+
+    @property
+    def band_is_narrow(self) -> bool:
+        return self.band_width < self.NARROW_BAND_PCT
+
+    @property
+    def band_centre(self) -> float:
+        return round(self.band_left + self.band_width / 2, 2)
+
+    @property
+    def band_label(self) -> str:
+        """The whole window in one label, for a band too narrow to carry two."""
+        if self.start_year == self.end_year:
+            return str(self.start_year or "")
+        return f"{self.start_year}–{self.end_year}"
 
 
 class OrderBlock(BaseModel):
