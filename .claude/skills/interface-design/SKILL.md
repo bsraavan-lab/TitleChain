@@ -314,7 +314,7 @@ Always offer to save: "Want me to save these patterns for future sessions?" If y
 
 # Commands
 
-- `/interface-design:design-review` — strict craft + hierarchy review of a build, with an approval bar; renders before/after when possible
-- `/interface-design:design-deslop` — fast, diff-scoped pass that strips visual slop from a branch
+- `/design-review` — strict craft + hierarchy review of a build, with an approval bar; renders before/after when possible
+- `/design-deslop` — fast, diff-scoped pass that strips visual slop from a branch
 
 If a user asks for design status, audit, or pattern extraction in natural language: read `.interface-design/system.md` and summarize it, check UI files against it for drift, or scan for repeated spacing/radius/color/component values and propose a system.md — perform the equivalent inline.

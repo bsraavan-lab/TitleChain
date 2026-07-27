@@ -1,5 +1,5 @@
 ---
-name: interface-design:design-review
+name: design-review
 description: Strict, multi-pass craft and visual-hierarchy review of a UI build, with severity scoring and an explicit approval bar. The design counterpart to a deep code-quality review.
 ---
 
