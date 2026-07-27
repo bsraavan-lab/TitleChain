@@ -12,7 +12,7 @@ from pathlib import Path
 import pytest
 
 from app import pipeline
-from app.digitise import Digitised, UnreadChunk
+from app.digitise import Block, Digitised, Page, UnreadChunk
 
 SAMPLE = Path(__file__).resolve().parent.parent / "ec_samples" / "ec_test_01.pdf"
 
@@ -50,11 +50,19 @@ def test_total_digitisation_failure_fails_it_does_not_refuse(statuses, monkeypat
 def test_a_readable_document_is_not_short_circuited(statuses, monkeypatch):
     """The guard is about zero pages, not about unread chunks. A document that
     lost one chunk of many still goes to stage ②, with the loss recorded."""
-    partial = Digitised(pages=[object()], markdown="", source_dir=Path("."),
+    # A REAL Page, not a bare object(): stage ② is now entered through
+    # certificate_ranges(), which reads page numbers to find where one certificate
+    # ends and the next begins. A stub thin enough to pass through the old
+    # straight-line path raises AttributeError on the new one, and that would be
+    # the stub failing rather than the guard.
+    page = Page(page_num=1, width=100, height=100, blocks=[
+        Block(block_id="b", page_num=1, bbox=None, layout_tag="table",
+              confidence=0.9, reading_order=0, text="<table></table>")])
+    partial = Digitised(pages=[page], markdown="", source_dir=Path("."),
                         from_cache=False,
                         unread=[UnreadChunk(11, 20, "chunk 2 timed out")])
     monkeypatch.setattr(pipeline.digitise_mod, "digitise", lambda *a, **k: partial)
-    monkeypatch.setattr(pipeline, "_cached_extraction", lambda dig: None)
+    monkeypatch.setattr(pipeline, "_cached_extraction", lambda dig, suffix="": None)
 
     def boom(*a, **k):
         raise RuntimeError("stage ② reached")
