@@ -1,12 +1,22 @@
 {# Everything derive() produced. Swapped whole on correction — that re-run IS the
-   memory proof. Band order is her question order, not the pipeline's:
-   can this answer my question → what do I do → what did you find → how does it
-   connect → show me the rows. #}
+   memory proof, not a stand-in for it.
+
+   Section order is her question order, not the pipeline's. The pipeline runs
+   extract → graph → rules → render; the page runs the exact reverse:
+
+     can this certificate answer my question   → the answer
+     so what do I do about it                  → the order block
+     what did you find                         → findings
+     how does it connect                       → chain
+     show me the rows                          → entries (folded)
+
+   Entries are last and folded because they are the audit surface, not the
+   reading surface. Leading with the table would restore her as the parser,
+   which is precisely the job this product removed.
+#}
 <div id="derived" class="{{ 'flash' if just_corrected }}">
 
-  {% if view.coverage %}
-    {% include "_coverage.html" %}
-  {% endif %}
+  {% include "_answer.html" %}
 
   {% if view.order %}
     {% include "_order.html" %}
@@ -23,4 +33,10 @@
   {% if entries %}
     {% include "_entries.html" %}
   {% endif %}
+
+  <p class="provenance">
+    Findings computed by deterministic code against rulebook
+    <span class="mono">{{ RULEBOOK_VERSION }}</span>. No language model decided
+    anything on this page.
+  </p>
 </div>

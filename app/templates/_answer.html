@@ -1,0 +1,34 @@
+{# ── THE ANSWER ───────────────────────────────────────────────────────────────
+   The one focal point of the case screen, and the only element allowed to shout.
+   Verdict, rule and sentence were three stacked cards in the previous build;
+   they are one argument, so they are now one block: claim → evidence → working.
+   Nothing above it, nothing beside it, and the whole thing sits above the fold
+   at 1280×800.
+
+   Legible on a projector from three metres, which is the same requirement as a
+   tired advocate reading at the end of a long day. The two constraints agree.
+#}
+{% import "_rule.html" as r %}
+{% set c = view.coverage %}
+<section class="answer {{ 'a-bad' if c and c.sufficient is false
+                          else ('a-good' if c and c.sufficient else 'a-flat') }}">
+
+  <p class="answer-kicker">
+    <span class="glyph" aria-hidden="true">
+      {%- if c and c.sufficient is false %}▲{% elif c and c.sufficient %}✓{% else %}⚑{% endif -%}
+    </span>
+    {% if c and c.sufficient is false %}Insufficient coverage
+    {% elif c and c.sufficient %}Coverage verified
+    {% else %}Coverage not computable{% endif %}
+  </p>
+
+  <h1 class="answer-headline">
+    {%- if c -%}{{ c.headline }}
+    {%- else -%}No entries were read from this certificate.{%- endif -%}
+  </h1>
+
+  {% if c %}
+    {{ r.rule(c) }}
+    <p class="answer-detail">{{ c.detail }}</p>
+  {% endif %}
+</section>
