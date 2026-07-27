@@ -26,7 +26,7 @@
 {% endmacro %}
 
 
-{% macro source_button(entry_id, text='source') %}
+{% macro source_button(entry_id, text='See it on the page') %}
   <button class="link" type="button"
           hx-get="/evidence/{{ entry_id }}" hx-target="#rail"
           hx-swap="innerHTML">{{ text }}</button>
@@ -38,13 +38,13 @@
      header, which is not an entry. #}
   <button class="link" type="button"
           hx-get="/evidence/page/{{ ec_id }}/{{ page_num }}"
-          hx-target="#rail" hx-swap="innerHTML">go to page {{ page_num }}</button>
+          hx-target="#rail" hx-swap="innerHTML">Open page {{ page_num }}</button>
 {% endmacro %}
 
 
-{% macro copy_button(text, label='copy') %}
+{% macro copy_button(text, label='Copy this') %}
   <button class="btn-quiet" type="button" data-copy="{{ text }}"
           onclick="navigator.clipboard.writeText(this.dataset.copy).then(()=>{
-                     const w=this.textContent; this.textContent='copied';
+                     const w=this.textContent; this.textContent='Copied';
                      setTimeout(()=>this.textContent=w,1600);})">{{ label }}</button>
 {% endmacro %}

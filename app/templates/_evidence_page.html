@@ -1,6 +1,9 @@
-<h2 class="section-title">Source</h2>
+<h2 class="section-title">The page itself</h2>
 {% if not ec %}
-  <p class="empty">That certificate is no longer available.</p>
+  <p class="empty">
+    We cannot find that certificate any more. Your other cases are all on the home
+    screen.
+  </p>
 {% else %}
   <figure class="evidence-fig">
     <img src="/page/{{ ec.id }}/{{ page_num }}.png"
@@ -20,7 +23,8 @@
     </p>
   {% endif %}
   <p class="meta">
-    The whole page, unmarked. Rule inputs read from the certificate header have no
-    entry to crop, so this is where they are checked.
+    The whole page, with nothing marked on it. Some details — the years this
+    certificate covers, for one — come from the header rather than from a single
+    entry, so this is where you check them.
   </p>
 {% endif %}

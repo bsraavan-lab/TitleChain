@@ -3,17 +3,17 @@
   <li class="chain-node {{ 'examined' if n.examined else 'unexamined' }}">
     <span class="dot" aria-hidden="true">{{ '●' if n.examined else '○' }}</span>
     <span class="chain-doc">{{ n.doc_no }}</span>
-    <span class="chain-nature">{{ n.nature or 'not present on this case' }}</span>
+    <span class="chain-nature">{{ n.nature or 'you do not have this one yet' }}</span>
     {% if n.cancelled_by %}
       <span class="tag-cancelled">⊘ cancelled by {{ n.cancelled_by }}</span>
     {% endif %}
     {% if n.entry_id %}
-      {{ source_button(n.entry_id) }}
+      {{ source_button(n.entry_id, 'See it on the page') }}
     {% else %}
       <button class="link" type="button"
               hx-get="/case/{{ case.id }}/tab/documents"
               hx-target="#tab-body" hx-swap="outerHTML"
-              hx-push-url="/case/{{ case.id }}?tab=documents">order this →</button>
+              hx-push-url="/case/{{ case.id }}?tab=documents">How to order it →</button>
     {% endif %}
     {% if n.children %}
       <ul class="chain">{% for c in n.children %}{{ node(c) }}{% endfor %}</ul>
@@ -25,6 +25,7 @@
   {% for n in view.chain %}{{ node(n) }}{% endfor %}
 </ul>
 <p class="meta">
-  ○ named as a parent but not present on this case — unexamined. Each one is a
-  button, because a hole in the chain is an errand, not a decoration.
+  ○ means the certificate points back to that document, but you do not have it, so
+  nobody has read what is inside it. Each one is a button, because a hole in the
+  chain is an errand you can finish rather than a warning you have to live with.
 </p>

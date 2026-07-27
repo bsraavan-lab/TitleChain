@@ -1,30 +1,30 @@
 <section class="band band-merge {{ 'flash' if merge }}">
-  <h2 class="section-title">{{ merge.label }} merged</h2>
+  <h2 class="section-title">{{ merge.label }} is on the case</h2>
   <p class="merge-head">
     <strong>{{ merge.label }}</strong> · {{ merge.window }} ·
     {{ merge.entries }} entries · {{ merge.pages }} pages
   </p>
   {% if merge.resolved %}
-    <h3 class="merge-h">Resolved ({{ merge.resolved|length }})</h3>
+    <h3 class="merge-h">This settled ({{ merge.resolved|length }})</h3>
     <ul class="merge-list resolved">
       {% for m in merge.resolved %}<li><span aria-hidden="true">✓</span> {{ m }}</li>{% endfor %}
     </ul>
   {% endif %}
   {% if merge.appeared %}
-    <h3 class="merge-h">New ({{ merge.appeared|length }})</h3>
+    <h3 class="merge-h">New to look at ({{ merge.appeared|length }})</h3>
     <ul class="merge-list appeared">
       {% for m in merge.appeared %}<li><span aria-hidden="true">＋</span> {{ m }}</li>{% endfor %}
     </ul>
     <p class="meta">
-      New findings are not a failure of the merge. Finding a 1961 parent behind a
-      2005 one is what a title chain does — the completeness figure moving is the
-      loop working.
+      Finding something new is not a step backwards. A 1961 document sitting behind
+      a 2005 one is exactly what a title search is for. The numbers moving means it
+      worked.
     </p>
   {% endif %}
   <p class="merge-carried meta">
     {{ merge.unchanged }} finding{{ '' if merge.unchanged == 1 else 's' }} unchanged ·
-    {{ merge.reviews_kept }} review{{ '' if merge.reviews_kept == 1 else 's' }}
-    carried over · {{ merge.corrections_kept }}
-    correction{{ '' if merge.corrections_kept == 1 else 's' }} preserved
+    your {{ merge.reviews_kept }} note{{ '' if merge.reviews_kept == 1 else 's' }}
+    and {{ merge.corrections_kept }}
+    correction{{ '' if merge.corrections_kept == 1 else 's' }} were kept
   </p>
 </section>

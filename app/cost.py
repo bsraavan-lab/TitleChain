@@ -26,13 +26,14 @@ from . import db
 
 RATES_PATH = Path(__file__).resolve().parent.parent / "config" / "rates.yml"
 
-# Stage → (label, the unit it is billed in). The units are Sarvam's; the rates are
-# the operator's.
+# Stage → (label, the unit it is billed in). The label says what the step DID, in
+# the words the rest of the interface uses; the units are Sarvam's, and the rates
+# are the operator's.
 STAGES: dict[str, tuple[str, str]] = {
-    "digitise":      ("Document Intelligence", "page"),
-    "header":        ("Header typing", "1M tokens"),
-    "entries":       ("Entry typing", "1M tokens"),
-    "transliterate": ("Transliteration", "character"),
+    "digitise":      ("Reading the pages", "page"),
+    "header":        ("Reading the header", "1M tokens"),
+    "entries":       ("Reading the entries", "1M tokens"),
+    "transliterate": ("Names into English", "character"),
 }
 STAGE_ORDER = ["digitise", "header", "entries", "transliterate"]
 

@@ -60,8 +60,8 @@ def find(view, rule_id: str, severity: str):
 def test_r3_reads_as_english_when_exactly_one_parent_predates(ec_test_02):
     view = derive(*ec_test_02)
     msg = find(view, "R3", "blocking")[0].message
-    assert "1 parent document predates" in msg
-    assert "parent documents" not in msg
+    assert "1 earlier document sits" in msg
+    assert "earlier documents" not in msg
     assert "19803/2024" in msg
 
 
@@ -74,16 +74,16 @@ def test_r4_reads_as_english_when_exactly_one_parent_dangles(ec_test_02):
     fired = find(view, "R4", "material")
     assert len(fired) == 1
     msg = fired[0].message
-    assert "names 19803/2024 as a parent document" in msg
-    assert "It is not present" in msg and "has not been examined" in msg
+    assert "points back to 19803/2024" in msg
+    assert "not in any certificate here" in msg
     assert "documents" not in msg
 
 
 def test_coverage_detail_reads_as_english_for_one_parent(ec_test_02):
     header, entries = ec_test_02
     detail = build_coverage(header, entries).detail
-    assert "1 parent document is named, from 2024" in detail
-    assert "It does not fall inside this window" in detail
+    assert "1 earlier document is named, from 2024" in detail
+    assert "It does not fall inside that window" in detail
 
 
 def test_plurals_are_untouched_above_one(ec_test_02):
@@ -92,14 +92,14 @@ def test_plurals_are_untouched_above_one(ec_test_02):
     entries[0].pr_numbers = [PRNumber(doc_no="19803/2024", year=2024),
                              PRNumber(doc_no="4148/1981", year=1981)]
     view = derive(header, entries)
-    assert "2 parent documents predate" in find(view, "R3", "blocking")[0].message
-    assert "The earliest is 4148/1981" in find(view, "R3", "blocking")[0].message
+    assert "2 earlier documents sit" in find(view, "R3", "blocking")[0].message
+    assert "The oldest is 4148/1981" in find(view, "R3", "blocking")[0].message
     # R4 splits per parent, so two dangling parents are two findings — each of
     # which still has to read as English on its own.
     fired = find(view, "R4", "material")
     assert len(fired) == 2
     assert {f.key for f in fired} == {"R4:parent=19803/2024", "R4:parent=4148/1981"}
-    assert all("as a parent document" in f.message and "documents" not in f.message
+    assert all("points back to" in f.message and "documents" not in f.message
                for f in fired)
 
 

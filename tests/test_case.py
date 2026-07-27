@@ -117,7 +117,7 @@ def test_chain_completeness_is_a_ratio_of_links_not_a_score(ec_a):
     c = derive_case([ec_a]).completeness
     assert (c.links_examined, c.links_named) == (1, 6)
     assert c.chain_pct == round(1 / 6 * 100)
-    assert c.chain_arithmetic == "1 of 6 parent documents examined"
+    assert c.chain_arithmetic == "1 of the 6 earlier documents are here"
 
 
 def test_coverage_counts_years_inside_any_window_on_the_case(ec_a):
@@ -133,7 +133,7 @@ def test_a_case_with_no_parents_is_not_reported_as_a_broken_chain(ec_a):
     c = derive_case([ec_a]).completeness
     assert c.links_named == 0
     assert c.chain_pct == 100                   # nothing named, nothing missing
-    assert "no parent document" in c.chain_arithmetic
+    assert "points back to an earlier document" in c.chain_arithmetic
 
 
 def test_required_span_reaches_back_to_the_earliest_parent():
@@ -150,7 +150,7 @@ def test_required_span_reaches_back_to_the_earliest_parent():
 def test_readiness_is_never_a_percentage(ec_a):
     r = derive_case([ec_a]).readiness
     assert r.ready is False
-    assert r.label == "Not ready to opine"
+    assert r.label == "Not ready to sign off yet"
     assert [g.id for g in r.gates] == ["G1", "G2", "G3", "G4", "G5"]
     assert not any("%" in g.label for g in r.gates)
 
@@ -160,7 +160,7 @@ def test_a_clean_case_passes_every_gate():
                 entries=[entry(1, "1/2020", 2020, "Sale deed", db_id=1)])
     view = derive_case([doc], reviewed={r.key for r in derive_case([doc]).open_runs})
     assert view.readiness.ready, [g.label for g in view.readiness.unmet]
-    assert view.readiness.label == "Ready to opine"
+    assert view.readiness.label == "Ready to sign off"
 
 
 def test_the_verdict_leads_with_a_blocking_finding_not_with_good_news():

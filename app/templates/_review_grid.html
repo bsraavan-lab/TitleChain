@@ -8,23 +8,23 @@
 {% if entries %}
 <section class="section">
   <h2 class="section-title">
-    Where review is needed
-    <span class="count count-quiet">by entry, from our own checks</span>
+    Entries worth a second look
+    <span class="count count-quiet">flagged by our own checks, entry by entry</span>
   </h2>
   <div class="table-scroll">
     <table class="matrix grid">
       <thead>
         <tr>
-          <th>Entry</th><th>Fields read</th><th>Parents resolved</th>
-          <th>Inside a window</th><th>Corrected</th><th>Reviewed</th>
-          <th>Layout conf.</th>
+          <th>Entry</th><th>Blank fields</th><th>Earlier documents</th>
+          <th>Inside your years</th><th>You corrected</th><th>You checked</th>
+          <th>Scan quality</th>
         </tr>
       </thead>
       <tbody>
         {% for e in entries %}
           {% set flags = grid[e.db_id] %}
           <tr>
-            <th>{{ e.sr_no }} · {{ e.doc_no or 'no doc no.' }}</th>
+            <th>{{ e.sr_no }} · {{ e.doc_no or 'no number read' }}</th>
             <td class="{{ 'cell-flag' if flags.fields else 'cell-on' }}">
               {{ '⚠ ' ~ flags.fields if flags.fields else '●' }}</td>
             <td class="{{ 'cell-flag' if flags.parents else 'cell-on' }}">
@@ -41,10 +41,10 @@
     </table>
   </div>
   <p class="meta">
-    Every flag above comes from our own deterministic checks (R9, R4, R3), not from
-    the model's confidence. Layout confidence is Sarvam's score for the whole
-    block — it is shown unstyled because it is blind to dropped cells: a
-    0.96-confidence block lost three date cells in this document.
+    Every flag above comes from our own checks, not from how confident the reader
+    was. Scan quality is the page reader's own score for the whole block, and we
+    leave it plain and uncoloured on purpose: it cannot see a cell it dropped. A
+    block scoring 0.96 lost three date cells in this very document.
   </p>
 </section>
 {% endif %}

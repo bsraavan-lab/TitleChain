@@ -42,7 +42,7 @@ def test_total_digitisation_failure_fails_it_does_not_refuse(statuses, monkeypat
 
     status, detail = statuses[-1]
     assert status == "FAILED"
-    assert "Could not read this document" in detail
+    assert "We could not read this document" in detail
     assert "state 'Failed'" in detail          # the digitiser's own reason, kept
     assert not any(s == "REFUSED" for s, _ in statuses)
 

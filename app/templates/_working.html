@@ -13,11 +13,11 @@
 <section class="answer a-flat is-working">
   <p class="answer-kicker">
     <span class="spinner" aria-hidden="true"></span>
-    {{ case.status_detail or 'Working' }}
+    {{ case.status_detail or 'Reading your certificate' }}
   </p>
 
   <h1 class="answer-headline muted">
-    {%- if c -%}{{ c.headline }}{%- else -%}Reading the certificate…{%- endif -%}
+    {%- if c -%}{{ c.headline }}{%- else -%}Reading your certificate…{%- endif -%}
   </h1>
 
   {% if case.pages_total %}
@@ -29,7 +29,8 @@
     <p class="progress-label">
       page <span class="mono">{{ case.pages_done }}</span> of
       <span class="mono">{{ case.pages_total }}</span>
-      <span class="sep">·</span>the job runs on the server — closing this tab loses nothing
+      <span class="sep">·</span>this runs on our side, so you can close the tab and
+      come back to it
     </p>
   {% endif %}
 
@@ -42,7 +43,7 @@
 {# Bands are present and empty rather than absent, so nothing jumps position
    when the data lands. Layout stability is the whole point of a skeleton. #}
 <section class="section">
-  <h2 class="section-title">Findings</h2>
+  <h2 class="section-title">What to check</h2>
   <ul class="skeleton-list">
     <li><span class="sk sk-a"></span><span class="sk sk-b"></span></li>
     <li><span class="sk sk-a"></span><span class="sk sk-c"></span></li>

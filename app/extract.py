@@ -602,16 +602,19 @@ def extract(dig: Digitised, *, filename: str,
 
     if not any(p.tables for p in dig.pages):
         return Refusal(
-            checks=["a registration-entry table"],
-            detail="No table was found on any page of this document. An "
-                   "Encumbrance Certificate presents its entries as a table.")
+            checks=["a table of registered entries"],
+            detail="We found no table on any page of this document, and an "
+                   "encumbrance certificate always lists its entries as a table. "
+                   "This may not be an EC — or the scan may be too faint for us to "
+                   "make out the table lines.")
 
     tables = [sub for b in dig.blocks if is_entry_table(b) for sub in split_block(b)]
     if not tables:
         return Refusal(
-            checks=["a registration-entry table", "a numbered-entry column"],
-            detail="Tables were found, but none of them carries the numbered "
-                   "registration-entry column an Encumbrance Certificate uses.")
+            checks=["a table of registered entries", "a numbered-entry column in it"],
+            detail="We found tables, but none of them has the numbered entry column "
+                   "an encumbrance certificate uses. Without that column there is no "
+                   "way to tell which rows are registrations.")
 
     if api_key is None:
         from config import get_api_key
@@ -697,10 +700,10 @@ def extract(dig: Digitised, *, filename: str,
             # Visible degradation. The pages this block covers are reported
             # unread rather than silently missing from the certificate.
             return [], UnreadChunk(block.page_num, block.page_num,
-                                   f"could not be typed: {str(exc)[:160]}")
+                                   f"we could not read this part: {str(exc)[:160]}")
 
     done = 0
-    say(f"Typing {len(tables)} entry blocks into the schema")
+    say(f"Reading {len(tables)} blocks of entries")
 
     results: dict[int, tuple[list[Entry], UnreadChunk | None]] = {}
     with ThreadPoolExecutor(max_workers=MAX_PARALLEL) as pool:
@@ -709,7 +712,7 @@ def extract(dig: Digitised, *, filename: str,
         for fut in as_completed(futures):
             results[futures[fut]] = fut.result()
             done += 1
-            say(f"Typing entries — {done} of {len(tables)} blocks read")
+            say(f"Reading the entries — {done} of {len(tables)} blocks done")
         header = head_future.result()
 
     # Merged in block order, never completion order, so the result is deterministic.
@@ -732,12 +735,13 @@ def extract(dig: Digitised, *, filename: str,
         # Raise, and let the pipeline mark it FAILED with the real reason.
         if len(unread) == len(tables):
             raise RuntimeError(
-                "no entry block could be typed — "
+                "we could not read a single block of entries — "
                 + "; ".join(u.reason for u in unread[:3]))
         return Refusal(
-            checks=["a registration-entry table", "at least one numbered entry"],
-            detail="Tables were found, but no numbered registration entry could be "
-                   "read from any of them.")
+            checks=["a table of registered entries",
+                    "at least one numbered entry in it"],
+            detail="We found the tables, but we could not read a single numbered "
+                   "entry out of any of them.")
 
     header.declared_entry_count = declared_count(dig)   # OURS — the R10 checksum
     return Extraction(header=header,

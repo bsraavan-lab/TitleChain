@@ -34,7 +34,7 @@
     var text = btn.getAttribute('data-copy');
     if (navigator.clipboard) {
       navigator.clipboard.writeText(text).then(function () {
-        toast('Request copied — paste it into TNREGINET');
+        toast('Copied — paste it straight into TNREGINET');
       }, function () { fallbackCopy(text); });
     } else { fallbackCopy(text); }
   });
@@ -44,8 +44,8 @@
     ta.value = text; ta.setAttribute('readonly', '');
     ta.style.position = 'fixed'; ta.style.opacity = '0';
     document.body.appendChild(ta); ta.select();
-    try { document.execCommand('copy'); toast('Request copied'); }
-    catch (err) { toast('Press ⌘C to copy'); }
+    try { document.execCommand('copy'); toast('Copied'); }
+    catch (err) { toast('That did not copy — press ⌘C and it will'); }
     document.body.removeChild(ta);
   }
 
@@ -180,7 +180,9 @@
       }).catch(function () { items = data_fallback(); loaded = true; });
   }
 
-  function data_fallback() { return [{ label: 'All cases', kind: 'Go', href: '/' }]; }
+  function data_fallback() {
+    return [{ label: 'See all your cases', kind: 'Go', href: '/' }];
+  }
 
   function render() {
     var q = pinput.value.trim().toLowerCase();
@@ -210,7 +212,8 @@
     if (!filtered.length) {
       var empty = document.createElement('li');
       empty.className = 'meta';
-      empty.textContent = 'Nothing matches “' + pinput.value + '”.';
+      empty.textContent = 'No case matches “' + pinput.value +
+                          '”. Try the village, or press esc to see them all.';
       plist.appendChild(empty);
     }
   }

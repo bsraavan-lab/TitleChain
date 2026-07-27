@@ -8,9 +8,9 @@
 
 <section class="section">
   <h2 class="section-title">
-    On this case
+    Certificates you have
     <span class="count count-quiet">{{ docs|length }}
-      certificate{{ '' if docs|length == 1 else 's' }}</span>
+      certificate{{ '' if docs|length == 1 else 's' }} on this case</span>
   </h2>
   {% for d in docs %}
     <article class="ec-card">
@@ -26,8 +26,10 @@
       </p>
       <p class="ec-file meta">{{ d.filename or '—' }}</p>
       {% if d.fulfils_request_key %}
+        {% set filled = view.run(d.fulfils_request_key) %}
         <p class="ec-fulfils">
-          ✓ uploaded to fill <code>{{ d.fulfils_request_key }}</code>
+          ✓ you added this to settle:
+          {{ filled.title if filled else d.fulfils_request_key }}
         </p>
       {% endif %}
       {% if d.page_count %}
@@ -45,20 +47,23 @@
 
 <section class="section section-required">
   <h2 class="section-title">
-    Still required
+    What is still missing
     <span class="count count-quiet">
-      {% if view.requests_live %}{{ view.requests_live|length }} item{{ '' if view.requests_live|length == 1 else 's' }}
-      {% else %}nothing outstanding{% endif %}
+      {% if view.requests_live %}{{ view.requests_live|length }}
+        thing{{ '' if view.requests_live|length == 1 else 's' }} to order
+      {% else %}nothing missing{% endif %}
     </span>
   </h2>
 
   {% if not view.requests_live %}
     <p class="empty">
       {% if view.completeness.links_named %}
-        Every parent document named on this case is present and examined.
+        Good news — every document these certificates point back to is here, and it
+        has been read. Nothing left to chase.
       {% else %}
-        No parent document is named on this case, so nothing is outstanding — that
-        is a statement about these certificates, not about the chain before them.
+        These certificates do not point back to any earlier document, so there is
+        nothing to chase. Worth knowing, though: that tells you about these
+        certificates, not about what happened before them.
       {% endif %}
     </p>
   {% endif %}
@@ -69,36 +74,38 @@
 
       {% if r.kind == 'EC_FOR_RANGE' %}
         <dl class="order">
-          <dt>SRO</dt><dd>{{ r.sro or '—' }}</dd>
+          <dt>Ask this SRO</dt><dd>{{ r.sro or '—' }}</dd>
           <dt>Village</dt><dd>{{ r.village or '—' }}</dd>
           <dt>Survey numbers</dt><dd>{{ r.survey_nos | join(', ') or '—' }}</dd>
-          <dt>Period</dt><dd class="strong">{{ r.date_from }} → {{ r.date_to }}</dd>
+          <dt>For these years</dt><dd class="strong">{{ r.date_from }} → {{ r.date_to }}</dd>
         </dl>
       {% else %}
         <dl class="order">
-          <dt>Document</dt><dd class="strong">{{ r.doc_no }}</dd>
-          <dt>SRO</dt><dd>{{ r.sro or '—' }}</dd>
+          <dt>Ask for document</dt><dd class="strong">{{ r.doc_no }}</dd>
+          <dt>At this SRO</dt><dd>{{ r.sro or '—' }}</dd>
           <dt>Village</dt><dd>{{ r.village or '—' }}</dd>
         </dl>
       {% endif %}
 
-      <p class="req-why"><strong>Why:</strong> {{ r.because }}</p>
+      <p class="req-why"><strong>Why you need it:</strong> {{ r.because }}</p>
       <p class="req-closes">
-        <strong>Closes:</strong>
+        <strong>It settles:</strong>
         {% for k in r.closes %}
-          <code>{{ k }}</code>{% if not loop.last %} · {% endif %}
+          {% set closed = view.run(k) %}
+          {{ closed.title if closed else k }}{% if not loop.last %} · {% endif %}
         {% endfor %}
       </p>
       {% if r.alternative %}<p class="meta">{{ r.alternative }}</p>{% endif %}
 
       <div class="req-actions">
-        {{ copy_button(r.as_text, 'copy order text') }}
+        {{ copy_button(r.as_text, 'Copy this request') }}
         <form class="req-drop" method="post"
               action="/case/{{ case.id }}/documents"
               enctype="multipart/form-data">
           <input type="hidden" name="request_key" value="{{ r.key }}">
           <label>
-            <span class="drop-hint">drop the certificate here when it arrives</span>
+            <span class="drop-hint">When it arrives, drop it here and we will add
+              it to this case</span>
             <input type="file" name="file" accept=".pdf,.jpg,.jpeg,.png"
                    onchange="this.form.submit()">
           </label>
@@ -111,8 +118,8 @@
   {% if covered %}
     <details class="superseded">
       <summary class="meta">
-        {{ covered|length }} parent document{{ '' if covered|length == 1 else 's' }}
-        the certificate above would also examine
+        {{ covered|length }} more document{{ '' if covered|length == 1 else 's' }}
+        the certificate above would cover too
       </summary>
       <ul>
         {% for r in covered %}
@@ -120,8 +127,8 @@
         {% endfor %}
       </ul>
       <p class="meta">
-        Listed here rather than as separate errands: ordering one certificate that
-        covers five parents is one errand, not six.
+        They sit here rather than in the list above, because one certificate that
+        covers five documents is one trip to the SRO, not six.
       </p>
     </details>
   {% endif %}
@@ -129,7 +136,7 @@
 
 {% if resolved_log %}
 <section class="section">
-  <h2 class="section-title">Resolved by later uploads</h2>
+  <h2 class="section-title">Cleared by what you added</h2>
   <ul class="resolved-log">
     {% for r in resolved_log %}
       <li><span class="glyph" aria-hidden="true">✓</span> {{ r }}</li>

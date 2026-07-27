@@ -19,7 +19,7 @@
   <div class="vr-verdict">
     {% if processing %}
       <span class="spinner" aria-hidden="true"></span>
-      <strong>{{ case.status_detail or 'Working' }}</strong>
+      <strong>{{ case.status_detail or 'Reading your certificate' }}</strong>
       {% if case.pages_total %}
         <span class="meta">page {{ case.pages_done }} of {{ case.pages_total }}</span>
       {% endif %}
@@ -34,12 +34,12 @@
        two unexamined deeds must not read as "82% good". #}
     <div class="vr-meters">
       {% if processing and not entries %}
-        <p class="meta vr-waiting">Counting parent documents as entries are typed…</p>
+        <p class="meta vr-waiting">Counting the earlier documents as each entry is read…</p>
       {% else %}
-        {{ meter('Chain', c.chain_pct, c.chain_arithmetic, 'documents') }}
-        {{ meter('Coverage', c.coverage_pct, c.coverage_arithmetic, 'documents') }}
-        {{ meter('Reviewed', c.review_pct,
-                 c.review_done ~ ' of ' ~ c.review_total ~ ' items reviewed',
+        {{ meter('Documents', c.chain_pct, c.chain_arithmetic, 'documents') }}
+        {{ meter('Years', c.coverage_pct, c.coverage_arithmetic, 'documents') }}
+        {{ meter('Checked by you', c.review_pct,
+                 'you have cleared ' ~ c.review_done ~ ' of ' ~ c.review_total ~ ' items',
                  'review') }}
       {% endif %}
     </div>
@@ -53,7 +53,7 @@
         <span class="gate-rest">
           {% for g in view.readiness.gates %}
             <span class="chip {{ 'chip-clear' if g.passed else 'chip-fail' }}"
-                  title="{{ 'met' if g.passed else 'not met' }}">
+                  title="{{ 'Done' if g.passed else 'Still open' }}">
               {{ '✓' if g.passed else '·' }} {{ g.label }}
             </span>
           {% endfor %}

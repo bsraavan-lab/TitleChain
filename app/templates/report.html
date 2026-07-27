@@ -1,9 +1,10 @@
 {% extends "base.html" %}
 {% import "_rule.html" as r %}
-{% block title %}Scrutiny report — {{ case.property_key }}{% endblock %}
+{% block title %}Title scrutiny report — {{ case.property_key }}{% endblock %}
 
 {% block bar_actions %}
-  <button class="btn btn-primary" type="button" onclick="window.print()">Print / PDF</button>
+  <button class="btn btn-primary" type="button" onclick="window.print()">
+    Print or save as PDF</button>
 {% endblock %}
 
 {% block content %}
@@ -22,27 +23,27 @@
          width="128" height="91">
     <div class="report-meta">
       <p>Rulebook <span class="mono">{{ view.rulebook_version }}</span></p>
-      <p>Every finding below was produced by deterministic code, not by a
+      <p>Every finding below came from fixed checks written in code, not from a
         language model.</p>
     </div>
   </header>
 
-  <h1>Scrutiny report</h1>
+  <h1>Title scrutiny report</h1>
   <p class="report-lede">{{ case.property_key }}</p>
 
-  <h2>Property</h2>
+  <h2>The property</h2>
   <dl class="spec report-spec">
     <div><dt>SRO</dt><dd>{{ header.sro or '—' }}</dd></div>
     <div><dt>Village</dt><dd>{{ header.village or '—' }}</dd></div>
     <div class="wide"><dt>Survey numbers</dt>
       <dd class="mono">{{ header.survey_details | join(' · ') or '—' }}</dd></div>
-    <div><dt>Certificate window</dt>
+    <div><dt>Years this certificate covers</dt>
       <dd class="mono">{{ header.search_period_start or '—' }} →
         {{ header.search_period_end or '—' }}</dd></div>
     <div><dt>Issued</dt><dd class="mono">{{ header.issue_date or '—' }}</dd></div>
   </dl>
 
-  <h2>Readiness</h2>
+  <h2>Can this be signed off?</h2>
   <p class="report-claim">{{ view.readiness.headline }}</p>
   <ul class="report-gates">
     {% for g in view.readiness.gates %}
@@ -51,21 +52,21 @@
     {% endfor %}
   </ul>
   <p>
-    Chain: {{ view.completeness.chain_arithmetic }}
+    Earlier documents: {{ view.completeness.chain_arithmetic }}
     (<span class="mono">{{ view.completeness.chain_pct }}%</span>).
-    Coverage: {{ view.completeness.coverage_arithmetic }}
+    Years: {{ view.completeness.coverage_arithmetic }}
     (<span class="mono">{{ view.completeness.coverage_pct }}%</span>).
-    Both are counts, not scores — a numerator over a denominator, with no
-    weighting applied to either.
+    Both are plain counts — one number over another, with nothing weighted or
+    adjusted.
   </p>
 
-  <h2>Certificates examined</h2>
+  <h2>The certificates we read</h2>
   {# The wrap is inert at reading width and on paper, where the table fits the
      column. It earns its keep on a phone, where a scroll is the honest failure
      mode and a table shoved through the right edge of the page is not. #}
   <div class="table-wrap">
   <table class="entries">
-    <thead><tr><th></th><th>SRO · village</th><th>Search period</th>
+    <thead><tr><th></th><th>SRO · village</th><th>Years covered</th>
       <th>Issued</th><th class="num">Entries</th><th class="num">Pages</th>
       <th>File</th></tr></thead>
     <tbody>
@@ -84,7 +85,7 @@
   </table>
   </div>
 
-  <h2>What this search does not cover</h2>
+  <h2>What this search cannot tell you</h2>
   {% if view.coverage %}
     {% if view.coverage.sufficient is false %}
       <p class="report-claim">{{ view.coverage.headline }}</p>
@@ -96,29 +97,29 @@
   {% if view.unexamined_parents %}
     {# One sentence and a list, not the same sentence five times. The reader is a
        credit manager scanning for the exposure, and repetition buries it. #}
-    <p>{{ view.unexamined_parents|length }} parent document{{ 's are'
-        if view.unexamined_parents|length != 1 else ' is' }} named on this case
-      but not present in it, and {{ 'have' if view.unexamined_parents|length != 1
-      else 'has' }} not been examined:
+    <p>These certificates point back to {{ view.unexamined_parents|length }}
+      earlier document{{ 's' if view.unexamined_parents|length != 1 }} that
+      {{ 'are' if view.unexamined_parents|length != 1 else 'is' }} not here, so
+      nobody has read {{ 'them' if view.unexamined_parents|length != 1 else 'it' }}:
       <span class="mono">{{ view.unexamined_parents
         | map(attribute='to_doc_no') | join(', ') }}</span>.</p>
   {% endif %}
   {% for u in unread %}
     <p>Pages {{ u.page_from }}–{{ u.page_to }} could not be read
-      ({{ u.reason }}). Nothing on those pages is reflected above.</p>
+      ({{ u.reason }}). Nothing from those pages appears above.</p>
   {% endfor %}
 
-  <h2>Rules executed</h2>
+  <h2>Every check we ran</h2>
   {# The most valuable table here: it turns "I checked what I could" from a claim
      into a record, including the checks that did NOT run and why. #}
   <p class="meta">
-    All ten rules in rulebook {{ view.rulebook_version }}. A rule that could not
-    run says so and says why; it is never reported as passing.
+    All ten checks in rulebook {{ view.rulebook_version }}. A check that could not
+    run says so, and says why. It is never reported as a pass.
   </p>
   <div class="table-wrap">
   <table class="entries report-rules">
-    <thead><tr><th>Rule</th><th>Outcome</th><th>Subject</th>
-      <th>Finding, or why nothing was concluded</th><th>Review</th></tr></thead>
+    <thead><tr><th>Check</th><th>Result</th><th>About</th>
+      <th>What we found, or why we could not say</th><th>Signed off</th></tr></thead>
     <tbody>
       {% for run in view.runs_ranked %}
         {% set rv = reviews.get(run.key) %}
@@ -137,12 +138,12 @@
   </table>
   </div>
 
-  <h2>The chain</h2>
+  <h2>How the documents connect</h2>
   {# Printed as a list, not as the SVG: a 940px drawing on A4 is unreadable, and
      the list carries the same facts. #}
   {% include "_chain_list.html" %}
 
-  <h2>Documents still required</h2>
+  <h2>What is still missing</h2>
   {% if view.requests_live %}
     <ol>
       {% for req in view.requests_live %}
@@ -155,17 +156,17 @@
       {% endfor %}
     </ol>
   {% else %}
-    <p>None outstanding.</p>
+    <p>Nothing missing.</p>
   {% endif %}
 
-  <h2>Entries as read</h2>
+  <h2>Every entry, exactly as we read it</h2>
   {% for d in docs %}
     <h3>{{ d.label }} — <span class="mono">{{ d.window }}</span></h3>
     <div class="table-wrap">
     <table class="entries">
       <thead><tr><th class="num">#</th><th>Document</th><th>Registered</th>
-        <th>Nature</th><th class="parents">Parent docs</th>
-        <th>Source</th></tr></thead>
+        <th>What it is</th><th class="parents">Points back to</th>
+        <th>Page</th></tr></thead>
       <tbody>
         {% for e in d.entries %}
           <tr>
@@ -184,7 +185,7 @@
     </div>
   {% endfor %}
 
-  <h2>Corrections</h2>
+  <h2>Corrections made by hand</h2>
   {% if corrections %}
     <ul>
       {% for c in corrections %}
@@ -194,10 +195,10 @@
       {% endfor %}
     </ul>
   {% else %}
-    <p>None. Every value above is as extracted.</p>
+    <p>None. Every value above is exactly as we read it off the page.</p>
   {% endif %}
 
-  <h2>Review log</h2>
+  <h2>Notes and sign-offs</h2>
   {% if review_log %}
     <ul>
       {% for h in review_log %}
@@ -207,14 +208,14 @@
           <span class="meta">{{ h.actor }} · {{ h.created_at }}</span></li>
       {% endfor %}
     </ul>
-    <p class="meta">Append-only. A review is never overwritten or deleted.</p>
+    <p class="meta">Every version is kept. A note is never overwritten or deleted.</p>
   {% else %}
-    <p>No item on this case has been marked reviewed.</p>
+    <p>Nothing on this case has been signed off yet.</p>
   {% endif %}
 
   <p class="meta report-foot">
-    This report evidences a chain; it does not opine on title. Judgment remains
-    with the advocate who signs it.
+    This report shows what the certificates do and do not evidence. It is not an
+    opinion on title — that judgement stays with the advocate who signs it.
   </p>
 </article>
 {% endblock %}

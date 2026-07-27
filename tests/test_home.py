@@ -53,7 +53,7 @@ def test_the_welcome_block_does_not_disappear_once_there_is_a_case(client):
     client.store.create_case("ec_test_01.pdf")
     html = client.get("/").text
     assert HERO in html
-    assert "Does this certificate cover the chain" in html
+    assert "How much of this property's past" in html
 
 
 def test_the_drop_target_keeps_its_size_and_its_wording(client):
@@ -63,7 +63,7 @@ def test_the_drop_target_keeps_its_size_and_its_wording(client):
     html = client.get("/").text
     assert 'class="dropzone"' in html
     assert "compact" not in html
-    assert "Drop an Encumbrance Certificate here" in html
+    assert "Drop your certificate here" in html
 
 
 def test_a_rejected_file_still_leaves_the_home_screen_standing(client):

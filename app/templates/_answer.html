@@ -17,14 +17,14 @@
     <span class="glyph" aria-hidden="true">
       {%- if c and c.sufficient is false %}▲{% elif c and c.sufficient %}✓{% else %}⚑{% endif -%}
     </span>
-    {% if c and c.sufficient is false %}Insufficient coverage
-    {% elif c and c.sufficient %}Coverage verified
-    {% else %}Coverage not computable{% endif %}
+    {% if c and c.sufficient is false %}There is a gap in the years
+    {% elif c and c.sufficient %}The years line up
+    {% else %}We could not work out the years{% endif %}
   </p>
 
   <h1 class="answer-headline">
     {%- if c -%}{{ c.headline }}
-    {%- else -%}No entries were read from this certificate.{%- endif -%}
+    {%- else -%}We did not find any entries in this certificate.{%- endif -%}
   </h1>
 
   {% if c %}

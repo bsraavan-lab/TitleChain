@@ -95,7 +95,8 @@ def run(case_id: int, pdf_path: Path,
     try:
         pages = crops.page_count(pdf_path)
     except Exception as exc:                                    # unreadable file
-        db.set_status(case_id, "FAILED", f"Could not open this file: {exc}")
+        db.set_status(case_id, "FAILED",
+                      f"We could not open this file at all. {exc}")
         return
 
     # The cost ledger. digitise() and extract() do not know what a case is, so they
@@ -121,7 +122,7 @@ def run(case_id: int, pdf_path: Path,
                 case_id, "READING", detail, pages_done=min(done, pages)))
     except Exception as exc:
         db.set_status(case_id, "FAILED",
-                      f"Digitisation failed: {str(exc)[:200]}")
+                      f"We got stuck reading the pages. {str(exc)[:200]}")
         return
 
     # digitise() reports a chunk that would not read as an UnreadChunk rather than
@@ -133,11 +134,12 @@ def run(case_id: int, pdf_path: Path,
     # ours, and the status has to say so. Same rule extract() already applies when
     # every entry block fails to type.
     if not dig.pages:
-        why = "; ".join(u.reason for u in dig.unread[:3]) or "no pages were returned"
-        db.set_status(case_id, "FAILED", f"Could not read this document: {why}"[:300])
+        why = "; ".join(u.reason for u in dig.unread[:3]) or "no pages came back"
+        db.set_status(case_id, "FAILED",
+                      f"We could not read this document: {why}"[:300])
         return
 
-    db.set_status(case_id, "READING", f"Read {len(dig.pages)} pages",
+    db.set_status(case_id, "READING", f"Read all {len(dig.pages)} pages",
                   pages_done=pages)
 
     # ── stage ② ──────────────────────────────────────────────────────────────
@@ -151,8 +153,8 @@ def run(case_id: int, pdf_path: Path,
     split = len(ranges) > 1
     if split:
         db.set_status(case_id, "TYPING",
-                      f"This file holds {len(ranges)} certificates — reading each "
-                      f"separately")
+                      f"There are {len(ranges)} certificates in this file, so we "
+                      f"are reading each one separately")
 
     last_ec_id: int | None = None
     for n, (page_from, page_to) in enumerate(ranges, start=1):
@@ -188,7 +190,7 @@ def run(case_id: int, pdf_path: Path,
         result = _cached_extraction(dig, suffix)
         if result is None:
             db.set_status(case_id, "TYPING",
-                          f"Typing entries into the schema{label}")
+                          f"Pulling out the entries{label}")
             try:
                 result = extract_mod.extract(
                     part, filename=pdf_path.name,
@@ -197,7 +199,8 @@ def run(case_id: int, pdf_path: Path,
                     on_header=save_header)
             except Exception as exc:
                 db.set_status(case_id, "FAILED",
-                              f"Entry typing failed{label}: {str(exc)[:200]}")
+                              f"We could not get the entries out{label}. "
+                              f"{str(exc)[:200]}")
                 return
             try:
                 _save_extraction(dig, result, suffix)
@@ -223,14 +226,15 @@ def run(case_id: int, pdf_path: Path,
 
     if last_ec_id is None:
         db.set_status(case_id, "REFUSED",
-                      "No certificate in this file could be read.",
+                      "We could not read a single certificate out of this file.",
                       refusal_checks=json.dumps(
-                          ["a registration-entry table",
-                           "at least one numbered entry"]))
+                          ["a table of registered entries",
+                           "at least one numbered entry in it"]))
         return
     ec_id = last_ec_id
 
-    db.set_status(case_id, "DERIVING", "Building the chain and running the rulebook")
+    db.set_status(case_id, "DERIVING",
+                  "Connecting the documents and running the checks")
     time.sleep(0.2)     # derive() is fast; let the state be seen, not subliminal
 
     # Log what the rulebook said. Two of these are what let the Documents tab
@@ -248,12 +252,20 @@ def run(case_id: int, pdf_path: Path,
 
 
 def accept_upload(filename: str, data: bytes) -> tuple[Path | None, str | None]:
-    """FR-1. Reject at the door, with the specific reason and the limit."""
+    """FR-1. Turned away at the door — and told what to do about it.
+
+    Both messages name the real limit and suggest the next move, because "invalid
+    file" leaves her guessing at a rule she cannot see.
+    """
     if len(data) > 50 * 1024 * 1024:
-        return None, f"{len(data) / 1_048_576:.0f} MB — the limit is 50 MB."
+        return None, (f"That file is {len(data) / 1_048_576:.0f} MB, and we can take "
+                      f"up to 50 MB. A lighter scan, or one certificate at a time, "
+                      f"should go through.")
     suffix = Path(filename).suffix.lower()
     if suffix not in {".pdf", ".jpg", ".jpeg", ".png"}:
-        return None, f"{suffix or 'this file type'} is not supported. PDF, JPEG or PNG."
+        return None, (f"We can open PDF, JPEG and PNG files, but not "
+                      f"{suffix or 'this kind of file'}. A scan or a clear photo of "
+                      f"the certificate will work.")
     dest = UPLOADS / f"{int(time.time())}_{Path(filename).name}"
     dest.write_bytes(data)
     return dest, None

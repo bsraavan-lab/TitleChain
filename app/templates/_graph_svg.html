@@ -56,16 +56,15 @@
 </div>
 
 <p class="graph-key">
-  <span class="k-node k-examined"></span> examined
-  <span class="k-node k-unexamined"></span> named but not on this case
+  <span class="k-node k-examined"></span> you have this one
+  <span class="k-node k-unexamined"></span> pointed to, but missing
   <span aria-hidden="true">⊘</span> cancelled
-  <span class="k-shape">▭ transfer · ◆ mortgage or charge · ▬ lease · ○ other</span>
+  <span class="k-shape">▭ transfer · ◆ mortgage or charge · ▬ lease · ○ something else</span>
 </p>
 
 {% if g.undated %}
   <p class="meta">
-    Not drawn, because no year could be read from the document number:
-    {{ g.undated | join(', ') }}. They are listed rather than placed at a guessed
-    point on the axis.
+    We could not read a year on these, so we left them off the line rather than
+    guess where they belong: {{ g.undated | join(', ') }}.
   </p>
 {% endif %}

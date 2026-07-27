@@ -40,7 +40,7 @@
       {% endif %}
     {% else %}
       <span class="band-missing" style="top:{{ 50 + loop.index0 * 20 }}px">
-        {{ b.label }} states no search period
+        {{ b.label }} does not say which years it covers
       </span>
     {% endif %}
   {% endfor %}
@@ -50,22 +50,23 @@
          style="left:{{ c.pct(c.required_from) }}%;
                 width:{{ c.pct(c.required_to) - c.pct(c.required_from) }}%;
                 top:{{ 84 + (c.bands|length - 1) * 20 }}px">
-      <span>{{ c.required_from }} — this case must cover to {{ c.required_to }}</span>
+      <span>{{ c.required_from }} — you need cover up to {{ c.required_to }}</span>
     </div>
   {% endif %}
 </div>
 
 <p class="ruler-key" aria-hidden="true">
-  <span class="k-band"></span> covered by a certificate on this case
-  {% if c.ticks %}<span class="k-tick"></span> parent document outside every window{% endif %}
-  <span class="k-req"></span> the span this case must cover
+  <span class="k-band"></span> covered by a certificate you have
+  {% if c.ticks %}<span class="k-tick"></span> a document none of them cover{% endif %}
+  <span class="k-req"></span> the years you need covered
 </p>
 
 <p class="coverage-detail">{{ c.detail }}</p>
 {% if c.required_from and c.required_to %}
   <p class="meta">
-    Required span: {{ c.required_from }}–{{ c.required_to }} — thirteen years back
-    from today, extended to the earliest parent document named on this case.
-    Nothing here is weighted; the meter is covered years over required years.
+    Why {{ c.required_from }}–{{ c.required_to }}: thirteen years back from today is
+    the usual search in Tamil Nadu, and we stretch it further back to reach the
+    oldest document this certificate names. The percentage is simply years covered
+    divided by years needed. We do not weight it.
   </p>
 {% endif %}

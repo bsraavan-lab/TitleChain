@@ -8,9 +8,9 @@
 {% endfor %}
 <section class="section">
   <h2 class="section-title">
-    Timeline
+    In date order
     <span class="count count-quiet">{{ dated|length }} dated{% if undated %} ·
-      {{ undated|length }} undated{% endif %}</span>
+      {{ undated|length }} with no date we could read{% endif %}</span>
   </h2>
   <ol class="timeline">
     {% for e in dated %}
@@ -19,10 +19,10 @@
   </ol>
   {% if undated %}
     <div class="timeline-undated">
-      <h3>Undated ({{ undated|length }})</h3>
+      <h3>No date we could read ({{ undated|length }})</h3>
       <p class="meta">
-        The certificate's date cells for these entries could not be read. They are
-        shown here rather than placed at a guessed point on the line.
+        The date cells for these entries did not come through. They sit here rather
+        than at a guessed spot on the line — a guessed date is an invented fact.
       </p>
       <ol class="timeline">
         {% for e in undated %}

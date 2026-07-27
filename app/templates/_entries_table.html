@@ -2,8 +2,10 @@
 <table class="entries">
   <thead>
     <tr>
-      <th>#</th><th>Document</th><th>Registered</th><th>Nature</th>
-      <th>Executants</th><th>Claimants</th><th>Parent docs</th><th></th>
+      <th>#</th><th>Document</th><th>Registered</th><th>What it is</th>
+      <th>From <span class="meta">executants</span></th>
+      <th>To <span class="meta">claimants</span></th>
+      <th>Points back to</th><th></th>
     </tr>
   </thead>
   <tbody>
@@ -27,17 +29,18 @@
       <td>
         <button class="link" type="button"
                 hx-get="/evidence/{{ e.db_id }}" hx-target="#rail" hx-swap="innerHTML">
-          source
+          See it on the page
         </button>
       </td>
     </tr>
     {% endfor %}
 
-    {% for u in doc_unread %}
     {# An unread page is a ROW, not a toast. A toast is dismissible; an unread
        page must not be. #}
+    {% for u in doc_unread %}
     <tr class="row-unread">
-      <td colspan="8">pages {{ u.page_from }}–{{ u.page_to }} unread — {{ u.reason }}</td>
+      <td colspan="8">We could not read pages {{ u.page_from }}–{{ u.page_to }} —
+        {{ u.reason }}. Nothing from them is included above.</td>
     </tr>
     {% endfor %}
   </tbody>

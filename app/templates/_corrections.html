@@ -1,5 +1,6 @@
 <section class="section">
-  <h2 class="section-title">Corrections <span class="count count-quiet">{{ corrections|length }}</span></h2>
+  <h2 class="section-title">Fixes you made
+    <span class="count count-quiet">{{ corrections|length }}</span></h2>
   <ul class="corrections-list">
     {% for c in corrections %}
       <li>
@@ -10,7 +11,8 @@
     {% endfor %}
   </ul>
   <p class="meta">
-    Append-only. A correction is never overwritten or deleted, and it survives every
-    later upload — corrections live on the entry, and entries are never replaced.
+    We keep every one of these. A fix is never overwritten or deleted, and it
+    survives everything you upload afterwards — your corrections live on the entry
+    itself, and entries are never replaced.
   </p>
 </section>

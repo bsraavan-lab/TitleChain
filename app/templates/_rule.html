@@ -45,13 +45,13 @@
 </div>
 
 <p class="rule-key" aria-hidden="true">
-  <span class="key"><i class="sw-window"></i>this certificate</span>
+  <span class="key"><i class="sw-window"></i>the years this certificate covers</span>
   {% if c.outside_count %}
-    <span class="key"><i class="sw-out"></i>{{ c.outside_count }} parent
-      document{{ 's' if c.outside_count != 1 }} outside it</span>
+    <span class="key"><i class="sw-out"></i>{{ c.outside_count }} earlier
+      document{{ 's' if c.outside_count != 1 }} outside them</span>
   {% endif %}
   {% if c.inside_count %}
-    <span class="key"><i class="sw-in"></i>{{ c.inside_count }} inside</span>
+    <span class="key"><i class="sw-in"></i>{{ c.inside_count }} inside them</span>
   {% endif %}
 </p>
 {% endmacro %}
