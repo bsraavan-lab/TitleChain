@@ -38,6 +38,10 @@ ink        --ink #191713 · --ink-2 #55504a · --ink-3 #837c72 · --ink-4 #a9a29
 meaning    --seal #a32330 (blocking) · --stamp #8a5a0b (check)
            --fee #15653f (verified) · --endorse #2b4c8c (the certificate's window, focus)
            each has a -soft tint for chips and wells
+           --fee-line #bfe0cd · --stamp-line #e6d3b0 — the same meanings at border
+           strength, for the one case a -soft fill is too weak to draw an edge with
+--ink-hover #2b2721 — the only ink below --ink, and only so the single filled
+           button on a view has somewhere to go on hover
 space      --s1..--s8 = 4 8 12 16 24 32 48 64
 radius     --r1 4 (control) · --r2 6 (input/button) · --r3 8 (card) · --r4 12 (rail/dialog)
 ease       cubic-bezier(0.23, 1, 0.32, 1)
@@ -55,7 +59,14 @@ Three registers, all offline — no CDN, no webfont (PRD §11).
 | `--tamil` | Noto Sans Tamil / Nirmala UI / Latha | `*_native` content. Never transform, never letter-space. |
 
 Scale 14px base × 1.25 → **11 · 12 · 14 · 17 · 21 · 26 · 33**. Hierarchy is built from size +
-weight + colour together, never size alone.
+weight + colour together, never size alone. 13 and 15 are the two ratified exceptions, and
+only where the component table below names them (button, finding, answer detail).
+
+**Every uppercase label is `11/600 caps 0.09em`** — section title, answer kicker, table
+column header, menu group, meter label, report heading. There is one such register and no
+second one; a label at 12/700/0.06em beside a label at 11/600/0.09em reads as two systems.
+Sizes below 11 are for glyphs and chart labels only, where the sizing is optical, never for
+words the eye reads as text.
 
 ## Density and depth
 
