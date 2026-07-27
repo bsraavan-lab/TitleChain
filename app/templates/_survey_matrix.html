@@ -10,10 +10,10 @@
 {% endfor %}{% endfor %}{% endfor %}
 
 {% if surveys and entries %}
-<section class="band">
-  <h2 class="band-title">
+<section class="section">
+  <h2 class="section-title">
     Survey numbers across transactions
-    <span class="counts">{{ surveys|length }} distinct</span>
+    <span class="count count-quiet">{{ surveys|length }} distinct</span>
   </h2>
   <div class="table-scroll">
     <table class="matrix">

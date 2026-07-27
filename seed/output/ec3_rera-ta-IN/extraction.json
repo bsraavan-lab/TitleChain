@@ -1,0 +1,150 @@
+{
+ "version": "e3",
+ "header": {
+  "sro": "Pollachi",
+  "village": "Uthukuli",
+  "survey_details": [
+   "332/18A1",
+   "332/18B",
+   "332/18C"
+  ],
+  "search_period_start": "30-Nov-2024",
+  "search_period_end": "11-Jul-2025",
+  "issue_date": "12-Jul-2025",
+  "declared_entry_count": 2
+ },
+ "entries": [
+  {
+   "sr_no": 1,
+   "doc_no": "13698/2024",
+   "doc_year": 2024,
+   "date_execution": "30-Nov-2024",
+   "date_presentation": "30-Nov-2024",
+   "date_registration": "30-Nov-2024",
+   "nature": "Gift deed",
+   "executants": [
+    {
+     "name_native": "முகமது அன்சாரி",
+     "role_marker": null,
+     "name_roman": null
+    },
+    {
+     "name_native": "முகமது சேட்",
+     "role_marker": null,
+     "name_roman": null
+    }
+   ],
+   "claimants": [
+    {
+     "name_native": "மேதகு ஆளுநர் தமிழ்நாடு அரசு சென்னை அவர்களின் நேரடி பிரதிநிதியான ஜமீன் ஊத்துக்குளி பேரூராட்சிக்காக அதன் தற்போதைய செயல் அலுவலர் அவர்களுக்கும் அவருக்கு பின்னிட்டு மேற்படி பொறுப்பை வகிப்பவர்களுக்கு",
+     "role_marker": null,
+     "name_roman": null
+    }
+   ],
+   "volume_page": "-",
+   "consideration_value": "-",
+   "market_value": "ரூ. 1,300/-",
+   "pr_numbers": [
+    {
+     "doc_no": "14190/2023",
+     "year": 2023
+    },
+    {
+     "doc_no": "15002/2023",
+     "year": 2023
+    },
+    {
+     "doc_no": "8267/2024",
+     "year": 2024
+    }
+   ],
+   "remarks": "இமல் 1903 சதுர மீட்டர்",
+   "schedules": [
+    {
+     "property_type": null,
+     "extent": null,
+     "village_street": null,
+     "survey_nos": [
+      "332/18A1",
+      "332/18B",
+      "332/18C"
+     ],
+     "door_no": null,
+     "boundaries_native": null
+    }
+   ],
+   "source": {
+    "page_num": 1,
+    "block_id": "20260725_dbad2d9a-5703-4326-8f4e-41ff0b5f55aa_1_block_003",
+    "bbox": [
+     309.0,
+     1045.0,
+     3210.0,
+     2350.0
+    ],
+    "confidence": 0.9560526609420776
+   }
+  },
+  {
+   "sr_no": 2,
+   "doc_no": "14483/2024",
+   "doc_year": 2024,
+   "date_execution": "16-Dec-2024",
+   "date_presentation": "16-Dec-2024",
+   "date_registration": "16-Dec-2024",
+   "nature": "Mortgage without possession deed",
+   "executants": [
+    {
+     "name_native": "மன்சூர் அலிகான்",
+     "role_marker": "முத.",
+     "name_roman": null
+    }
+   ],
+   "claimants": [
+    {
+     "name_native": "சுடலை",
+     "role_marker": null,
+     "name_roman": null
+    }
+   ],
+   "volume_page": null,
+   "consideration_value": "-",
+   "market_value": "ரூ. 1,50,000/-",
+   "pr_numbers": [
+    {
+     "doc_no": "1452/2000",
+     "year": 2000
+    },
+    {
+     "doc_no": "2183/2024",
+     "year": 2024
+    }
+   ],
+   "remarks": null,
+   "schedules": [
+    {
+     "property_type": null,
+     "extent": null,
+     "village_street": null,
+     "survey_nos": [
+      "332"
+     ],
+     "door_no": null,
+     "boundaries_native": null
+    }
+   ],
+   "source": {
+    "page_num": 5,
+    "block_id": "20260725_dbad2d9a-5703-4326-8f4e-41ff0b5f55aa_5_block_000",
+    "bbox": [
+     304.0,
+     114.0,
+     3221.0,
+     2355.0
+    ],
+    "confidence": 0.9743862152099609
+   }
+  }
+ ],
+ "unread": []
+}

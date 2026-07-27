@@ -61,6 +61,16 @@ def _parse_date(text: str | None) -> date | None:
     return None
 
 
+def _n(count: int, singular: str, plural: str | None = None) -> str:
+    """"1 parent document" / "5 parent documents".
+
+    Not cosmetic. These sentences are the body of a report an advocate signs, and
+    a single-entry certificate — the shortest, most common kind — is exactly the
+    case that read "1 parent documents predate this certificate".
+    """
+    return f"{count} {singular if count == 1 else (plural or singular + 's')}"
+
+
 # ── graph.py ──────────────────────────────────────────────────────────────────
 
 def build_graph(entries: list[Entry]) -> list[Edge]:
@@ -534,13 +544,17 @@ def r3(docs: list[ECDoc], entries: list[Entry], ec_for: EcFor) -> list[RuleRun]:
     return [_run(
         "R3", f"R3:gap={earliest.year}-{earliest_start - 1}", "FAIL",
         "Search window insufficient",
-        (f"{len(outside)} parent documents predate this certificate's search "
-         f"period. The earliest is {earliest.doc_no}. "
+        (f"{_n(len(outside), 'parent document')} "
+         f"{'predates' if len(outside) == 1 else 'predate'} this certificate's "
+         f"search period. "
+         f"{'It is' if len(outside) == 1 else 'The earliest is'} {earliest.doc_no}. "
          f"This certificate cannot evidence the chain before {earliest_start}."
          if solo else
-         f"{len(outside)} parent documents fall outside every search window on "
-         f"this case. The earliest is {earliest.doc_no}. Nothing on this case "
-         f"evidences the chain before {earliest_start}."),
+         f"{_n(len(outside), 'parent document')} "
+         f"{'falls' if len(outside) == 1 else 'fall'} outside every search window "
+         f"on this case. "
+         f"{'It is' if len(outside) == 1 else 'The earliest is'} {earliest.doc_no}. "
+         f"Nothing on this case evidences the chain before {earliest_start}."),
         severity="blocking", inputs=shown,
         evidence={e.db_id for e, _ in outside},
         pages=_pages([e for e, _ in outside], ec_for))]
@@ -804,6 +818,8 @@ def build_coverage(header: ECHeader, entries: list[Entry]) -> Coverage:
     outside = [t for t in ticks if not t.inside]
     outside_docs = [pr for e in entries for pr in e.pr_numbers
                     if not (start <= pr.year <= end)]
+    inside_docs = [pr for e in entries for pr in e.pr_numbers
+                   if start <= pr.year <= end]
 
     if not pr_years:
         return Coverage(start_year=start, end_year=end, axis_min=axis_min,
@@ -813,19 +829,26 @@ def build_coverage(header: ECHeader, entries: list[Entry]) -> Coverage:
                                f"{header.search_period_end}. That is a statement about "
                                f"this window, not about the chain before it.")
     if not outside:
+        # Ticks are deduped by year; the sentence counts DOCUMENTS, as the note
+        # above requires — five parents sharing two years is five links, not two.
         return Coverage(start_year=start, end_year=end, axis_min=axis_min,
                         axis_max=axis_max, ticks=ticks, sufficient=True,
                         headline="Every parent document named here falls inside this "
                                  "certificate's window.",
-                        detail=f"{len(ticks)} parent links resolve within "
+                        detail=f"{_n(len(inside_docs), 'parent link')} "
+                               f"{'resolves' if len(inside_docs) == 1 else 'resolve'} within "
                                f"{header.search_period_start} → {header.search_period_end}.")
     return Coverage(
         start_year=start, end_year=end, axis_min=axis_min, axis_max=axis_max,
         ticks=ticks, sufficient=False,
         headline="This certificate cannot support a 13-year search.",
         detail=(f"It covers {header.search_period_start} → {header.search_period_end}. "
-                f"{len(outside_docs)} parent documents are named, the earliest from "
-                f"{min(t.year for t in outside)}. None of them fall inside this window."))
+                f"{_n(len(outside_docs), 'parent document')} "
+                f"{'is' if len(outside_docs) == 1 else 'are'} named, "
+                f"{'from' if len(outside_docs) == 1 else 'the earliest from'} "
+                f"{min(t.year for t in outside)}. "
+                f"{'It does not fall' if len(outside_docs) == 1 else 'None of them fall'} "
+                f"inside this window."))
 
 
 def build_order(header: ECHeader, entries: list[Entry], coverage: Coverage) -> OrderBlock | None:
@@ -837,12 +860,20 @@ def build_order(header: ECHeader, entries: list[Entry], coverage: Coverage) -> O
     if not (pr_years and coverage.start_year):
         return None
 
-    survey: list[str] = list(header.survey_details)
-    for e in entries:
-        for s in e.schedules:
-            for sn in s.survey_nos:
-                if sn not in survey:
-                    survey.append(sn)
+    # The header and the schedule spell the same survey number differently —
+    # "94/3b" in the header, "94/3B" in the schedule, both verbatim from the
+    # certificate. A case-sensitive check calls those two numbers, and the block
+    # she copies into the order goes out asking for a plot that does not exist.
+    # First spelling wins, and the header's is first because it is the
+    # certificate's own statement of what was searched.
+    survey: list[str] = []
+    seen: set[str] = set()
+    for sn in [*header.survey_details,
+               *(s_no for e in entries for s in e.schedules for s_no in s.survey_nos)]:
+        key = sn.strip().upper()
+        if key and key not in seen:
+            seen.add(key)
+            survey.append(sn.strip())
 
     return OrderBlock(
         sro=header.sro, village=header.village, survey_nos=survey,

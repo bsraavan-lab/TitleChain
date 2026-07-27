@@ -1,25 +1,5 @@
-# What must NOT be uploaded. Without this file the CLI ships the whole directory —
-# which is how the first deployment carried a 62 MB virtualenv and a pre-seeded
-# titlechain.db, and why that deployment could only ever be a read-only snapshot.
-.venv/
-__pycache__/
-*.pyc
-.pytest_cache/
-.git/
-.claude/
-
-# Mutable state belongs in /tmp at runtime (config.data_dir()), never in the image.
-titlechain.db
-uploads/
-
-# Not needed to serve the app.
-docs/
-tests/
-assets/
-*.log
-output/**/*.zip
-output/.chunks/
-
-# output/ IS shipped, deliberately: it holds the cached Sarvam digitisations and
-# extractions for the two sample certificates, which is what lets the samples run
-# with no network and no API key (PRD §15.5, the offline demo fallback).
+# Vercel hosts nothing but the proxy config — the app itself runs on Render.
+# Everything else is excluded so Vercel never tries to build the Python app.
+*
+!vercel.json
+!public/

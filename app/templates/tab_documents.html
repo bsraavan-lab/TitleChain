@@ -6,10 +6,10 @@
 
 {% if merge %}{% include "_merge_result.html" %}{% endif %}
 
-<section class="band">
-  <h2 class="band-title">
+<section class="section">
+  <h2 class="section-title">
     On this case
-    <span class="counts">{{ docs|length }}
+    <span class="count count-quiet">{{ docs|length }}
       certificate{{ '' if docs|length == 1 else 's' }}</span>
   </h2>
   {% for d in docs %}
@@ -35,7 +35,7 @@
           {% for n in range(1, d.page_count + 1) %}
             <button class="btn-tiny" type="button"
                     hx-get="/evidence/page/{{ d.ec_id }}/{{ n }}"
-                    hx-target="#evidence" hx-swap="innerHTML">p{{ n }}</button>
+                    hx-target="#rail" hx-swap="innerHTML">p{{ n }}</button>
           {% endfor %}
         </p>
       {% endif %}
@@ -43,17 +43,17 @@
   {% endfor %}
 </section>
 
-<section class="band band-required">
-  <h2 class="band-title">
+<section class="section section-required">
+  <h2 class="section-title">
     Still required
-    <span class="counts">
+    <span class="count count-quiet">
       {% if view.requests_live %}{{ view.requests_live|length }} item{{ '' if view.requests_live|length == 1 else 's' }}
       {% else %}nothing outstanding{% endif %}
     </span>
   </h2>
 
   {% if not view.requests_live %}
-    <p class="pane-empty">
+    <p class="empty">
       {% if view.completeness.links_named %}
         Every parent document named on this case is present and examined.
       {% else %}
@@ -128,8 +128,8 @@
 </section>
 
 {% if resolved_log %}
-<section class="band">
-  <h2 class="band-title">Resolved by later uploads</h2>
+<section class="section">
+  <h2 class="section-title">Resolved by later uploads</h2>
   <ul class="resolved-log">
     {% for r in resolved_log %}
       <li><span class="glyph" aria-hidden="true">✓</span> {{ r }}</li>

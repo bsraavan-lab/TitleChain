@@ -1,0 +1,73 @@
+{
+  "page_num": 2,
+  "image_width": 3509,
+  "image_height": 2480,
+  "created_at": "2026-07-25T19:06:26.347222+00:00",
+  "blocks": [
+    {
+      "block_id": "20260725_14a106f7-b9b8-4f8b-82de-a4f611e4652c_2_block_000",
+      "coordinates": {
+        "x1": 308.0,
+        "y1": 114.0,
+        "x2": 3208.0,
+        "y2": 1342.0
+      },
+      "layout_tag": "table",
+      "confidence": 0.9621813893318176,
+      "reading_order": 1,
+      "text": "<table>\n<tbody>\n<tr>\n<td rowspan=\"7\">2</td>\n<td>க,ச,117 விஜயேஸ்வரி டெக்ஸ்டைல்ஸ் (வேலாயுதசாமி கல்யாண<br/>மண்டபம்), வடக்கு - க,ச,113/1 ல் அருள்ஜோதி சாரிடபிள் டிரஸ்ட் மீதி பூமி<br/>, தெற்கு - கிழமேல் மெயின் ரோடு எஸ்,ஹெச், 19</td>\n<td>கட்டிடங்களைச் சேர்ந்த கதவு நிலவு ஜன்னல்களும் மேற்படி கட்டிடங்களுக்குள்ள<br/>மின்சார இணைப்புகளும் காம்பவுண்டு சுவர்களும் சகதிம், கதவு எண் 2 /3 4 0ஏ<br/>வரிவிதிப்பு எண்.713ஏ.</td>\n</tr>\n<tr>\n<td>8756/2020</td>\n<td>Cancellation Deed</td>\n<td>1. அருள்ஜோதி சாரிடபிள்<br/>டிரஸ்ட்(முத.)<br/>அப்புக்குட்டி(முக.)</td>\n<td>1. பி ஏ காலேஜ் ஆப்<br/>என்ஜினியரிங் அண்ட்<br/>டெக்னாலஜி(முத.)<br/>அப்புக்குட்டி(முக.)</td>\n<td>-</td>\n</tr>\n<tr>\n<td colspan=\"2\">Consideration Value/கைமாற்றுத் தொகை:<br/>-</td>\n<td>Market Value/சந்தை மதிப்பு:<br/>ரூ. 12,000/-</td>\n<td>PR Number/முந்தைய ஆவண எண்:<br/>2520/2019</td>\n</tr>\n<tr>\n<td colspan=\"2\">Document Remarks/<br/>ஆவணக் குறிப்புகள் :</td>\n<td colspan=\"3\">This document cancels the document R/பொள்ளாச்சி/புத்தகம் 1/2520/2019</td>\n</tr>\n<tr>\n<td colspan=\"3\">Schedule 1 Details:<br/>Property Type/சொத்தின் வகைப்பாடு: Agriculture Land with Building</td>\n<td colspan=\"2\">Property Extent/சொத்தின் விஸ்தீர்ணம்: 10 ACRE, 18.0 CENTS</td>\n</tr>\n<tr>\n<td colspan=\"3\">Village & Street/கிராமம் மற்றும் தெரு: Puliyampatti</td>\n<td colspan=\"2\">Survey No./புல எண் : 100/3A, 113/1B, 116/A1, 116/B1, 95/2</td>\n</tr>\n<tr>\n<td colspan=\"3\">New Door No./புதிய கதவு எண்: 2/340A</td>\n<td colspan=\"2\"></td>\n</tr>\n<tr>\n<td colspan=\"3\">எல்லை விபரங்கள்:<br/>கிழக்கு - க,ச,101/3 அருள்ஜோதி சாரிடபிள் டிரஸ்ட் மீதி பூமி, மேற்கு -<br/>க,ச,117 விஜயேஸ்வரி டெக்ஸ்டைல்ஸ் (வேலாயுதசாமி கல்யாண<br/>மண்டபம்), வடக்கு - க,ச,113/1 ல் அருள்ஜோதி சாரிடபிள் டிரஸ்ட் மீதி பூமி<br/>, தெற்கு - கிழமேல் மெயின் ரோடு எஸ்,ஹெச், 19</td>\n<td colspan=\"3\">Schedule Remarks/சொத்து விவரம் தொடர்பான குறிப்புரை: இதன் மத்தியில் உள்ள<br/>பு,எ, 10.18 உள்ள பூமியும் மேற்படி பூமியில் உள்ள தார்சு கட்டிடங்களும் மேற்படி<br/>கட்டிடங்களைச் சேர்ந்த கதவு நிலவு ஜன்னல்களும் மேற்படி கட்டிடங்களுக்குள்ள<br/>மின்சார இணைப்புகளும் காம்பவுண்டு சுவர்களும் சகதிம், கதவு எண் 2 /3 4 0ஏ<br/>வரிவிதிப்பு எண்.713ஏ.</td>\n</tr>\n</tbody>\n</table>"
+    },
+    {
+      "block_id": "20260725_14a106f7-b9b8-4f8b-82de-a4f611e4652c_2_block_001",
+      "coordinates": {
+        "x1": 292.0,
+        "y1": 1351.0,
+        "x2": 1098.0,
+        "y2": 1402.0
+      },
+      "layout_tag": "footnote",
+      "confidence": 0.7474727034568787,
+      "reading_order": 2,
+      "text": "Number of Entries/பதிவுகளின் எண்ணிக்கை: 2"
+    },
+    {
+      "block_id": "20260725_14a106f7-b9b8-4f8b-82de-a4f611e4652c_2_block_002",
+      "coordinates": {
+        "x1": 288.0,
+        "y1": 1503.0,
+        "x2": 3220.0,
+        "y2": 1613.0
+      },
+      "layout_tag": "paragraph",
+      "confidence": 0.8221309185028076,
+      "reading_order": 3,
+      "text": "Disclaimer: The details of the above property have been provided with due care and with reference to the Acts and Rules. However in case of any error or omission, the\nDepartment cannot be held responsible. The above details are of informative in nature."
+    },
+    {
+      "block_id": "20260725_14a106f7-b9b8-4f8b-82de-a4f611e4652c_2_block_003",
+      "coordinates": {
+        "x1": 287.0,
+        "y1": 1616.0,
+        "x2": 3224.0,
+        "y2": 1805.0
+      },
+      "layout_tag": "paragraph",
+      "confidence": 0.8631976842880249,
+      "reading_order": 4,
+      "text": "குறிப்புரை: சட்டம் மற்றும் விதிகளுக்குட்பட்டு மிகுந்த கவனத்துடன் சொத்து தொடர்பான மேற்கண்ட விவரங்கள் அளிக்கப்பட்டுள்ளது\nஎனினும் இதில் ஏதேனும் தவறுகளோ விடல்களோ இருப்பின், அதற்கு இத்துறை பொறுப்பேற்க இயலாது. மேற்கண்ட விவரங்கள்\nதகவலுக்காக அளிக்கப்பட்டுள்ளன"
+    },
+    {
+      "block_id": "20260725_14a106f7-b9b8-4f8b-82de-a4f611e4652c_2_block_004",
+      "coordinates": {
+        "x1": 1484.471484375,
+        "y1": 1844.96640625,
+        "x2": 3207.4453125,
+        "y2": 2467.265625
+      },
+      "layout_tag": "footer",
+      "confidence": 0.282958984375,
+      "reading_order": 5,
+      "text": "Digitally signed by MANIGANDAN THATHAN\nDN: C=IN, O=PERSONAL, IID.2.5.4.65=\nb23581d2d90148b1bc5ac9d0654c694c, Phone=\n2da81024a4470c8449b87dfd2ab6c242a8736b47a89c3\ndf12cc356f441d20f99, PostalCode=642002, S=TAMIL\nNADU, SERIALNUMBER=\n04339572050bceef2ef0fd86c6b745ff6cf42c963ebc94a\n616fc1305ea5bda0, CN=MANIGANDAN THATHAN\nReason: I am the author of this document\nLocation:\nDate: 2024.03.22 11:37:45+05'30'\nFoxit PDF Reader Version: 12.1.3\n\n2"
+    }
+  ]
+}

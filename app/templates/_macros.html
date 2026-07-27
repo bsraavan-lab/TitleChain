@@ -28,7 +28,7 @@
 
 {% macro source_button(entry_id, text='source') %}
   <button class="link" type="button"
-          hx-get="/evidence/{{ entry_id }}" hx-target="#evidence"
+          hx-get="/evidence/{{ entry_id }}" hx-target="#rail"
           hx-swap="innerHTML">{{ text }}</button>
 {% endmacro %}
 
@@ -38,7 +38,7 @@
      header, which is not an entry. #}
   <button class="link" type="button"
           hx-get="/evidence/page/{{ ec_id }}/{{ page_num }}"
-          hx-target="#evidence" hx-swap="innerHTML">go to page {{ page_num }}</button>
+          hx-target="#rail" hx-swap="innerHTML">go to page {{ page_num }}</button>
 {% endmacro %}
 
 

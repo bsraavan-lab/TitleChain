@@ -26,7 +26,7 @@
       <td>{{ e.pr_numbers | map(attribute='doc_no') | join(', ') or '—' }}</td>
       <td>
         <button class="link" type="button"
-                hx-get="/evidence/{{ e.db_id }}" hx-target="#evidence" hx-swap="innerHTML">
+                hx-get="/evidence/{{ e.db_id }}" hx-target="#rail" hx-swap="innerHTML">
           source
         </button>
       </td>

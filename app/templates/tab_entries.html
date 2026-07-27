@@ -4,8 +4,8 @@
 {% include "_review_grid.html" %}
 
 {% for d in docs %}
-  <details class="band" {{ 'open' if docs|length == 1 or d.entries }}>
-    <summary class="band-title">
+  <details class="section" {{ 'open' if docs|length == 1 or d.entries }}>
+    <summary class="section-title">
       {{ d.label }} — entries ({{ d.entries|length }})
       {% if d.header.declared_entry_count %}
         <span class="meta">certificate declares

@@ -1,5 +1,6 @@
 .env
-output/
+# runtime digitisation cache only; the seeded copies in seed/output/ do ship
+/output/
 *.zip
 __pycache__/
 .DS_Store

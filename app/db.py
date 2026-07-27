@@ -12,9 +12,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Iterable
 
-from config import data_dir
+from .paths import DB_PATH          # repo root locally, the mounted disk in prod
 
-DB_PATH = data_dir() / "titlechain.db"
 SCHEMA = Path(__file__).resolve().parent / "schema.sql"
 
 
@@ -29,31 +28,10 @@ def connect() -> sqlite3.Connection:
     return conn
 
 
-# Columns added after the first release. `CREATE TABLE IF NOT EXISTS` will not add
-# a column to a table that already exists, so a database written by an earlier
-# build needs these applied by hand — and a case store that survives a restart is
-# the whole memory proof, so dropping the file is not an acceptable migration.
-ADDED_COLUMNS: dict[str, dict[str, str]] = {
-    "ec_documents": {
-        "uploaded_at": "TEXT",
-        "fulfils_request_key": "TEXT",
-        "page_from": "INTEGER",
-        "page_to": "INTEGER",
-    },
-}
-
-
 def init() -> None:
     """Idempotent. If the file is ever corrupted mid-demo: rm titlechain.db."""
     with connect() as conn:
         conn.executescript(SCHEMA.read_text())
-        for table, cols in ADDED_COLUMNS.items():
-            have = {r["name"] for r in
-                    conn.execute(f"PRAGMA table_info({table})").fetchall()}
-            for name, decl in cols.items():
-                if name not in have:
-                    conn.execute(f"ALTER TABLE {table} ADD COLUMN {name} {decl}")
-        conn.commit()
 
 
 def now() -> str:

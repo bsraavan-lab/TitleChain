@@ -6,7 +6,7 @@
     <li class="gn {{ 'gn-examined' if n.examined else 'gn-unexamined' }}">
       {% if n.entry_id %}
         <button class="gn-btn" type="button"
-                hx-get="/evidence/{{ n.entry_id }}" hx-target="#evidence"
+                hx-get="/evidence/{{ n.entry_id }}" hx-target="#rail"
                 hx-swap="innerHTML">
           <span class="gn-dot" aria-hidden="true">●</span>
           <span class="gn-doc">{{ n.doc_no }}</span>

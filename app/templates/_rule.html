@@ -1,0 +1,72 @@
+{# ── THE RULE ─────────────────────────────────────────────────────────────────
+   The product's signature mark, and the only element drawn at more than one
+   scale: 6px in a case row, full width in the case header, printed in the
+   report. One axis of years. Parent documents sit ABOVE it, the certificate's
+   own window BELOW it, and the distance between them IS the finding — it lands
+   before a word of prose is read.
+
+   Never a score, never a badge. She will not trust a machine verdict on a
+   question she is liable for; she will trust arithmetic she can check in two
+   seconds. Colliding years are merged into one label upstream (Coverage.
+   clusters) rather than left to CSS luck, because a label landing on top of
+   another label destroys the only thing this mark exists to show.
+   The whole figure is aria-hidden — the sentence beneath it is the accessible
+   equivalent, and it is permanent, never a tooltip.
+#}
+
+{% macro rule(c) %}
+<div class="rule" aria-hidden="true">
+  <div class="rule-parents">
+    {% for k in c.clusters %}
+      <span class="rk {{ 'in' if k.inside else 'out' }}" style="left:{{ k.pct }}%">
+        <em>{{ k.label }}{% if k.count > 1 %} <i class="rk-n">×{{ k.count }}</i>{% endif %}</em>
+        <b></b>
+      </span>
+    {% endfor %}
+  </div>
+
+  <div class="rule-axis"></div>
+
+  <div class="rule-window">
+    {% if c.start_year and c.end_year %}
+      <span class="rw" style="left:{{ c.band_left }}%; width:{{ c.band_width }}%"></span>
+      {# A short window — the case this product exists to flag — leaves no room
+         for a label at each end. One centred label, never two overlapping ones. #}
+      {% if c.band_is_narrow %}
+        <span class="rw-label mid"
+              style="left:{{ c.band_centre }}%">{{ c.band_label }}</span>
+      {% else %}
+        <span class="rw-label" style="left:{{ c.band_left }}%">{{ c.start_year }}</span>
+        <span class="rw-label end"
+              style="left:{{ c.band_left + c.band_width }}%">{{ c.end_year }}</span>
+      {% endif %}
+    {% endif %}
+  </div>
+</div>
+
+<p class="rule-key" aria-hidden="true">
+  <span class="key"><i class="sw-window"></i>this certificate</span>
+  {% if c.outside_count %}
+    <span class="key"><i class="sw-out"></i>{{ c.outside_count }} parent
+      document{{ 's' if c.outside_count != 1 }} outside it</span>
+  {% endif %}
+  {% if c.inside_count %}
+    <span class="key"><i class="sw-in"></i>{{ c.inside_count }} inside</span>
+  {% endif %}
+</p>
+{% endmacro %}
+
+
+{# The same argument at 1/8 scale, for a case row. No labels, no key: at this
+   size the mark is a shape, and its job is only to say "these do not overlap"
+   before the row's own words are read. #}
+{% macro spark(c) %}
+<span class="spark" aria-hidden="true">
+  {% if c.start_year and c.end_year %}
+    <i class="sp-window" style="left:{{ c.band_left }}%; width:{{ c.band_width }}%"></i>
+  {% endif %}
+  {% for k in c.clusters %}
+    <i class="sp-tick {{ 'in' if k.inside else 'out' }}" style="left:{{ k.pct }}%"></i>
+  {% endfor %}
+</span>
+{% endmacro %}

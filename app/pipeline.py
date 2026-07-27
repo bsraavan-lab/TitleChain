@@ -33,11 +33,8 @@ from .extract import Extraction, Refusal
 from .fixtures import SAMPLES
 from .models import ECHeader, Entry
 
-from config import data_dir, is_serverless
-
-ROOT = Path(__file__).resolve().parent.parent
-UPLOADS = data_dir() / "uploads"
-UPLOADS.mkdir(parents=True, exist_ok=True)
+from .paths import ROOT, UPLOADS    # UPLOADS follows TITLECHAIN_DATA_DIR;
+                                    # created by paths.ensure() at startup
 
 
 def property_key(header: ECHeader) -> str:
@@ -235,25 +232,6 @@ def run(case_id: int, pdf_path: Path,
     digitise_mod.set_recorder(None)
     extract_mod.set_recorder(None)
     db.set_status(case_id, "READY", "")
-
-
-def is_fully_cached(pdf_path: Path) -> bool:
-    """True when this file can be processed with no network call at all — a cached
-    digitisation AND a cached extraction beside it.
-
-    This is what decides inline versus background. On a serverless host a thread
-    does not outlive the response, so a case started in one would poll at "Queued"
-    for ever; run inline it finishes in about a second and the page renders complete
-    on first paint. Locally the same check just means a re-opened sample is instant.
-
-    Conservative by construction: a multi-certificate bundle caches per range
-    (`extraction_p1-3.json`), does not match here, and takes the background path.
-    """
-    try:
-        cached = digitise_mod.find_cached(pdf_path)
-        return bool(cached and (cached / "extraction.json").is_file())
-    except Exception:
-        return False
 
 
 def accept_upload(filename: str, data: bytes) -> tuple[Path | None, str | None]:

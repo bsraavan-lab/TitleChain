@@ -7,10 +7,10 @@
    one case and four on another teaches the reader that absence means "fine" —
    which is exactly the inversion the refusal screen already refuses to make. #}
 {% set counts = view.outcome_counts %}
-<section class="band">
-  <h2 class="band-title">
+<section class="section">
+  <h2 class="section-title">
     Review checklist
-    <span class="counts">
+    <span class="count count-quiet">
       {% for o in OUTCOME_ORDER if counts[o] %}
         {% if not loop.first %} · {% endif %}
         <span class="{{ OUTCOME_UI[o].cls }}">
@@ -18,14 +18,14 @@
         </span>
       {% endfor %}
     </span>
-    <span class="counts push">
+    <span class="count count-quiet push">
       {{ view.completeness.review_done }} of {{ view.completeness.review_total }}
       reviewed
     </span>
   </h2>
 
   {% if not view.runs %}
-    <p class="pane-empty">
+    <p class="empty">
       The rulebook has not run yet — it runs once the first entry is typed.
     </p>
   {% endif %}

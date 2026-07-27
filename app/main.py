@@ -22,7 +22,8 @@ from fastapi.responses import HTMLResponse, RedirectResponse, Response
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
-from . import cost as cost_mod, crops, db, derive as derive_mod, layout, pipeline, store
+from . import (cost as cost_mod, crops, db, derive as derive_mod, layout, paths,
+               pipeline, store)
 from .fixtures import SAMPLES
 from .models import OUTCOME_ORDER, OUTCOME_UI, DerivedView
 
@@ -31,6 +32,8 @@ ROOT = Path(__file__).resolve().parent.parent
 
 @asynccontextmanager
 async def lifespan(_: FastAPI):
+    paths.ensure()     # creates uploads/ and output/ under the data dir
+    paths.seed_cache() # bundled digitisations, so the samples never wait on Sarvam
     db.init()          # idempotent; if the file is ever corrupted: rm titlechain.db
     yield
 
@@ -48,22 +51,6 @@ templates.env.globals["REVIEW_STATES"] = store.REVIEW_STATES
 
 PROCESSING = {"QUEUED", "READING", "TYPING", "DERIVING"}
 
-
-def _start_pipeline(case_id: int, path: Path,
-                    request_key: str | None = None) -> None:
-    """Inline when nothing needs the network, a background thread otherwise.
-
-    A daemon thread does not outlive the response on a serverless host, so a case
-    started in one there polls at "Queued" for ever. When the certificate is fully
-    cached the walk is about a second, so it runs inline and the page renders
-    complete on first paint — which is also the nicer local behaviour for a
-    re-opened sample.
-    """
-    if pipeline.is_fully_cached(path):
-        pipeline.run(case_id, path, request_key)
-        return
-    threading.Thread(target=pipeline.run, args=(case_id, path, request_key),
-                     daemon=True).start()
 
 # Order is her question order: what must I check → how does it connect → what am I
 # missing → is the extraction right → what did this cost.
@@ -207,40 +194,81 @@ def case_context(request: Request, case_id: int, tab: str = "review") -> dict:
         "cost_actual": cost_mod.actual(case_id),
         "ledger": db.q("SELECT * FROM api_calls WHERE case_id = ? ORDER BY id",
                        (case_id,)),
+        # Recognition over recall: the switcher lists the other open properties
+        # by name, so moving between files never routes through the home screen.
+        "other_cases": [c for c in store.case_list() if c["id"] != case_id],
     }
 
 
 def _entry(entry_id: int):
-    row = db.one("SELECT e.*, d.file_path, d.case_id FROM entries e "
+    row = db.one("SELECT e.*, d.file_path, d.case_id, d.page_count FROM entries e "
                  "JOIN ec_documents d ON d.id = e.ec_id WHERE e.id = ?", (entry_id,))
     return row
 
 
-# ── screens ──────────────────────────────────────────────────────────────────
+def _document(case_id: int):
+    return db.one("SELECT * FROM ec_documents WHERE case_id = ? ORDER BY id LIMIT 1",
+                  (case_id,))
 
-def _case_summary(case_id: int) -> dict | None:
-    """The case-list row: property identity, how many certificates, chain state.
-    Rendered from SQLite, so its mere presence after a restart is the memory proof."""
-    docs = store.load_case(case_id)
-    if not docs or not any(d.entries for d in docs):
-        return None
-    view = derive_mod.derive_case(docs, reviewed=store.reviewed_keys(case_id))
-    open_n = len(view.open_runs)
-    return {
-        "docs": len(docs),
-        "chain_pct": view.completeness.chain_pct,
-        "state": ("ready to opine" if view.readiness.ready
-                  else f"{open_n} to review"),
-    }
+
+def case_summaries() -> list[dict]:
+    """The case list is the returning user's landing screen, so it carries the
+    answer, not the filename: chain state, what is still open, and the same
+    search-window rule the case page draws — at 1/8 the size.
+
+    Deriving per row is cheap (entries are already typed and in memory) and it
+    keeps ONE source of truth for the verdict. A denormalised `cases.verdict`
+    column would be a second one, and the two would disagree the first time the
+    rulebook version changed.
+    """
+    out: list[dict] = []
+    for case in store.case_list():
+        summary = {"case": case, "header": None, "view": None,
+                   "processing": case["status"] in PROCESSING}
+        try:
+            docs = store.load_case(case["id"])
+            summary["header"] = docs[0].header if docs else None
+            summary["docs"] = len(docs)
+            if docs and any(d.entries for d in docs):
+                view = derive_mod.derive_case(
+                    docs, reviewed=store.reviewed_keys(case["id"]))
+                summary["view"] = view
+                summary["entry_count"] = sum(len(d.entries) for d in docs)
+                summary["chain_pct"] = view.completeness.chain_pct
+                summary["open_count"] = len(view.open_runs)
+                summary["ready"] = view.readiness.ready
+        except Exception:                       # a row written by an older
+            pass                                # extractor must not 500 the list
+        out.append(summary)
+    return out
+
+
+# ── screens ──────────────────────────────────────────────────────────────────
 
 
 @app.get("/", response_class=HTMLResponse)
 def home(request: Request, rejected: str | None = None):
-    cases = store.case_list()
     return templates.TemplateResponse(request, "home.html", {
-        "request": request, "cases": cases, "rejected": rejected,
-        "summaries": {c["id"]: _case_summary(c["id"]) for c in cases},
+        "request": request, "summaries": case_summaries(), "rejected": rejected,
     })
+
+
+@app.get("/palette.json")
+def palette():
+    """Feeds the command palette. Recognition over recall: she picks a property
+    by name instead of remembering where it sat in a list."""
+    cases = []
+    for c in store.case_list():
+        header, _ = store.load_header(c["id"])
+        cases.append({
+            "id": c["id"],
+            "label": c["property_key"] or "Untitled case",
+            "sub": f"{header.sro} SRO" if header and header.sro else c["status"].lower(),
+        })
+    return {
+        "cases": cases,
+        "commands": [{"label": "All cases", "kind": "Go", "href": "/"}],
+    }
 
 
 @app.post("/upload")
@@ -250,7 +278,8 @@ async def upload(file: UploadFile):
     if error:
         return RedirectResponse(f"/?rejected={error}", status_code=303)
     case_id = store.create_case(file.filename or "New case")
-    _start_pipeline(case_id, path)
+    threading.Thread(target=pipeline.run, args=(case_id, path),
+                     daemon=True).start()
     return RedirectResponse(f"/case/{case_id}", status_code=303)
 
 
@@ -260,7 +289,8 @@ def open_sample(key: str):
         return RedirectResponse("/?rejected=Unknown sample", status_code=303)
     path = pipeline.stage_sample(key)
     case_id = store.create_case(SAMPLES[key]["label"])
-    _start_pipeline(case_id, path)
+    threading.Thread(target=pipeline.run, args=(case_id, path),
+                     daemon=True).start()
     return RedirectResponse(f"/case/{case_id}", status_code=303)
 
 
@@ -272,13 +302,16 @@ def case_page(request: Request, case_id: int, tab: str = "review"):
     return templates.TemplateResponse(request, "case.html", ctx)
 
 
-@app.get("/case/{case_id}/rail", response_class=HTMLResponse)
-def case_rail(request: Request, case_id: int, tab: str = "review"):
+@app.get("/case/{case_id}/status", response_class=HTMLResponse)
+def case_status(request: Request, case_id: int, tab: str = "review"):
     """Polled while processing. The READY fragment carries no hx-trigger, so
     polling stops by itself — no client-side state to unwind. The response also
-    carries the active tab body out-of-band, so the whole page keeps up with one
-    request rather than one per region."""
-    return templates.TemplateResponse(request, "_rail_poll.html",
+    carries the ruler, the active tab body and the tab counts out-of-band, so the
+    whole page keeps up with one request rather than one poller per region.
+
+    Named `status`, not `rail`: `/case/{id}/rail` is the document pane, which is a
+    different component that happens to have wanted the same word."""
+    return templates.TemplateResponse(request, "_verdict_poll.html",
                                       case_context(request, case_id, tab))
 
 
@@ -307,7 +340,9 @@ async def add_document(case_id: int, file: UploadFile,
     if error:
         return RedirectResponse(f"/case/{case_id}?tab=documents&rejected={error}",
                                 status_code=303)
-    _start_pipeline(case_id, path, request_key or None)
+    threading.Thread(target=pipeline.run,
+                     args=(case_id, path, request_key or None),
+                     daemon=True).start()
     return RedirectResponse(f"/case/{case_id}?tab=documents", status_code=303)
 
 
@@ -380,14 +415,47 @@ def finding_collapse(request: Request, case_id: int, key: str, tab: str = "revie
     return templates.TemplateResponse(request, "_rule_row.html", ctx)
 
 
-# ── evidence ─────────────────────────────────────────────────────────────────
+# ── the document rail ────────────────────────────────────────────────────────
+# One component, two modes. `document` browses the certificate itself and is
+# what the rail shows on arrival — the old build left this half of the screen
+# empty until the first click, which is the largest piece of dead space in the
+# product. `evidence` pins one entry's region. Both are the same HTML shell, so
+# switching between them never moves the controls.
+
+def _rail(request: Request, *, mode: str, case_id: int, page: int = 1,
+          row=None, view: str = "crop"):
+    doc = _document(case_id)
+    return templates.TemplateResponse(request, "_rail.html", {
+        "request": request, "mode": mode, "doc": doc, "case_id": case_id,
+        "page": max(1, min(page, (doc["page_count"] if doc else 1) or 1)),
+        "page_count": (doc["page_count"] if doc else 1) or 1,
+        "row": row, "view": view,
+    })
+
+
+@app.get("/case/{case_id}/rail", response_class=HTMLResponse)
+def rail(request: Request, case_id: int, page: int = 1):
+    return _rail(request, mode="document", case_id=case_id, page=page)
+
 
 @app.get("/evidence/{entry_id}", response_class=HTMLResponse)
 def evidence(request: Request, entry_id: int, view: str = "crop"):
     row = _entry(entry_id)
-    return templates.TemplateResponse(request, "_evidence.html", {
-        "request": request, "row": row, "view": view,
-    })
+    if not row:
+        return HTMLResponse("<p class='rail-empty'>That entry is no longer available.</p>")
+    return _rail(request, mode="evidence", case_id=row["case_id"],
+                 page=row["page_num"], row=row, view=view)
+
+
+@app.get("/page/{case_id}/{page_num}.png")
+def document_page(case_id: int, page_num: int):
+    """The certificate itself, unmarked. Rendered lazily, one page at a time."""
+    doc = _document(case_id)
+    if not doc or not doc["file_path"]:
+        return Response(status_code=404)
+    png = crops.page_rect(doc["file_path"], page_num, None)
+    return Response(png, media_type="image/png",
+                    headers={"Cache-Control": "max-age=3600"})
 
 
 @app.get("/crop/{entry_id}.png")

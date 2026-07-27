@@ -1,6 +1,6 @@
-<h2 class="band-title">Source</h2>
+<h2 class="section-title">Source</h2>
 {% if not ec %}
-  <p class="pane-empty">That certificate is no longer available.</p>
+  <p class="empty">That certificate is no longer available.</p>
 {% else %}
   <figure class="evidence-fig">
     <img src="/page/{{ ec.id }}/{{ page_num }}.png"
@@ -15,7 +15,7 @@
       {% for n in range(1, ec.page_count + 1) %}
         <button class="btn-tiny {{ 'on' if n == page_num }}" type="button"
                 hx-get="/evidence/page/{{ ec.id }}/{{ n }}"
-                hx-target="#evidence" hx-swap="innerHTML">p{{ n }}</button>
+                hx-target="#rail" hx-swap="innerHTML">p{{ n }}</button>
       {% endfor %}
     </p>
   {% endif %}

@@ -2,10 +2,10 @@
 {# How the documents connect. The graph is for the eye; the nested list beneath it
    is the accessible equivalent, the print form, and the thing that carries the
    same facts when the SVG cannot be read. #}
-<section class="band">
-  <h2 class="band-title">
+<section class="section">
+  <h2 class="section-title">
     Ownership graph
-    <span class="counts">{{ view.completeness.chain_arithmetic }}</span>
+    <span class="count count-quiet">{{ view.completeness.chain_arithmetic }}</span>
   </h2>
 
   {% if graph and not graph.empty %}
@@ -17,7 +17,7 @@
     </p>
     {% include "_graph_nodes.html" %}
   {% else %}
-    <p class="pane-empty">No document has been read from this case yet.</p>
+    <p class="empty">No document has been read from this case yet.</p>
   {% endif %}
 
   <details class="chain-as-list" {{ 'open' if not graph or graph.empty }}>

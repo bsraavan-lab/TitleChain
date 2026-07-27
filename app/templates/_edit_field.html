@@ -1,17 +1,20 @@
-{# Inline. No save button state to lose: Enter commits, Escape restores. The POST
-   re-runs derive() server-side and swaps the cell, the rail and the active tab —
-   that re-derivation IS the memory proof, not a stand-in for it. #}
-<form class="edit-inline" hx-post="/correct" hx-target="closest td"
-      hx-swap="innerHTML">
+{# Inline. No save button in the way of the keyboard: Enter commits, Escape
+   restores the cell untouched. No save button therefore no unsaved state, and
+   nothing to warn her about on navigation.
+
+   The POST re-runs derive() server-side and swaps the whole derived panel — that
+   re-derivation IS the memory proof, not a stand-in for it. A correction she
+   makes visibly changes the findings, which is the only way she will believe
+   the findings were computed rather than written. #}
+<form class="edit" hx-post="/correct" hx-target="#derived" hx-swap="outerHTML">
   <input type="hidden" name="entry_id" value="{{ entry_id }}">
   <input type="hidden" name="field" value="{{ field }}">
   <input type="hidden" name="case_id" value="{{ case_id }}">
-  <input type="hidden" name="tab" value="{{ tab or 'entries' }}">
   <label class="sr-only" for="v-{{ entry_id }}-{{ field }}">{{ label }}</label>
   <input id="v-{{ entry_id }}-{{ field }}" name="value" value="{{ value or '' }}"
          autofocus autocomplete="off" placeholder="{{ label }}"
          hx-get="/entry/{{ entry_id }}/cell/{{ field }}"
          hx-trigger="keyup[key=='Escape']"
          hx-target="closest td" hx-swap="innerHTML">
-  <button class="btn-tiny" type="submit">save</button>
+  <button class="btn btn-primary btn-sm" type="submit" title="Enter">Save</button>
 </form>

@@ -1,42 +1,81 @@
 {% extends "base.html" %}
 {% block title %}{{ case.property_key or 'Case' }} — TitleChain{% endblock %}
-{% block topbar %}
-  <span class="meta">
-    {{ header.sro ~ ' SRO · ' ~ header.village if header else case.property_key }}
-    {% if docs|length > 1 %} · {{ docs|length }} certificates{% endif %}
-  </span>
+
+{# The property is the identity of this screen, so it is the strongest thing in
+   the bar. It doubles as the case switcher: moving between files never routes
+   through the home screen. <details> gives click, keyboard and Escape for free.
+
+   Every part is guarded rather than concatenated: an unread SRO is a null, and a
+   bare `header.sro ~ ' SRO · ' ~ header.village` renders that as "None SRO ·
+   None". The village is not repeated — property_key already carries it. #}
+{% block bar_context %}
+<details class="switcher">
+  <summary>
+    <span class="sw-name">{{ case.property_key or 'Untitled case' }}</span>
+    {% if header and header.sro %}<span class="sw-sub">{{ header.sro }} SRO</span>{% endif %}
+    {% if docs|length > 1 %}
+      <span class="sw-sub">{{ docs|length }} certificates</span>
+    {% endif %}
+    <span class="caret" aria-hidden="true">⌄</span>
+  </summary>
+  <div class="switcher-menu">
+    {% if other_cases %}
+      <p class="menu-label">Other cases</p>
+      {% for c in other_cases %}
+        <a href="/case/{{ c.id }}">{{ c.property_key or 'Untitled case' }}</a>
+      {% endfor %}
+    {% endif %}
+    <p class="menu-label">Go</p>
+    <a href="/">All cases</a>
+  </div>
+</details>
+{% endblock %}
+
+{% block bar_actions %}
+  {% if not processing and case.status not in ('FAILED', 'REFUSED') %}
+    <a class="btn btn-ghost" href="/report/{{ case.id }}" target="_blank"
+       rel="noopener" data-shortcut="e">Export report</a>
+  {% endif %}
 {% endblock %}
 
 {% block content %}
-{# Processing and results are the SAME screen in two states. The user never
-   watches a page they will have to leave, and closing the tab loses nothing —
-   the job is server-side and every state is in SQLite.
+{# Processing and results are the SAME screen in two states. She never watches a
+   page she will have to leave, and closing the tab loses nothing — the job is
+   server-side and every state is in SQLite.
 
-   The rail sits above the tabs and is never hidden, so the 30-second answer is
-   inherited by every tab. Each tab label carries its own count: a tab can be
-   closed, but its contents can never be silent. #}
-<div class="case">
+   Two columns, 58/42. That ratio is a statement: the answer leads, the document
+   corroborates. A 50/50 split would make them peers, which is wrong — she comes
+   for the conclusion and consults the page to falsify it.
+
+   In the left column the verdict strip and the tabs stick together as one unit,
+   so the 30-second answer is inherited by every tab; the ruler sits below them
+   and scrolls, because pinned it eats a third of the viewport. #}
+<div class="case" data-case="{{ case.id }}">
   {% if case.status in ('FAILED', 'REFUSED') %}
     {% include "_refusal.html" %}
   {% else %}
-    <div class="case-head">
-      {% include "_rail.html" %}
-      {% include "_tabs.html" %}
-    </div>
+    <div class="case-main">
+      <div class="case-head">
+        {% include "_verdict.html" %}
+        {% include "_tabs.html" %}
+      </div>
 
-    {% include "_ruler_strip.html" %}
+      {% include "_ruler_strip.html" %}
 
-    <div class="case-grid">
       <div id="tab-body">{% include "_tab_body.html" %}</div>
-
-      <aside id="evidence" class="pane">
-        <h2 class="band-title">Source</h2>
-        <p class="pane-empty">
-          Select a finding, a rule input or an entry to see the region of the
-          certificate it came from.
-        </p>
-      </aside>
     </div>
+
+    {# No rail on a refused case: there is no document to corroborate anything
+       with, and an empty pane beside a refusal reads as a second failure. #}
+    {% if ec or processing %}
+    <aside class="rail" id="rail">
+      {% set pc = (ec.page_count or 1) if ec else 1 %}
+      {% with mode = 'document', doc = ec, case_id = case.id,
+              page = 1, page_count = pc, row = None, view = 'crop' %}
+        {% include "_rail.html" %}
+      {% endwith %}
+    </aside>
+    {% endif %}
   {% endif %}
 </div>
 {% endblock %}

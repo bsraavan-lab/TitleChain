@@ -6,6 +6,12 @@ Companion to [PRD.md](PRD.md) §7 (Core MVP), [PIPELINE.md](PIPELINE.md) §④ (
 disagree, this one wins — it is the later decision, made against a fixed team size of one and a
 fixed clock. Version 1.0 · 26 Jul 2026.
 
+> **Superseded in part.** [UX_REDESIGN.md](UX_REDESIGN.md) (v2.0, 27 Jul 2026) rebuilt the
+> layout, hierarchy and component structure from first principles. Its decisions win over the
+> wireframes in Part 6 and the screen structure in Part 3. Everything else here — the thesis,
+> the personas, the cut order, the edge-case principle, and Part 7's reasoning — still stands,
+> and the redesign was argued against it rather than around it.
+
 > **The constraint that governs every choice below:** the build window is 11:30–14:00 for the
 > product and 14:00–15:30 for the scoring surface. `graph.py` and `rulebook.py` are the product.
 > **No frontend decision in this document is allowed to cost them a minute.** Everything here is
