@@ -725,6 +725,12 @@ main { padding: var(--s6) var(--s5) var(--s8); }
    through the right border, past every other rule, and clipped the last column
    off the PDF. Here they fit the column. */
 .report .entries { min-width: 0; }
+/* And the report's cells are tighter than the audit surface's. That surface is
+   scrolled and clicked at 1440 and can afford 12px; this one has 682px, is read
+   at arm's length, and is printed. 12px here costs ~64px across eight columns —
+   more than the slack the column has — and puts the table back through the
+   border. 8px, and it fits with room to spare. */
+.report .entries th, .report .entries td { padding: var(--s2); }
 /* Only the identifiers are held on one line — a wrapped registry number is a
    misread registry number. Everything else on these three tables is prose and
    must wrap: a rule's description, a subject, the sentence explaining why a
