@@ -79,9 +79,14 @@
   </ol>
 
   <h2>Entries as read</h2>
+  {# The wrap is inert at reading width and on paper — the table fits the column
+     there. It earns its keep on a phone, where a scroll is the honest failure
+     mode and a table shoved through the right edge of the page is not. #}
+  <div class="table-wrap">
   <table class="entries">
     <thead><tr><th class="num">#</th><th>Document</th><th>Registered</th>
-      <th>Nature</th><th>Parent docs</th><th>Source</th></tr></thead>
+      <th class="nature">Nature</th><th class="parents">Parent docs</th>
+      <th>Source</th></tr></thead>
     <tbody>
       {% for e in entries %}
         <tr>
@@ -89,8 +94,8 @@
           <td class="mono">{{ e.doc_no or '—' }}</td>
           <td class="mono {{ 'not-read' if not e.date_registration }}">
             {{ e.date_registration or '— not read' }}</td>
-          <td>{{ e.nature or '—' }}</td>
-          <td class="mono">{{ e.pr_numbers | map(attribute='doc_no') | join(', ') or '—' }}</td>
+          <td class="nature">{{ e.nature or '—' }}</td>
+          <td class="parents mono">{{ e.pr_numbers | map(attribute='doc_no') | join(', ') or '—' }}</td>
           <td class="meta mono">p{{ e.source.page_num }}</td>
         </tr>
       {% endfor %}
@@ -102,6 +107,7 @@
       {% endfor %}
     </tbody>
   </table>
+  </div>
 
   <h2>Corrections</h2>
   {% if corrections %}

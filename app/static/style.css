@@ -707,7 +707,19 @@ main { padding: var(--s6) var(--s5) var(--s8); }
 .report-findings .sev-check strong { color: var(--stamp); }
 .report-findings .sev-verified strong { color: var(--fee); }
 .report-spec { margin-top: var(--s3); }
-.report .entries { border: 1px solid var(--rule-line); border-radius: var(--r3); }
+/* The audit table's 760px floor is wrong on the report: this column is 684px
+   wide on screen and narrower still on A4, and the report is the artifact that
+   gets printed — a floor it cannot meet broke the table out through the right
+   border, past every other rule on the page. Here the table fits the column.
+
+   Fitting must not cost the identifiers: every column is held on one line, and
+   the two columns of prose — nature, and the comma-separated parent list, which
+   carries its own break points — absorb the slack. A wrapped registry number is
+   a misread registry number, and this is the page that leaves the building. */
+.report .entries { min-width: 0; }
+.report .entries th, .report .entries td { white-space: nowrap; }
+.report .entries .nature, .report .entries .parents,
+.report .entries .row-unread td { white-space: normal; }
 .report .not-read { color: var(--stamp); }
 .report-foot { margin-top: var(--s7); padding-top: var(--s4);
                border-top: 1px solid var(--rule-line); color: var(--ink-3);
@@ -719,6 +731,10 @@ main { padding: var(--s6) var(--s5) var(--s8); }
   main { padding: 0; }
   .report { border: 0; padding: 0; max-width: none; border-radius: 0; }
   .report h2 { margin-top: var(--s5); }
+  /* A scroll container has no meaning on paper: it clips instead of scrolling,
+     and what it would clip here is evidence. */
+  .table-wrap { overflow: visible; }
+  .entries thead th { position: static; }
   a[href]::after { content: none; }
 }
 
