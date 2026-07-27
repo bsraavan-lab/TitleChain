@@ -60,6 +60,10 @@
   </p>
 
   <h2>Certificates examined</h2>
+  {# The wrap is inert at reading width and on paper, where the table fits the
+     column. It earns its keep on a phone, where a scroll is the honest failure
+     mode and a table shoved through the right edge of the page is not. #}
+  <div class="table-wrap">
   <table class="entries">
     <thead><tr><th></th><th>SRO · village</th><th>Search period</th>
       <th>Issued</th><th class="num">Entries</th><th class="num">Pages</th>
@@ -78,6 +82,7 @@
       {% endfor %}
     </tbody>
   </table>
+  </div>
 
   <h2>What this search does not cover</h2>
   {% if view.coverage %}
@@ -110,6 +115,7 @@
     All ten rules in rulebook {{ view.rulebook_version }}. A rule that could not
     run says so and says why; it is never reported as passing.
   </p>
+  <div class="table-wrap">
   <table class="entries report-rules">
     <thead><tr><th>Rule</th><th>Outcome</th><th>Subject</th>
       <th>Finding, or why nothing was concluded</th><th>Review</th></tr></thead>
@@ -129,6 +135,7 @@
       {% endfor %}
     </tbody>
   </table>
+  </div>
 
   <h2>The chain</h2>
   {# Printed as a list, not as the SVG: a 940px drawing on A4 is unreadable, and
@@ -154,9 +161,11 @@
   <h2>Entries as read</h2>
   {% for d in docs %}
     <h3>{{ d.label }} — <span class="mono">{{ d.window }}</span></h3>
+    <div class="table-wrap">
     <table class="entries">
       <thead><tr><th class="num">#</th><th>Document</th><th>Registered</th>
-        <th>Nature</th><th>Parent docs</th><th>Source</th></tr></thead>
+        <th>Nature</th><th class="parents">Parent docs</th>
+        <th>Source</th></tr></thead>
       <tbody>
         {% for e in d.entries %}
           <tr>
@@ -165,13 +174,14 @@
             <td class="mono {{ 'not-read' if not e.date_registration }}">
               {{ e.date_registration or '— not read' }}</td>
             <td>{{ e.nature or '—' }}</td>
-            <td class="mono">{{ e.pr_numbers | map(attribute='doc_no')
+            <td class="parents mono">{{ e.pr_numbers | map(attribute='doc_no')
               | join(', ') or '—' }}</td>
             <td class="meta">p{{ e.source.page_num }}</td>
           </tr>
         {% endfor %}
       </tbody>
     </table>
+    </div>
   {% endfor %}
 
   <h2>Corrections</h2>
