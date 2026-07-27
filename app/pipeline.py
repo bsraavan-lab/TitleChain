@@ -25,7 +25,7 @@ import time
 from dataclasses import asdict
 from pathlib import Path
 
-from . import crops, db, store
+from . import crops, db, derive as derive_mod, store
 from . import digitise as digitise_mod
 from . import extract as extract_mod
 from .digitise import Digitised, UnreadChunk
@@ -46,8 +46,10 @@ def property_key(header: ECHeader) -> str:
 
 # ── stage-② disk cache ───────────────────────────────────────────────────────
 
-def _cached_extraction(dig: Digitised) -> Extraction | Refusal | None:
-    f = dig.source_dir / "extraction.json"
+def _cached_extraction(dig: Digitised, suffix: str = "") -> Extraction | Refusal | None:
+    """`suffix` names one certificate inside a bundle ("_p4-5"), so the two halves
+    of ec5 cache separately instead of overwriting each other."""
+    f = dig.source_dir / f"extraction{suffix}.json"
     if not f.is_file():
         return None
     try:
@@ -65,7 +67,8 @@ def _cached_extraction(dig: Digitised) -> Extraction | Refusal | None:
         return None                       # a corrupt cache is a miss, not a crash
 
 
-def _save_extraction(dig: Digitised, result: Extraction | Refusal) -> None:
+def _save_extraction(dig: Digitised, result: Extraction | Refusal,
+                     suffix: str = "") -> None:
     payload: dict = {"version": extract_mod.EXTRACT_VERSION}
     if isinstance(result, Refusal):
         payload["refusal"] = asdict(result)
@@ -73,19 +76,39 @@ def _save_extraction(dig: Digitised, result: Extraction | Refusal) -> None:
         payload["header"] = result.header.model_dump()
         payload["entries"] = [e.model_dump(exclude={"db_id"}) for e in result.entries]
         payload["unread"] = [asdict(u) for u in result.unread]
-    (dig.source_dir / "extraction.json").write_text(
+    (dig.source_dir / f"extraction{suffix}.json").write_text(
         json.dumps(payload, ensure_ascii=False, indent=1), encoding="utf-8")
 
 
 # ── the walk ─────────────────────────────────────────────────────────────────
 
-def run(case_id: int, pdf_path: Path) -> None:
-    """Runs in a background thread. Every state it sets is user-visible and true."""
+def run(case_id: int, pdf_path: Path,
+        fulfils_request_key: str | None = None) -> None:
+    """Runs in a background thread. Every state it sets is user-visible and true.
+
+    Called with an existing `case_id` that already holds a certificate, this
+    APPENDS: a second `ec_documents` row on the same case, whose entries join the
+    same graph. Nothing is cleared and nothing is re-read — corrections live on the
+    entries already stored, and review state keys on the finding's subject rather
+    than on a row id, so both survive by construction.
+    """
     try:
         pages = crops.page_count(pdf_path)
     except Exception as exc:                                    # unreadable file
         db.set_status(case_id, "FAILED", f"Could not open this file: {exc}")
         return
+
+    # The cost ledger. digitise() and extract() do not know what a case is, so they
+    # are handed a recorder and every real HTTP request lands in one row — retries
+    # included, because the truncation ladder is the actual per-case cost driver.
+    ec_box: dict[str, int | None] = {"ec_id": None}
+
+    def record(row: dict) -> None:
+        db.insert("api_calls", case_id=case_id, ec_id=ec_box["ec_id"],
+                  created_at=db.now(), **row)
+
+    digitise_mod.set_recorder(record)
+    extract_mod.set_recorder(record)
 
     db.set_status(case_id, "READING", f"Reading page 1 of {pages}",
                   pages_total=pages, pages_done=0)
@@ -105,53 +128,109 @@ def run(case_id: int, pdf_path: Path) -> None:
                   pages_done=pages)
 
     # ── stage ② ──────────────────────────────────────────────────────────────
-    # The header lands first (on_header), so the case page — ruler included —
-    # renders while the entry blocks are still being typed. ec_id is created
-    # then; entries attach to it when they arrive.
-    ec_id: int | None = None
+    # A file may hold MORE THAN ONE certificate (ec5 holds two for the same
+    # property). Each range becomes its own ec_documents row on this one case, and
+    # the merge path downstream is the same one an uploaded second certificate
+    # takes — so the ruler draws two bands, and R3 evaluates against both windows
+    # instead of silently filing the second certificate's entries under the first
+    # one's search period.
+    ranges = extract_mod.certificate_ranges(dig)
+    split = len(ranges) > 1
+    if split:
+        db.set_status(case_id, "TYPING",
+                      f"This file holds {len(ranges)} certificates — reading each "
+                      f"separately")
 
-    def save_header(header: ECHeader) -> int:
-        nonlocal ec_id
-        if ec_id is None:
-            ec_id = store.save_header(case_id, header, filename=pdf_path.name,
-                                      file_path=str(pdf_path), page_count=pages)
-            db.execute("UPDATE cases SET property_key = ? WHERE id = ?",
-                       (property_key(header), case_id))
-        else:
-            # The early header (on_header) carried no declared_entry_count — it is
-            # read separately, by regex, as the R10 checksum. Without this update
-            # R10 never runs, and R10 not running looks exactly like R10 passing.
-            db.execute("UPDATE ec_documents SET declared_entry_count = ? WHERE id = ?",
-                       (header.declared_entry_count, ec_id))
-        return ec_id
+    last_ec_id: int | None = None
+    for n, (page_from, page_to) in enumerate(ranges, start=1):
+        part = digitise_mod.slice_pages(dig, page_from, page_to) if split else dig
+        label = f" ({n} of {len(ranges)}, pages {page_from}–{page_to})" if split else ""
+        ec_id: int | None = None
 
-    result = _cached_extraction(dig)
-    if result is None:
-        db.set_status(case_id, "TYPING", "Typing entries into the schema")
-        try:
-            result = extract_mod.extract(
-                dig, filename=pdf_path.name,
-                on_progress=lambda detail: db.set_status(case_id, "TYPING", detail),
-                on_header=lambda h: save_header(h))
-        except Exception as exc:
-            db.set_status(case_id, "FAILED",
-                          f"Entry typing failed: {str(exc)[:200]}")
-            return
-        _save_extraction(dig, result)
+        def save_header(header: ECHeader, _pf=page_from, _pt=page_to) -> int:
+            nonlocal ec_id
+            if ec_id is None:
+                ec_id = store.save_header(
+                    case_id, header, filename=pdf_path.name,
+                    file_path=str(pdf_path), page_count=_pt - _pf + 1,
+                    fulfils_request_key=fulfils_request_key,
+                    page_from=_pf, page_to=_pt)
+                ec_box["ec_id"] = ec_id
+                # The property key names the case, and the FIRST certificate names
+                # the property. A later certificate must not rename it.
+                if len(store.ec_rows(case_id)) == 1:
+                    db.execute("UPDATE cases SET property_key = ? WHERE id = ?",
+                               (property_key(header), case_id))
+            else:
+                # The early header (on_header) carried no declared_entry_count — it
+                # is read separately, by regex, as the R10 checksum. Without this
+                # update R10 never runs, and R10 not running looks exactly like R10
+                # passing.
+                db.execute(
+                    "UPDATE ec_documents SET declared_entry_count = ? WHERE id = ?",
+                    (header.declared_entry_count, ec_id))
+            return ec_id
 
-    if isinstance(result, Refusal):
-        db.set_status(case_id, "REFUSED", result.detail,
-                      refusal_checks=json.dumps(result.checks))
+        suffix = f"_p{page_from}-{page_to}" if split else ""
+        result = _cached_extraction(dig, suffix)
+        if result is None:
+            db.set_status(case_id, "TYPING",
+                          f"Typing entries into the schema{label}")
+            try:
+                result = extract_mod.extract(
+                    part, filename=pdf_path.name,
+                    on_progress=lambda detail, _l=label: db.set_status(
+                        case_id, "TYPING", f"{detail}{_l}"),
+                    on_header=save_header)
+            except Exception as exc:
+                db.set_status(case_id, "FAILED",
+                              f"Entry typing failed{label}: {str(exc)[:200]}")
+                return
+            try:
+                _save_extraction(dig, result, suffix)
+            except OSError:
+                # output/ is read-only on a serverless host. Losing the cache write
+                # costs a slower next run; failing the case here would throw away an
+                # extraction we have already paid Sarvam for.
+                pass
+
+        if isinstance(result, Refusal):
+            if not split:
+                db.set_status(case_id, "REFUSED", result.detail,
+                              refusal_checks=json.dumps(result.checks))
+                return
+            continue        # one certificate in a bundle may be unreadable
+
+        save_header(result.header)
+        store.save_entries(ec_id, result.entries)
+        for u in [*part.unread, *result.unread]:
+            db.insert("unread_chunks", ec_id=ec_id, page_from=u.page_from,
+                      page_to=u.page_to, reason=u.reason)
+        last_ec_id = ec_id
+
+    if last_ec_id is None:
+        db.set_status(case_id, "REFUSED",
+                      "No certificate in this file could be read.",
+                      refusal_checks=json.dumps(
+                          ["a registration-entry table",
+                           "at least one numbered entry"]))
         return
-
-    save_header(result.header)
-    store.save_entries(ec_id, result.entries)
-    for u in [*dig.unread, *result.unread]:
-        db.insert("unread_chunks", ec_id=ec_id, page_from=u.page_from,
-                  page_to=u.page_to, reason=u.reason)
+    ec_id = last_ec_id
 
     db.set_status(case_id, "DERIVING", "Building the chain and running the rulebook")
     time.sleep(0.2)     # derive() is fast; let the state be seen, not subliminal
+
+    # Log what the rulebook said. Two of these are what let the Documents tab
+    # report "this certificate resolved these four findings" as a diff of recorded
+    # facts rather than as a guess.
+    docs = store.load_case(case_id)
+    view = derive_mod.derive_case(docs, reviewed=store.reviewed_keys(case_id))
+    store.record_derivation(case_id, view,
+                            trigger="merge" if len(docs) > 1 else "upload",
+                            ec_id=ec_id)
+
+    digitise_mod.set_recorder(None)
+    extract_mod.set_recorder(None)
     db.set_status(case_id, "READY", "")
 
 

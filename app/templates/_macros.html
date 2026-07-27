@@ -1,0 +1,50 @@
+{# Shared components. Kept in one file so a change to the way a count is drawn
+   changes it everywhere it is drawn. #}
+
+{% macro meter(label, pct, arithmetic, tab=None) %}
+  {# A count ratio with its own arithmetic printed beside it. No weights, no
+     coefficients — the numerator and the denominator ARE the tooltip, which is
+     what distinguishes this from the sufficiency score the product refuses. #}
+  <div class="meter {{ 'meter-full' if pct >= 100 else '' }}">
+    <span class="meter-label">{{ label }}</span>
+    <span class="meter-bar" role="img"
+          aria-label="{{ label }}: {{ arithmetic }}">
+      <i style="width:{{ pct }}%"></i>
+    </span>
+    <span class="meter-pct">{{ pct }}%</span>
+    <span class="meter-note">{{ arithmetic }}</span>
+  </div>
+{% endmacro %}
+
+
+{% macro outcome_badge(run) %}
+  {# Colour is never the only carrier: glyph + word + colour, every time. #}
+  <span class="outcome {{ run.ui.cls }}">
+    <span class="glyph" aria-hidden="true">{{ run.ui.glyph }}</span>
+    <span class="outcome-word">{{ run.ui.word }}</span>
+  </span>
+{% endmacro %}
+
+
+{% macro source_button(entry_id, text='source') %}
+  <button class="link" type="button"
+          hx-get="/evidence/{{ entry_id }}" hx-target="#rail"
+          hx-swap="innerHTML">{{ text }}</button>
+{% endmacro %}
+
+
+{% macro page_button(ec_id, page_num) %}
+  {# "Jump to page 7" where no entry anchors it — an R3 window is read off the
+     header, which is not an entry. #}
+  <button class="link" type="button"
+          hx-get="/evidence/page/{{ ec_id }}/{{ page_num }}"
+          hx-target="#rail" hx-swap="innerHTML">go to page {{ page_num }}</button>
+{% endmacro %}
+
+
+{% macro copy_button(text, label='copy') %}
+  <button class="btn-quiet" type="button" data-copy="{{ text }}"
+          onclick="navigator.clipboard.writeText(this.dataset.copy).then(()=>{
+                     const w=this.textContent; this.textContent='copied';
+                     setTimeout(()=>this.textContent=w,1600);})">{{ label }}</button>
+{% endmacro %}

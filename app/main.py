@@ -1,7 +1,13 @@
 """TitleChain — FastAPI serving Jinja + HTMX from one process.
 
-Two routes the user can see (/ and /case/{id}). Everything else is a fragment
-swap or an image. No build step, no npm, no CORS, no CDN.
+Two full pages the user can see (/ and /case/{id}) plus the printable report.
+Everything else is a fragment swap or an image. No build step, no npm, no CORS,
+no CDN.
+
+The case page is one shell: a sticky rail that always carries the verdict and the
+completion state, a tab strip, and a persistent evidence pane that survives tab
+switches. Tabs are `hx-get` + `hx-push-url`, so the URL stays shareable and the
+back button works without a page reload.
 """
 
 from __future__ import annotations
@@ -16,9 +22,10 @@ from fastapi.responses import HTMLResponse, RedirectResponse, Response
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
-from . import crops, db, derive as derive_mod, paths, pipeline, store
+from . import (cost as cost_mod, crops, db, derive as derive_mod, layout, paths,
+               pipeline, store)
 from .fixtures import SAMPLES
-from .models import DerivedView
+from .models import OUTCOME_ORDER, OUTCOME_UI, DerivedView
 
 ROOT = Path(__file__).resolve().parent.parent
 
@@ -37,30 +44,156 @@ templates = Jinja2Templates(directory=Path(__file__).parent / "templates")
 templates.env.globals["SAMPLES"] = SAMPLES
 templates.env.globals["EDITABLE"] = store.EDITABLE
 templates.env.globals["RULEBOOK_VERSION"] = derive_mod.RULEBOOK_VERSION
+templates.env.globals["RULEBOOK"] = derive_mod.RULEBOOK
+templates.env.globals["OUTCOME_ORDER"] = OUTCOME_ORDER
+templates.env.globals["OUTCOME_UI"] = OUTCOME_UI
+templates.env.globals["REVIEW_STATES"] = store.REVIEW_STATES
 
 PROCESSING = {"QUEUED", "READING", "TYPING", "DERIVING"}
 
 
+# Order is her question order: what must I check → how does it connect → what am I
+# missing → is the extraction right → what did this cost.
+TABS = [
+    ("review", "Review"),
+    ("chain", "Chain"),
+    ("documents", "Documents"),
+    ("entries", "Entries"),
+    ("processing", "Processing"),
+]
+TAB_NAMES = {name for name, _ in TABS}
+
+
 # ── shared page assembly ─────────────────────────────────────────────────────
 
-def case_context(request: Request, case_id: int) -> dict:
+def _unread_pages(rows: list[dict]) -> int:
+    return sum(max((r["page_to"] or 0) - (r["page_from"] or 0) + 1, 1) for r in rows)
+
+
+def _review_grid(view, entries, corrections, reviewed) -> dict[int, dict]:
+    """Where review is needed, per entry — from OUR checks, not from the model's
+    confidence. Sarvam's block score is blind to a dropped cell, so it is reported
+    as a bare number in its own column and never as a colour."""
+    counted = {"R9": "fields", "R4": "parents", "R3": "window"}
+    grid: dict[int, dict] = {
+        e.db_id: {"fields": 0, "parents": 0, "window": 0, "corrected": 0,
+                  "reviewed": False, "open": 0}
+        for e in entries
+    }
+    for r in view.runs:
+        col = counted.get(r.rule_id)
+        if not (col and r.is_open):
+            continue
+        for eid in r.evidence_entry_ids:
+            if eid in grid:
+                grid[eid][col] += 1
+                grid[eid]["open"] += 1
+                if r.key in reviewed:
+                    grid[eid]["open"] -= 1
+    for c in corrections:
+        if c["entry_id"] in grid:
+            grid[c["entry_id"]]["corrected"] += 1
+    for eid, flags in grid.items():
+        flags["reviewed"] = flags["open"] == 0
+    return grid
+
+
+ENC_STATUS = {
+    # R2 outcome → (label, glyph, css class). "Not evaluated" is a first-class
+    # status: an entry whose nature could not be read must not be shown as Active.
+    "FAIL":           ("Active", "▲", "active"),
+    "PASS":           ("Closed", "✓", "closed"),
+    "NOT_EVALUABLE":  ("Not evaluated", "⚠", "unknown"),
+}
+
+
+def _encumbrance_cards(view) -> list[dict]:
+    """One card per R2 run that is about an instrument. The rule already decided;
+    this only chooses the words."""
+    cards = []
+    for r in view.runs:
+        if r.rule_id != "R2" or r.key in ("R2:none", "R2:unclassified"):
+            continue
+        label, glyph, cls = ENC_STATUS.get(r.outcome, ("Not evaluated", "⚠", "unknown"))
+        if r.outcome == "PASS":
+            label = "Cancelled" if "cancelled" in r.message else "Released"
+        nature = next((i.value for i in r.inputs if i.label == "nature"), None)
+        cards.append({
+            "key": r.key, "status": label, "glyph": glyph, "status_class": cls,
+            "doc_no": r.key.split("=", 1)[-1].split("/sr:")[0]
+                      if "enc=" in r.key else r.title,
+            "nature": None if nature in (None, "not read", "null") else nature,
+            "detail": r.message if r.outcome != "NOT_EVALUABLE" else r.reason,
+            "entry_id": r.evidence_entry_ids[0] if r.evidence_entry_ids else None,
+        })
+    return cards
+
+
+def case_context(request: Request, case_id: int, tab: str = "review") -> dict:
     case = db.one("SELECT * FROM cases WHERE id = ?", (case_id,))
     if not case:
         return {"request": request, "case": None}
-    header, ec_row = store.load_header(case_id)
-    entries = store.load_entries(ec_row["id"]) if ec_row else []
-    view = derive_mod.derive(header, entries) if (header and entries) else DerivedView()
+
+    docs = store.load_case(case_id)
+    reviews = store.review_state(case_id)
+    reviewed = {k for k, r in reviews.items() if r["state"] in ("reviewed", "accepted")}
+    corrections = store.corrections_for_case(case_id)
+    unread = store.unread_for_case(case_id)
+
+    # Mid-processing a certificate has a header but no entries yet. derive_case on
+    # an entry-less case would report "no parent document is named", which is a
+    # statement about the certificate rather than about our progress — so the
+    # rail renders the windows it already knows and says nothing else.
+    typed = any(d.entries for d in docs)
+    view = (derive_mod.derive_case(docs, reviewed=reviewed,
+                                  corrections=len(corrections),
+                                  unread_pages=_unread_pages(unread))
+            if typed else DerivedView(docs=docs))
+
+    tab = tab if tab in TAB_NAMES else "review"
+    first = docs[0] if docs else None
+
+    log = store.review_history(case_id)
+    by_key: dict[str, list[dict]] = {}
+    for row in log:
+        by_key.setdefault(row["finding_key"], []).append(row)
     return {
         "request": request,
         "case": case,
-        "header": header,
-        "ec": ec_row,
-        "entries": entries,
+        "docs": docs,
+        "header": first.header if first else None,
+        "ec": db.one("SELECT * FROM ec_documents WHERE case_id = ? ORDER BY id LIMIT 1",
+                     (case_id,)),
+        "entries": [e for d in docs for e in d.entries],
         "view": view,
         "processing": case["status"] in PROCESSING,
-        "corrections": store.corrections_for(ec_row["id"]) if ec_row else [],
-        "unread": store.unread_chunks(ec_row["id"]) if ec_row else [],
+        "corrections": corrections,
+        "unread": unread,
+        "reviews": reviews,
         "refusal_checks": json.loads(case["refusal_checks"] or "null"),
+        "tab": tab,
+        "tabs": TABS,
+        "tab_counts": {
+            "review": len(view.open_runs),
+            "documents": len(view.requests_live),
+            "entries": len(unread),
+        },
+        "review_log": log,
+        "review_by_key": by_key,
+        "grid": _review_grid(view, [e for d in docs for e in d.entries],
+                             corrections, reviewed),
+        "merge": store.merge_summary(case_id, view) if typed else None,
+        "graph": layout.build_layout(
+            docs, [e for d in docs for e in d.entries], view.edges,
+            corrected_entry_ids={c["entry_id"] for c in corrections},
+            open_encumbrance_docs={
+                r.key.removeprefix("R2:enc=") for r in view.runs
+                if r.rule_id == "R2" and r.outcome == "FAIL"}),
+        "encumbrances": _encumbrance_cards(view),
+        "cost_estimate": cost_mod.estimate(case["pages_total"] or 1),
+        "cost_actual": cost_mod.actual(case_id),
+        "ledger": db.q("SELECT * FROM api_calls WHERE case_id = ? ORDER BY id",
+                       (case_id,)),
         # Recognition over recall: the switcher lists the other open properties
         # by name, so moving between files never routes through the home screen.
         "other_cases": [c for c in store.case_list() if c["id"] != case_id],
@@ -93,12 +226,17 @@ def case_summaries() -> list[dict]:
         summary = {"case": case, "header": None, "view": None,
                    "processing": case["status"] in PROCESSING}
         try:
-            header, ec_row = store.load_header(case["id"])
-            entries = store.load_entries(ec_row["id"]) if ec_row else []
-            summary["header"] = header
-            if header and entries:
-                summary["view"] = derive_mod.derive(header, entries)
-                summary["entry_count"] = len(entries)
+            docs = store.load_case(case["id"])
+            summary["header"] = docs[0].header if docs else None
+            summary["docs"] = len(docs)
+            if docs and any(d.entries for d in docs):
+                view = derive_mod.derive_case(
+                    docs, reviewed=store.reviewed_keys(case["id"]))
+                summary["view"] = view
+                summary["entry_count"] = sum(len(d.entries) for d in docs)
+                summary["chain_pct"] = view.completeness.chain_pct
+                summary["open_count"] = len(view.open_runs)
+                summary["ready"] = view.readiness.ready
         except Exception:                       # a row written by an older
             pass                                # extractor must not 500 the list
         out.append(summary)
@@ -106,6 +244,7 @@ def case_summaries() -> list[dict]:
 
 
 # ── screens ──────────────────────────────────────────────────────────────────
+
 
 @app.get("/", response_class=HTMLResponse)
 def home(request: Request, rejected: str | None = None):
@@ -139,7 +278,8 @@ async def upload(file: UploadFile):
     if error:
         return RedirectResponse(f"/?rejected={error}", status_code=303)
     case_id = store.create_case(file.filename or "New case")
-    threading.Thread(target=pipeline.run, args=(case_id, path), daemon=True).start()
+    threading.Thread(target=pipeline.run, args=(case_id, path),
+                     daemon=True).start()
     return RedirectResponse(f"/case/{case_id}", status_code=303)
 
 
@@ -149,35 +289,73 @@ def open_sample(key: str):
         return RedirectResponse("/?rejected=Unknown sample", status_code=303)
     path = pipeline.stage_sample(key)
     case_id = store.create_case(SAMPLES[key]["label"])
-    threading.Thread(target=pipeline.run, args=(case_id, path), daemon=True).start()
+    threading.Thread(target=pipeline.run, args=(case_id, path),
+                     daemon=True).start()
     return RedirectResponse(f"/case/{case_id}", status_code=303)
 
 
 @app.get("/case/{case_id}", response_class=HTMLResponse)
-def case_page(request: Request, case_id: int):
-    ctx = case_context(request, case_id)
+def case_page(request: Request, case_id: int, tab: str = "review"):
+    ctx = case_context(request, case_id, tab)
     if ctx["case"] is None:
         return RedirectResponse("/", status_code=303)
     return templates.TemplateResponse(request, "case.html", ctx)
 
 
-@app.get("/case/{case_id}/body", response_class=HTMLResponse)
-def case_body(request: Request, case_id: int):
-    """Polled while processing. When the returned fragment is READY it carries no
-    hx-trigger, so polling stops by itself — no client-side state to unwind."""
-    return templates.TemplateResponse(request, "_body.html", case_context(request, case_id))
+@app.get("/case/{case_id}/status", response_class=HTMLResponse)
+def case_status(request: Request, case_id: int, tab: str = "review"):
+    """Polled while processing. The READY fragment carries no hx-trigger, so
+    polling stops by itself — no client-side state to unwind. The response also
+    carries the ruler, the active tab body and the tab counts out-of-band, so the
+    whole page keeps up with one request rather than one poller per region.
+
+    Named `status`, not `rail`: `/case/{id}/rail` is the document pane, which is a
+    different component that happens to have wanted the same word."""
+    return templates.TemplateResponse(request, "_verdict_poll.html",
+                                      case_context(request, case_id, tab))
+
+
+@app.get("/case/{case_id}/tab/{name}", response_class=HTMLResponse)
+def case_tab(request: Request, case_id: int, name: str):
+    return templates.TemplateResponse(request, "_tab_swap.html",
+                                      case_context(request, case_id, name))
+
+
+# ── the missing-document loop ────────────────────────────────────────────────
+
+@app.post("/case/{case_id}/documents")
+async def add_document(case_id: int, file: UploadFile,
+                       request_key: str = Form("")):
+    """Drop a certificate on a request card and it joins THIS case.
+
+    Same pipeline, same code path, one extra `ec_documents` row. The findings
+    already on screen are not cleared while it reads — the case does not go blank,
+    which is the difference between completing a title history and restarting an
+    analysis.
+    """
+    if not db.one("SELECT id FROM cases WHERE id = ?", (case_id,)):
+        return RedirectResponse("/", status_code=303)
+    data = await file.read()
+    path, error = pipeline.accept_upload(file.filename or "upload", data)
+    if error:
+        return RedirectResponse(f"/case/{case_id}?tab=documents&rejected={error}",
+                                status_code=303)
+    threading.Thread(target=pipeline.run,
+                     args=(case_id, path, request_key or None),
+                     daemon=True).start()
+    return RedirectResponse(f"/case/{case_id}?tab=documents", status_code=303)
 
 
 # ── correction: the memory proof, rendered ───────────────────────────────────
 
 @app.get("/entry/{entry_id}/edit/{field}", response_class=HTMLResponse)
-def edit_field(request: Request, entry_id: int, field: str):
+def edit_field(request: Request, entry_id: int, field: str,
+               tab: str = "entries"):
     row = _entry(entry_id)
     return templates.TemplateResponse(request, "_edit_field.html", {
         "request": request, "entry_id": entry_id, "field": field,
         "label": store.EDITABLE.get(field, field), "value": row[field] if row else "",
-        "case_id": db.one("SELECT case_id FROM ec_documents WHERE id = ?",
-                          (row["ec_id"],))["case_id"] if row else None,
+        "case_id": row["case_id"] if row else None, "tab": tab,
     })
 
 
@@ -193,11 +371,48 @@ def cell(request: Request, entry_id: int, field: str):
 
 @app.post("/correct", response_class=HTMLResponse)
 def correct(request: Request, entry_id: int = Form(...), field: str = Form(...),
-            value: str = Form(""), case_id: int = Form(...)):
+            value: str = Form(""), case_id: int = Form(...),
+            tab: str = Form("entries")):
+    """One POST, four regions. The cell is the target; the rail and the active tab
+    come back out-of-band, because a correction changes the meters and the
+    checklist as well as the value — and seeing all three move is the memory
+    proof, not a stand-in for it."""
     store.apply_correction(entry_id, field, value)
-    ctx = case_context(request, case_id)
+    row = _entry(entry_id)
+    ctx = case_context(request, case_id, tab)
     ctx["just_corrected"] = True          # drives the one-shot flash
-    return templates.TemplateResponse(request, "_derived.html", ctx)
+    ctx["entry_id"] = entry_id
+    ctx["field"] = field
+    ctx["value"] = row[field] if row else None
+    return templates.TemplateResponse(request, "_correction_swap.html", ctx)
+
+
+# ── review: the advocate's own record ────────────────────────────────────────
+
+@app.post("/review", response_class=HTMLResponse)
+def review(request: Request, case_id: int = Form(...), key: str = Form(...),
+           state: str = Form(...), note: str = Form(""),
+           tab: str = Form("review")):
+    store.set_review(case_id, key, state, note)
+    ctx = case_context(request, case_id, tab)
+    ctx["focus_key"] = key
+    return templates.TemplateResponse(request, "_review_swap.html", ctx)
+
+
+@app.get("/finding/{case_id}/detail", response_class=HTMLResponse)
+def finding_detail(request: Request, case_id: int, key: str, tab: str = "review"):
+    ctx = case_context(request, case_id, tab)
+    ctx["run"] = ctx["view"].run(key)
+    ctx["expanded"] = True
+    return templates.TemplateResponse(request, "_rule_row.html", ctx)
+
+
+@app.get("/finding/{case_id}/collapse", response_class=HTMLResponse)
+def finding_collapse(request: Request, case_id: int, key: str, tab: str = "review"):
+    ctx = case_context(request, case_id, tab)
+    ctx["run"] = ctx["view"].run(key)
+    ctx["expanded"] = False
+    return templates.TemplateResponse(request, "_rule_row.html", ctx)
 
 
 # ── the document rail ────────────────────────────────────────────────────────
@@ -266,8 +481,32 @@ def page_png(entry_id: int):
                     headers={"Cache-Control": "max-age=3600"})
 
 
+@app.get("/page/{ec_id}/{page_num}.png")
+def whole_page_png(ec_id: int, page_num: int):
+    """A page with no entry to anchor on. An R3 window is read off the header,
+    which is not an entry — "jump to page 1" has to work anyway."""
+    row = db.one("SELECT file_path, page_count FROM ec_documents WHERE id = ?", (ec_id,))
+    if not row or not row["file_path"]:
+        return Response(status_code=404)
+    try:
+        png = crops.page_rect(row["file_path"], page_num, None)
+    except Exception:
+        return Response(status_code=404)
+    return Response(png, media_type="image/png",
+                    headers={"Cache-Control": "max-age=3600"})
+
+
+@app.get("/evidence/page/{ec_id}/{page_num}", response_class=HTMLResponse)
+def evidence_page(request: Request, ec_id: int, page_num: int):
+    row = db.one("SELECT * FROM ec_documents WHERE id = ?", (ec_id,))
+    return templates.TemplateResponse(request, "_evidence_page.html", {
+        "request": request, "ec": row, "page_num": page_num,
+    })
+
+
 # ── the artifact that leaves the building ────────────────────────────────────
 
 @app.get("/report/{case_id}", response_class=HTMLResponse)
 def report(request: Request, case_id: int):
-    return templates.TemplateResponse(request, "report.html", case_context(request, case_id))
+    return templates.TemplateResponse(request, "report.html",
+                                      case_context(request, case_id))

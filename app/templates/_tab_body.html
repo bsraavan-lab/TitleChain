@@ -1,0 +1,8 @@
+{# Tab dispatch. One include, so the shell and every swap route agree on which
+   template a tab name maps to. #}
+{% if tab == 'chain' %}{% include "tab_chain.html" %}
+{% elif tab == 'documents' %}{% include "tab_documents.html" %}
+{% elif tab == 'entries' %}{% include "tab_entries.html" %}
+{% elif tab == 'processing' %}{% include "tab_processing.html" %}
+{% else %}{% include "tab_review.html" %}
+{% endif %}

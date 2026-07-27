@@ -1,0 +1,33 @@
+{# Active / Cancelled / Released / Not evaluated. The fourth status is not a
+   placeholder — labelling a mortgage "Active" because nothing said otherwise is an
+   unbacked legal assertion, so an entry whose nature could not be read gets its
+   own card saying exactly that. #}
+{% set cards = encumbrances %}
+{% if cards %}
+<section class="section">
+  <h2 class="section-title">
+    Encumbrances
+    <span class="count count-quiet">{{ cards|length }} instrument{{ '' if cards|length == 1 else 's' }}
+      · from R2, rulebook {{ view.rulebook_version }}</span>
+  </h2>
+  <div class="enc-cards">
+    {% for c in cards %}
+      <article class="enc enc-{{ c.status_class }}">
+        <p class="enc-status">
+          <span class="glyph" aria-hidden="true">{{ c.glyph }}</span> {{ c.status }}
+        </p>
+        <h3>{{ c.doc_no }}</h3>
+        <p class="enc-nature">{{ c.nature or 'nature could not be read' }}</p>
+        <p class="enc-why">{{ c.detail }}</p>
+        <p class="enc-actions">
+          {% if c.entry_id %}
+            <button class="link" type="button" hx-get="/evidence/{{ c.entry_id }}"
+                    hx-target="#rail" hx-swap="innerHTML">source</button>
+          {% endif %}
+          <span class="meta">{{ c.key }}</span>
+        </p>
+      </article>
+    {% endfor %}
+  </div>
+</section>
+{% endif %}

@@ -1,0 +1,139 @@
+{% from "_macros.html" import outcome_badge, source_button, page_button, copy_button %}
+{# One checklist row. Collapsed it is a verdict and a sentence; expanded it is the
+   rule's working, its evidence, what would close it, and the advocate's own note.
+
+   `run` and `expanded` come from the caller (tab_review) or from the detail route,
+   so the same template serves the list and the single-row swap. #}
+{% set rv = reviews.get(run.key) %}
+<li id="row-{{ run.key|replace(':','-')|replace('/','-')|replace('=','-') }}"
+    class="check {{ run.ui.cls }} {{ 'is-reviewed' if rv and rv.state in ('reviewed','accepted') }}">
+
+  <div class="check-head">
+    {{ outcome_badge(run) }}
+    <button class="check-title" type="button"
+            hx-get="/finding/{{ case.id }}/{{ 'collapse' if expanded else 'detail' }}?key={{ run.key|urlencode }}&tab={{ tab }}"
+            hx-target="closest li" hx-swap="outerHTML"
+            aria-expanded="{{ 'true' if expanded else 'false' }}">
+      <span class="caret" aria-hidden="true">{{ '▾' if expanded else '▸' }}</span>
+      <span class="check-what">{{ run.title }}</span>
+      <span class="rule-tag">{{ run.rule_id }}</span>
+    </button>
+    {% if rv %}
+      <span class="review-flag" title="{{ rv.created_at }}">
+        {{ REVIEW_STATES[rv.state] }}{% if rv.note %} · note{% endif %}
+      </span>
+    {% endif %}
+  </div>
+
+  <p class="check-msg">{{ run.message }}</p>
+
+  {% if expanded %}
+    <div class="check-detail">
+      <h4>What this rule checked</h4>
+      <p class="rule-statement">{{ RULEBOOK[run.rule_id][1] }}</p>
+
+      {% if run.inputs %}
+        <dl class="rule-inputs">
+          {% for i in run.inputs %}
+            <dt>{{ i.label }}</dt>
+            <dd>
+              <span class="val">{{ i.value or '—' }}</span>
+              {% if i.source_entry_id %}{{ source_button(i.source_entry_id) }}{% endif %}
+            </dd>
+          {% endfor %}
+        </dl>
+      {% else %}
+        <p class="meta">This rule read no values on this case.</p>
+      {% endif %}
+
+      {% if run.reason %}
+        <h4>Why nothing was concluded</h4>
+        <p class="rule-reason">{{ run.reason }}</p>
+        {% if not run.implemented %}
+          <p class="meta">
+            Not implemented in rulebook {{ run.rulebook_version }}. This is stated
+            rather than omitted: a check we did not run must never look like a
+            check that passed.
+          </p>
+        {% endif %}
+      {% endif %}
+
+      {% if run.evidence_entry_ids or run.pages %}
+        <h4>Evidence</h4>
+        <p class="rule-evidence">
+          {% for eid in run.evidence_entry_ids %}
+            {{ source_button(eid, 'entry crop') }}
+          {% endfor %}
+          {% for p in run.pages %}
+            {% if p.ec_id %}{{ page_button(p.ec_id, p.page_num) }}{% endif %}
+          {% endfor %}
+        </p>
+      {% endif %}
+
+      {% set closer = view.closer_for(run.key) %}
+      {% if closer %}
+        <h4>What closes this</h4>
+        <p class="rule-closes">
+          {{ closer.title }}
+          {% if closer.date_from %}
+            · {{ closer.date_from }} → {{ closer.date_to }}
+          {% endif %}
+        </p>
+        <p class="rule-closes-actions">
+          {{ copy_button(closer.as_text, 'copy order text') }}
+          <button class="link" type="button"
+                  hx-get="/case/{{ case.id }}/tab/documents"
+                  hx-target="#tab-body" hx-swap="outerHTML"
+                  hx-push-url="/case/{{ case.id }}?tab=documents">
+            upload it now →
+          </button>
+        </p>
+      {% endif %}
+
+      <h4>Review</h4>
+      <form class="review-form" hx-post="/review" hx-target="#tab-body"
+            hx-swap="outerHTML">
+        <input type="hidden" name="case_id" value="{{ case.id }}">
+        <input type="hidden" name="key" value="{{ run.key }}">
+        <input type="hidden" name="tab" value="{{ tab }}">
+        <div class="review-states">
+          {% for value, label in REVIEW_STATES.items() %}
+            <label class="radio">
+              <input type="radio" name="state" value="{{ value }}"
+                     {{ 'checked' if rv and rv.state == value else
+                        ('checked' if not rv and value == 'reviewed' else '') }}>
+              {{ label }}
+            </label>
+          {% endfor %}
+        </div>
+        <label class="sr-only" for="note-{{ run.key }}">Review note</label>
+        <textarea id="note-{{ run.key }}" name="note" rows="2"
+                  placeholder="Note for the record — appears in the exported report"
+                  >{{ rv.note if rv and rv.note else '' }}</textarea>
+        <button class="btn" type="submit">save review</button>
+      </form>
+
+      {% set history = review_by_key.get(run.key, []) %}
+      {% if history %}
+        <details class="review-history">
+          <summary class="meta">review history ({{ history|length }})</summary>
+          <ul>
+            {% for h in history %}
+              <li>
+                <strong>{{ REVIEW_STATES[h.state] }}</strong>
+                {% if h.note %} — {{ h.note }}{% endif %}
+                <span class="meta">{{ h.actor }} · {{ h.created_at }}</span>
+              </li>
+            {% endfor %}
+          </ul>
+          <p class="meta">
+            Append-only. A review is never overwritten or deleted.
+          </p>
+        </details>
+      {% endif %}
+
+      <p class="meta">{{ run.rule_id }} {{ RULEBOOK[run.rule_id][0] }} ·
+        rulebook {{ run.rulebook_version }} · key <code>{{ run.key }}</code></p>
+    </div>
+  {% endif %}
+</li>

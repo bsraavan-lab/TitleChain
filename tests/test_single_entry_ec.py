@@ -66,10 +66,17 @@ def test_r3_reads_as_english_when_exactly_one_parent_predates(ec_test_02):
 
 
 def test_r4_reads_as_english_when_exactly_one_parent_dangles(ec_test_02):
+    """R4 is now one finding PER PARENT — one dangling parent is one obligation,
+    so it can be reviewed, resolved and have an upload attributed to it on its
+    own. The aggregate sentence this test used to assert cannot do any of that.
+    The English still has to read, which is what is checked here."""
     view = derive(*ec_test_02)
-    msg = find(view, "R4", "material")[0].message
-    assert "1 parent document is named but not present" in msg
-    assert "It has not been examined" in msg
+    fired = find(view, "R4", "material")
+    assert len(fired) == 1
+    msg = fired[0].message
+    assert "names 19803/2024 as a parent document" in msg
+    assert "It is not present" in msg and "has not been examined" in msg
+    assert "documents" not in msg
 
 
 def test_coverage_detail_reads_as_english_for_one_parent(ec_test_02):
@@ -87,7 +94,13 @@ def test_plurals_are_untouched_above_one(ec_test_02):
     view = derive(header, entries)
     assert "2 parent documents predate" in find(view, "R3", "blocking")[0].message
     assert "The earliest is 4148/1981" in find(view, "R3", "blocking")[0].message
-    assert "They have not been examined" in find(view, "R4", "material")[0].message
+    # R4 splits per parent, so two dangling parents are two findings — each of
+    # which still has to read as English on its own.
+    fired = find(view, "R4", "material")
+    assert len(fired) == 2
+    assert {f.key for f in fired} == {"R4:parent=19803/2024", "R4:parent=4148/1981"}
+    assert all("as a parent document" in f.message and "documents" not in f.message
+               for f in fired)
 
 
 # ── the order block, which she copies into a request ─────────────────────────

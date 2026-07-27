@@ -1,0 +1,45 @@
+<div class="table-scroll">
+<table class="entries">
+  <thead>
+    <tr>
+      <th>#</th><th>Document</th><th>Registered</th><th>Nature</th>
+      <th>Executants</th><th>Claimants</th><th>Parent docs</th><th></th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for e in doc_entries %}
+    <tr>
+      <td>{{ e.sr_no }}</td>
+      {% for field in ('doc_no', 'date_registration', 'nature') %}
+        <td>
+          {% with entry_id = e.db_id, value = e[field] %}
+            {% include "_cell.html" %}
+          {% endwith %}
+        </td>
+      {% endfor %}
+      <td class="ta">
+        {% for p in e.executants %}<div>{{ p.name_native }}<span class="rm">{{ p.role_marker }}</span></div>{% endfor %}
+      </td>
+      <td class="ta">
+        {% for p in e.claimants %}<div>{{ p.name_native }}<span class="rm">{{ p.role_marker }}</span></div>{% endfor %}
+      </td>
+      <td>{{ e.pr_numbers | map(attribute='doc_no') | join(', ') or '—' }}</td>
+      <td>
+        <button class="link" type="button"
+                hx-get="/evidence/{{ e.db_id }}" hx-target="#rail" hx-swap="innerHTML">
+          source
+        </button>
+      </td>
+    </tr>
+    {% endfor %}
+
+    {% for u in doc_unread %}
+    {# An unread page is a ROW, not a toast. A toast is dismissible; an unread
+       page must not be. #}
+    <tr class="row-unread">
+      <td colspan="8">pages {{ u.page_from }}–{{ u.page_to }} unread — {{ u.reason }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+</div>

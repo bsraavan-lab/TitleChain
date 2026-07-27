@@ -149,6 +149,38 @@ def is_entry_table(b: Block) -> bool:
 
 _COUNT = re.compile(r"(?:Number of Entries|பதிவுகளின்\s*எண்ணிக்கை)\s*[:：]?\s*(\d{1,4})")
 
+# A certificate announces itself with a search-period field in its header table.
+# `ec5_adyar_chennai_bundle.pdf` is TWO certificates for one property in one PDF —
+# pages 1–3 cover 11-Sep-2023 → 04-Apr-2024 and pages 4–5 are a Nil EC for
+# 01-Apr → 09-May-2024 — and today's pipeline maps one file to one certificate, so
+# it attaches the Nil EC's entries to the FIRST certificate's window. The coverage
+# ruler then draws one band where there are two and R3 evaluates parent years
+# against the wrong span: the product's own central failure mode, reproduced inside
+# our data model. This is the deterministic fix, and no model call decides it.
+_SEARCH_PERIOD = re.compile(r"தேடுதல்\s*காலம்|Search\s*Period", re.I)
+
+
+def certificate_starts(dig: Digitised) -> list[int]:
+    """Page numbers on which a certificate header appears, ascending.
+
+    One entry means an ordinary single-certificate document. Two or more means a
+    bundle, and each range becomes its own `ec_documents` row on one case — which
+    is the same merge path an uploaded second certificate takes.
+    """
+    starts = [p.page_num for p in dig.pages
+              if any(_SEARCH_PERIOD.search(b.text) for b in p.blocks)]
+    return starts or ([min(p.page_num for p in dig.pages)] if dig.pages else [])
+
+
+def certificate_ranges(dig: Digitised) -> list[tuple[int, int]]:
+    """[(page_from, page_to)] — the identity [(first, last)] for a single EC."""
+    if not dig.pages:
+        return []
+    last = max(p.page_num for p in dig.pages)
+    starts = certificate_starts(dig)
+    return [(s, (starts[i + 1] - 1) if i + 1 < len(starts) else last)
+            for i, s in enumerate(starts)]
+
 
 def declared_count(dig: Digitised) -> int | None:
     """The certificate's own stated entry count — read by regex, not by the model.
@@ -282,9 +314,32 @@ def _throttle() -> None:
     _last_call_at = time.monotonic()
 
 
+# The ledger callback. `extract()` does not know what a case is, so the caller
+# passes a recorder and gets back one row per REAL http request — retries included,
+# because the truncation ladder is the actual per-case cost driver and a cost panel
+# that hid retries would be marketing.
+CallRecorder = Callable[[dict], None]
+_recorder: CallRecorder | None = None
+
+
+def set_recorder(fn: CallRecorder | None) -> None:
+    global _recorder
+    _recorder = fn
+
+
+def _record(**row: Any) -> None:
+    if _recorder is not None:
+        try:
+            _recorder(row)
+        except Exception:            # telemetry must never break an extraction
+            pass
+
+
 def _post(api_key: str, model: str, system: str, user: str, schema: dict,
-          name: str, extra: dict | None = None) -> str:
+          name: str, extra: dict | None = None, stage: str = "entries",
+          rung: str = "") -> str:
     _throttle()
+    started = time.monotonic()
     payload = {
         "model": model,
         "messages": [{"role": "system", "content": system},
@@ -301,6 +356,11 @@ def _post(api_key: str, model: str, system: str, user: str, schema: dict,
     r = httpx.post(BASE_URL, json=payload, timeout=TIMEOUT,
                    headers={"api-subscription-key": api_key,
                             "Content-Type": "application/json"})
+    ms = int((time.monotonic() - started) * 1000)
+    usage = (r.json().get("usage") or {}) if r.status_code < 400 else {}
+    _record(stage=stage, model=model, ladder_rung=rung,
+            tokens_in=usage.get("prompt_tokens") or 0,
+            tokens_out=usage.get("completion_tokens") or 0, ms=ms, cached=0)
     if r.status_code >= 400:
         raise httpx.HTTPStatusError(f"{r.status_code}: {r.text[:400]}",
                                     request=r.request, response=r)
@@ -325,7 +385,7 @@ def _loads(content: str) -> dict:
 
 
 def _call(api_key: str, system: str, users: str | list[str], schema: dict,
-          name: str) -> dict:
+          name: str, stage: str = "entries") -> dict:
     """Try each prompt variant on 105B, then on 30B.
 
     `users` is ordered longest-prompt-first. Retrying a *truncated* reply
@@ -340,7 +400,8 @@ def _call(api_key: str, system: str, users: str | list[str], schema: dict,
     for i, user in enumerate(variants):
         for label, model, extra in LADDER:
             try:
-                return _loads(_post(api_key, model, system, user, schema, name, extra))
+                return _loads(_post(api_key, model, system, user, schema,
+                                    name, extra, stage=stage, rung=label))
             except Truncated as exc:
                 errors.append(f"v{i}/{label}: {exc}")
             except (httpx.HTTPError, json.JSONDecodeError) as exc:
@@ -573,7 +634,7 @@ def extract(dig: Digitised, *, filename: str,
         try:
             header = normalise_header(ECHeader.model_validate({
                 **_call(api_key, SYSTEM_HEADER, f"Document: {filename}\n\n{text}",
-                        header_schema(), "ec_header"),
+                        header_schema(), "ec_header", stage="header"),
                 "declared_entry_count": None,
             }))
         except (RuntimeError, ValidationError):
