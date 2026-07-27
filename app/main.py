@@ -129,6 +129,14 @@ def _encumbrance_cards(view) -> list[dict]:
     return cards
 
 
+def _gone(case_id: int) -> RedirectResponse:
+    """A case id that no longer resolves. Not an error page: on a host with an
+    ephemeral disk the instance restarts and takes the case store with it, so a
+    bookmarked /report/7 is an ordinary Tuesday. Send her to the case list, which
+    is the honest answer to "that file is not here"."""
+    return RedirectResponse("/", status_code=303)
+
+
 def case_context(request: Request, case_id: int, tab: str = "review") -> dict:
     case = db.one("SELECT * FROM cases WHERE id = ?", (case_id,))
     if not case:
@@ -311,14 +319,18 @@ def case_status(request: Request, case_id: int, tab: str = "review"):
 
     Named `status`, not `rail`: `/case/{id}/rail` is the document pane, which is a
     different component that happens to have wanted the same word."""
-    return templates.TemplateResponse(request, "_verdict_poll.html",
-                                      case_context(request, case_id, tab))
+    ctx = case_context(request, case_id, tab)
+    if ctx["case"] is None:
+        return _gone(case_id)
+    return templates.TemplateResponse(request, "_verdict_poll.html", ctx)
 
 
 @app.get("/case/{case_id}/tab/{name}", response_class=HTMLResponse)
 def case_tab(request: Request, case_id: int, name: str):
-    return templates.TemplateResponse(request, "_tab_swap.html",
-                                      case_context(request, case_id, name))
+    ctx = case_context(request, case_id, name)
+    if ctx["case"] is None:
+        return _gone(case_id)
+    return templates.TemplateResponse(request, "_tab_swap.html", ctx)
 
 
 # ── the missing-document loop ────────────────────────────────────────────────
@@ -377,6 +389,8 @@ def correct(request: Request, entry_id: int = Form(...), field: str = Form(...),
     come back out-of-band, because a correction changes the meters and the
     checklist as well as the value — and seeing all three move is the memory
     proof, not a stand-in for it."""
+    if not db.one("SELECT id FROM cases WHERE id = ?", (case_id,)):
+        return _gone(case_id)
     store.apply_correction(entry_id, field, value)
     row = _entry(entry_id)
     ctx = case_context(request, case_id, tab)
@@ -393,6 +407,8 @@ def correct(request: Request, entry_id: int = Form(...), field: str = Form(...),
 def review(request: Request, case_id: int = Form(...), key: str = Form(...),
            state: str = Form(...), note: str = Form(""),
            tab: str = Form("review")):
+    if not db.one("SELECT id FROM cases WHERE id = ?", (case_id,)):
+        return _gone(case_id)
     store.set_review(case_id, key, state, note)
     ctx = case_context(request, case_id, tab)
     ctx["focus_key"] = key
@@ -402,6 +418,8 @@ def review(request: Request, case_id: int = Form(...), key: str = Form(...),
 @app.get("/finding/{case_id}/detail", response_class=HTMLResponse)
 def finding_detail(request: Request, case_id: int, key: str, tab: str = "review"):
     ctx = case_context(request, case_id, tab)
+    if ctx["case"] is None:
+        return _gone(case_id)
     ctx["run"] = ctx["view"].run(key)
     ctx["expanded"] = True
     return templates.TemplateResponse(request, "_rule_row.html", ctx)
@@ -410,6 +428,8 @@ def finding_detail(request: Request, case_id: int, key: str, tab: str = "review"
 @app.get("/finding/{case_id}/collapse", response_class=HTMLResponse)
 def finding_collapse(request: Request, case_id: int, key: str, tab: str = "review"):
     ctx = case_context(request, case_id, tab)
+    if ctx["case"] is None:
+        return _gone(case_id)
     ctx["run"] = ctx["view"].run(key)
     ctx["expanded"] = False
     return templates.TemplateResponse(request, "_rule_row.html", ctx)
@@ -508,5 +528,7 @@ def evidence_page(request: Request, ec_id: int, page_num: int):
 
 @app.get("/report/{case_id}", response_class=HTMLResponse)
 def report(request: Request, case_id: int):
-    return templates.TemplateResponse(request, "report.html",
-                                      case_context(request, case_id))
+    ctx = case_context(request, case_id)
+    if ctx["case"] is None:
+        return _gone(case_id)
+    return templates.TemplateResponse(request, "report.html", ctx)
