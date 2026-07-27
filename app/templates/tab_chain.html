@@ -4,24 +4,28 @@
    same facts when the SVG cannot be read. #}
 <section class="section">
   <h2 class="section-title">
-    Ownership graph
+    How the documents connect
     <span class="count count-quiet">{{ view.completeness.chain_arithmetic }}</span>
   </h2>
 
   {% if graph and not graph.empty %}
     {% include "_graph_svg.html" %}
     <p class="meta">
-      Position on the horizontal axis is the document's year — the gap between the
-      hollow nodes on the left and the certificates on this case IS the missing
-      history. Click a node for its source crop; click a hollow node to order it.
+      Left to right is time: each document sits under the year it was registered.
+      The space between the hollow circles on the left and your certificates on the
+      right is the history nobody has looked at yet. Click a filled circle to see it
+      on the page; click a hollow one to find out how to order it.
     </p>
     {% include "_graph_nodes.html" %}
   {% else %}
-    <p class="empty">No document has been read from this case yet.</p>
+    <p class="empty">
+      Nothing to draw yet. The moment the first entry is read, the documents and the
+      links between them appear here.
+    </p>
   {% endif %}
 
   <details class="chain-as-list" {{ 'open' if not graph or graph.empty }}>
-    <summary class="meta">read as a nested list</summary>
+    <summary class="meta">Prefer a list? Read it that way</summary>
     {% include "_chain_list.html" %}
   </details>
 </section>

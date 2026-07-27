@@ -1,12 +1,12 @@
 {% from "_macros.html" import source_button %}
 <li class="tl-row">
   <span class="tl-date">{{ e.date_registration or '——' }}</span>
-  <span class="tl-doc">{{ e.doc_no or 'document no. not read' }}</span>
-  <span class="tl-nature">{{ e.nature or 'nature not read' }}</span>
+  <span class="tl-doc">{{ e.doc_no or 'document number not read' }}</span>
+  <span class="tl-nature">{{ e.nature or 'type not read' }}</span>
   <span class="tl-parties ta">
     {% for p in e.executants %}{{ p.name_native }}{% if not loop.last %}, {% endif %}{% endfor %}
     {% if e.executants and e.claimants %} → {% endif %}
     {% for p in e.claimants %}{{ p.name_native }}{% if not loop.last %}, {% endif %}{% endfor %}
   </span>
-  <span class="tl-src">{{ source_button(e.db_id) }}</span>
+  <span class="tl-src">{{ source_button(e.db_id, 'See it on the page') }}</span>
 </li>

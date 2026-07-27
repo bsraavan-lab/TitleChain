@@ -52,14 +52,15 @@ templates.env.globals["REVIEW_STATES"] = store.REVIEW_STATES
 PROCESSING = {"QUEUED", "READING", "TYPING", "DERIVING"}
 
 
-# Order is her question order: what must I check → how does it connect → what am I
-# missing → is the extraction right → what did this cost.
+# Order is her question order, and each label is that question in her words:
+# what must I check → how does it connect → what am I missing → did you read it
+# right → what did this cost. No label needs the domain explained to it first.
 TABS = [
-    ("review", "Review"),
-    ("chain", "Chain"),
-    ("documents", "Documents"),
-    ("entries", "Entries"),
-    ("processing", "Processing"),
+    ("review", "What to check"),
+    ("chain", "How it connects"),
+    ("documents", "What's missing"),
+    ("entries", "What we read"),
+    ("processing", "What it cost"),
 ]
 TAB_NAMES = {name for name, _ in TABS}
 
@@ -99,11 +100,12 @@ def _review_grid(view, entries, corrections, reviewed) -> dict[int, dict]:
 
 
 ENC_STATUS = {
-    # R2 outcome → (label, glyph, css class). "Not evaluated" is a first-class
-    # status: an entry whose nature could not be read must not be shown as Active.
-    "FAIL":           ("Active", "▲", "active"),
+    # R2 outcome → (label, glyph, css class). "Couldn't tell" is a first-class
+    # status: an entry whose nature could not be read must never be shown as
+    # settled, and must never be shown as open either.
+    "FAIL":           ("Still open", "▲", "active"),
     "PASS":           ("Closed", "✓", "closed"),
-    "NOT_EVALUABLE":  ("Not evaluated", "⚠", "unknown"),
+    "NOT_EVALUABLE":  ("Couldn't tell", "⚠", "unknown"),
 }
 
 
@@ -114,7 +116,7 @@ def _encumbrance_cards(view) -> list[dict]:
     for r in view.runs:
         if r.rule_id != "R2" or r.key in ("R2:none", "R2:unclassified"):
             continue
-        label, glyph, cls = ENC_STATUS.get(r.outcome, ("Not evaluated", "⚠", "unknown"))
+        label, glyph, cls = ENC_STATUS.get(r.outcome, ("Couldn't tell", "⚠", "unknown"))
         if r.outcome == "PASS":
             label = "Cancelled" if "cancelled" in r.message else "Released"
         nature = next((i.value for i in r.inputs if i.label == "nature"), None)
@@ -270,12 +272,12 @@ def palette():
         header, _ = store.load_header(c["id"])
         cases.append({
             "id": c["id"],
-            "label": c["property_key"] or "Untitled case",
+            "label": c["property_key"] or "New case",
             "sub": f"{header.sro} SRO" if header and header.sro else c["status"].lower(),
         })
     return {
         "cases": cases,
-        "commands": [{"label": "All cases", "kind": "Go", "href": "/"}],
+        "commands": [{"label": "See all your cases", "kind": "Go", "href": "/"}],
     }
 
 
@@ -294,7 +296,9 @@ async def upload(file: UploadFile):
 @app.post("/sample/{key}")
 def open_sample(key: str):
     if key not in SAMPLES:
-        return RedirectResponse("/?rejected=Unknown sample", status_code=303)
+        return RedirectResponse(
+            "/?rejected=We could not find that example. Pick one of the others below.",
+            status_code=303)
     path = pipeline.stage_sample(key)
     case_id = store.create_case(SAMPLES[key]["label"])
     threading.Thread(target=pipeline.run, args=(case_id, path),
@@ -462,7 +466,8 @@ def rail(request: Request, case_id: int, page: int = 1):
 def evidence(request: Request, entry_id: int, view: str = "crop"):
     row = _entry(entry_id)
     if not row:
-        return HTMLResponse("<p class='rail-empty'>That entry is no longer available.</p>")
+        return HTMLResponse("<p class='rail-empty'>We cannot find that entry any "
+                            "more. Reload the case and it will come back.</p>")
     return _rail(request, mode="evidence", case_id=row["case_id"],
                  page=row["page_num"], row=row, view=view)
 

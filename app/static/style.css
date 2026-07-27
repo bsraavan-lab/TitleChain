@@ -236,10 +236,15 @@ main { padding: var(--s6) var(--s5) var(--s8); }
 .welcome { text-align: center; padding: var(--s8) 0 var(--s6); }
 .welcome-mark { width: 132px; height: auto; margin: 0 auto var(--s5);
                 display: block; opacity: .92; }
+/* 24ch, not 20: the question this page opens with is a sentence, and at 20ch it
+   broke into three ragged lines with two words on the first. */
 .welcome h1 { font: 400 33px/1.18 var(--serif); letter-spacing: -0.018em;
-              max-width: 20ch; margin: 0 auto var(--s4); }
+              max-width: 24ch; margin: 0 auto var(--s4); }
 .lede { color: var(--ink-2); font-size: 15px; line-height: 1.6;
         max-width: 56ch; margin: 0 auto; }
+/* The problem and the relief are two thoughts, so they must not read as one
+   paragraph that happens to be six lines long. */
+.lede + .lede { margin-top: var(--s3); }
 
 .dropzone {
   background: var(--paper); border: 1px dashed var(--rule-firm);
@@ -278,6 +283,23 @@ main { padding: var(--s6) var(--s5) var(--s8); }
 .samples-label { color: var(--ink-3); font-size: 13px; margin-right: var(--s1); }
 /* A <form> wrapper must not break the flex row it sits in. */
 .inline { display: inline-flex; }
+
+/* The first-visit pitch: three things she gets back, three reasons to believe
+   them. Set with the same section grammar as the case screen — hairline, small
+   caps title, plain list — so the explaining does not look like a different
+   application bolted on top of the tool. It disappears entirely once there is
+   a case, because by then she has her own evidence. */
+.pitch { margin-top: var(--s7); }
+.pitch-list { display: grid; gap: var(--s5) var(--s4); margin-top: 0;
+              grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.pitch-list li { display: grid; gap: 6px; align-content: start;
+                 padding-top: var(--s3); border-top: 1px solid var(--rule-line); }
+.pitch-list h3 { font-size: 15px; font-weight: 600; letter-spacing: -0.01em; }
+.pitch-list p { color: var(--ink-2); font-size: 14px; line-height: 1.55; }
+.pitch-foot { margin-top: var(--s5); padding-top: var(--s3);
+              border-top: 1px solid var(--rule-soft);
+              color: var(--ink-3); font-size: 13px; line-height: 1.6;
+              max-width: 64ch; }
 
 .cases { margin-top: var(--s7); }
 .case-list { border-top: 1px solid var(--rule-soft); }
@@ -642,6 +664,11 @@ main { padding: var(--s6) var(--s5) var(--s8); }
 .checks li { display: flex; gap: var(--s2); padding: 3px 0; color: var(--ink-2);
              font-size: 13px; }
 .checks .x { color: var(--seal); font-weight: 700; }
+/* The one place the product is allowed to console. It sits between the reasons
+   and the recovery buttons, because that is the order she needs them in: what
+   happened, that it is probably fixable, what to press. */
+.refusal-reassure { margin-top: var(--s5); max-width: 62ch;
+                    color: var(--ink-2); font-size: 14px; line-height: 1.6; }
 .refusal-actions { display: flex; gap: var(--s2); flex-wrap: wrap;
                    margin-top: var(--s5); }
 
@@ -773,6 +800,7 @@ main { padding: var(--s6) var(--s5) var(--s8); }
   .case-row .spark { display: none; }
   .rule { height: 74px; }
   .welcome { padding: var(--s6) 0 var(--s5); }
+  .pitch-list { grid-template-columns: minmax(0, 1fr); gap: var(--s4); }
 }
 
 @media (prefers-reduced-motion: reduce) {

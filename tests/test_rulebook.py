@@ -52,8 +52,8 @@ def test_r3_window_insufficiency(ec2):
     header, entries = ec2
     fired = rules(derive(header, entries), "R3", "blocking")
     assert len(fired) == 1
-    # five parent documents, 2005–2011, against a 2018–2023 window
-    assert "5 parent documents" in fired[0].message
+    # five earlier documents, 2005–2011, against a 2018–2023 window
+    assert "5 earlier documents" in fired[0].message
     assert "4451/2005" in fired[0].message
 
 
@@ -80,7 +80,8 @@ def test_r4_dangling_parents_are_counted_not_dropped(ec2):
         "R4:parent=4451/2005", "R4:parent=4453/2005", "R4:parent=4581/2007",
         "R4:parent=4582/2007", "R4:parent=4755/2011",
     }
-    assert all("has not been examined" in f.message for f in fired)
+    assert all("nobody has read what is inside it" in f.message
+               for f in fired)
     # and the one that DOES resolve is confirmed out loud
     assert any("2520/2019" in f.message for f in rules(view, "R4", "confirmation"))
 
@@ -157,7 +158,7 @@ def test_coverage_sentence_counts_documents_not_distinct_years(ec2):
     if these disagree the verdict contradicts R3."""
     header, entries = ec2
     c = build_coverage(header, entries)
-    assert "5 parent documents" in c.detail
+    assert "5 earlier documents" in c.detail
 
 
 def test_blank_search_period_is_not_evaluable(ec2):
@@ -166,7 +167,7 @@ def test_blank_search_period_is_not_evaluable(ec2):
     header.search_period_start = None
     c = build_coverage(header, entries)
     assert c.sufficient is None
-    assert "does not state a search period" in c.headline
+    assert "does not say which years it covers" in c.headline
 
 
 def test_certificate_with_no_parents_is_not_reported_as_clean(ec2):
@@ -299,9 +300,10 @@ def test_rules_show_their_working(ec2):
     already knew its inputs, it simply never reported them."""
     r3 = derive(*ec2).run("R3:gap=2005-2017")
     labels = {i.label: i.value for i in r3.inputs}
-    assert labels["EC-A window"] == "01-Jan-2018 → 18-Jun-2023"
-    assert labels["parent years found"] == "2005, 2005, 2007, 2007, 2011, 2019"
-    assert labels["condition"] == "any parent year < 2018 → 5 matched"
+    assert labels["years EC-A covers"] == "01-Jan-2018 → 18-Jun-2023"
+    assert (labels["years of the earlier documents"]
+            == "2005, 2005, 2007, 2007, 2011, 2019")
+    assert labels["what we looked for"] == "anything earlier than 2018 → 5 found"
     assert r3.pages and r3.pages[0].page_num == 1
 
 
@@ -312,7 +314,7 @@ def test_r2_is_not_applicable_when_no_entry_is_an_encumbrance(ec2):
     never silence, and never a pass that implies we found nothing open."""
     run = next(r for r in derive(*ec2).runs if r.rule_id == "R2")
     assert run.outcome == "NOT_APPLICABLE"
-    assert run.reason and "encumbrance instrument" in run.reason
+    assert run.reason and "not one of them creates a claim" in run.reason
 
 
 def test_r2_fires_on_a_mortgage_with_no_discharge(ec2):
@@ -397,7 +399,7 @@ def test_r2_flags_a_nature_it_does_not_recognise(ec2):
     entries[1].remarks = None
     run = next(r for r in derive(header, entries).runs if r.rule_id == "R2")
     assert run.outcome == "NOT_EVALUABLE"
-    assert "Unrecognised natures" in run.reason
+    assert "Types we did not recognise" in run.reason
 
 
 def test_release_is_a_discharge_and_not_a_lease(ec2):

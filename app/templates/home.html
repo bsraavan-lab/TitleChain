@@ -1,23 +1,33 @@
 {% extends "base.html" %}
 {% import "_rule.html" as r %}
-{% block title %}Cases — TitleChain{% endblock %}
+{% block title %}{{ 'Your cases' if summaries
+   else 'Know what your certificate can prove' }} — TitleChain{% endblock %}
 
 {% block content %}
 {# Two audiences share this screen and they want opposite things: a first-time
    user wants to be told what this is and given something to drop; a returning
    user wants the file she was in the middle of. Rather than build two pages,
    the upload IS the first row of the case list — "start a new case" is always
-   at the top of the page, and it never costs the list its position. #}
+   at the top of the page, and it never costs the list its position.
+
+   The welcome copy answers four questions before she scrolls: what am I up
+   against, why does it matter, what do I get back, and why should I believe
+   any of it. #}
 <div class="page page-home">
 
   {% if not summaries %}
   <section class="welcome">
     <img src="/static/logo.png" alt="TitleChain" width="132" height="94" class="welcome-mark">
-    <h1>Does this certificate cover the chain you are about to sign on?</h1>
+    <h1>How much of this property's past can this certificate actually prove?</h1>
     <p class="lede">
-      Drop a Tamil Nadu Encumbrance Certificate. TitleChain reads it, computes what
-      its search window can and cannot evidence, and shows you the region of the
-      page behind every finding.
+      An encumbrance certificate only covers the years printed on it. A mortgage
+      from before that window, or a sale nobody mentioned, will not appear on the
+      page at all. Your name still goes on the opinion.
+    </p>
+    <p class="lede">
+      Drop one in. In about a minute you will know which years it can vouch for,
+      which it cannot, and what to order to close the gap. Every finding comes with
+      the exact spot on the page it came from.
     </p>
   </section>
   {% endif %}
@@ -33,11 +43,12 @@
         </svg>
       </span>
       <span class="dz-text">
-        <strong>{{ 'Drop a certificate, or choose a file' if summaries
-                   else 'Drop an Encumbrance Certificate here' }}</strong>
-        <span class="dz-sub">PDF, JPEG or PNG · up to 50 MB</span>
+        <strong>{{ 'Drop another certificate, or choose a file' if summaries
+                   else 'Drop your certificate here' }}</strong>
+        <span class="dz-sub">PDF, JPEG or PNG, up to 50 MB · reading starts the
+          moment you pick it</span>
       </span>
-      <span class="btn btn-primary" aria-hidden="true">Choose file</span>
+      <span class="btn btn-primary" aria-hidden="true">Choose a file</span>
     </label>
     <input id="file" type="file" name="file" accept=".pdf,.jpg,.jpeg,.png"
            onchange="document.getElementById('dropform').submit()">
@@ -55,17 +66,74 @@
      the buttons ended up OUTSIDE .samples and the flex row never applied to them —
      label on one line, two buttons touching on the next. #}
   <div class="samples">
-    <span class="samples-label">No certificate to hand?</span>
+    <span class="samples-label">Haven't got one to hand?</span>
     {% for key, s in SAMPLES.items() %}
       <form method="post" action="/sample/{{ key }}" class="inline">
-        <button class="btn btn-ghost" type="submit">{{ s.label }}</button>
+        <button class="btn btn-ghost" type="submit">Try {{ s.label }}</button>
       </form>
     {% endfor %}
   </div>
 
+  {% if not summaries %}
+  {# Benefits, not features. Each heading is something she gets back; each line
+     says how, in her words, without naming a single piece of our machinery. #}
+  <section class="pitch">
+    <h2 class="section-title">What you get back</h2>
+    <ul class="pitch-list">
+      <li>
+        <h3>Know what this certificate leaves out</h3>
+        <p>Which years it covers, which it does not, and every earlier document it
+          points at but nobody has read. All on one screen, in plain words.</p>
+      </li>
+      <li>
+        <h3>Turn a gap into one errand</h3>
+        <p>When something is missing, the request arrives already filled in:
+          sub-registrar office, village, survey numbers, dates. Copy it, paste it
+          into TNREGINET, and drop the certificate back here when it turns up.</p>
+      </li>
+      <li>
+        <h3>Hand over a record, not a promise</h3>
+        <p>One report carries the checks that ran, the ones that could not, and
+          whatever you noted along the way. It goes in the file, and it goes to the
+          bank.</p>
+      </li>
+    </ul>
+  </section>
+
+  {# Trust, stated as three things we refuse to do. Vaguer reassurance would
+     read as marketing, which is the one thing this screen cannot afford. #}
+  <section class="pitch pitch-trust">
+    <h2 class="section-title">Why you can rely on it</h2>
+    <ul class="pitch-list">
+      <li>
+        <h3>Nothing is guessed</h3>
+        <p>Findings come from fixed checks written in code, not from a language
+          model's opinion. The same certificate gives you the same answer every
+          time you open it.</p>
+      </li>
+      <li>
+        <h3>Every finding shows its source</h3>
+        <p>Click any line and the exact region of the scanned page appears beside
+          it. If we cannot show you where something came from, we do not claim
+          it.</p>
+      </li>
+      <li>
+        <h3>It admits what it could not read</h3>
+        <p>If we could not make out a date, it stays blank and waits for you to fill
+          it in. A check that could not run says so, and says why. Nothing here
+          quietly counts as a pass.</p>
+      </li>
+    </ul>
+    <p class="pitch-foot">
+      TitleChain shows you what a certificate does and does not evidence. It does not
+      give an opinion on title. That judgement stays yours.
+    </p>
+  </section>
+  {% endif %}
+
   {% if summaries %}
   <section class="cases">
-    <h2 class="section-title">Cases <span class="count">{{ summaries|length }}</span></h2>
+    <h2 class="section-title">Your cases <span class="count">{{ summaries|length }}</span></h2>
 
     {# Rows lead with property identity and chain state, never the filename.
        `ec2_pacollege.pdf` means nothing to her; *Puliyampatti, survey 95/2* is
@@ -89,7 +157,7 @@
           </span>
 
           <span class="case-id">
-            <span class="case-name">{{ c.property_key or 'Untitled case' }}</span>
+            <span class="case-name">{{ c.property_key or 'New case' }}</span>
             <span class="case-sub">
               {%- if s.header and s.header.sro %}{{ s.header.sro }} SRO{% endif -%}
               {%- if s.header and s.header.search_period_start %}
@@ -103,13 +171,13 @@
           <span class="case-verdict">
             {%- if s.processing -%}
               <span class="chip chip-wait"><span class="spinner" aria-hidden="true"></span>
-                {{ c.status_detail or 'Reading' }}</span>
+                {{ c.status_detail or 'Reading it now' }}</span>
             {%- elif c.status in ('FAILED', 'REFUSED') -%}
-              <span class="chip chip-fail">Needs attention</span>
+              <span class="chip chip-fail">Needs a hand</span>
             {%- elif s.view and s.view.open_items -%}
-              <span class="chip chip-open">{{ s.view.open_items|length }} open</span>
+              <span class="chip chip-open">{{ s.view.open_items|length }} to look at</span>
             {%- elif s.view -%}
-              <span class="chip chip-clear">Nothing open</span>
+              <span class="chip chip-clear">Nothing left</span>
             {%- endif -%}
           </span>
         </a>

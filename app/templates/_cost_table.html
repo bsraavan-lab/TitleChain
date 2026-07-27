@@ -8,7 +8,8 @@
 <table class="cost">
   <thead>
     <tr>
-      <th>Stage</th><th>Billed in</th><th>Estimated</th><th>Actual</th><th>Δ</th>
+      <th>Step</th><th>Charged by</th><th>We expected</th><th>It actually took</th>
+      <th>Difference</th>
       {% if act.rates.configured %}<th>Cost</th>{% endif %}
     </tr>
   </thead>
@@ -32,7 +33,7 @@
               <span class="cached">{{ a.cached_calls }} cached</span>
             {% endif %}
           {% elif live %}
-            <span class="meta">not run</span>
+            <span class="meta">did not run</span>
           {% else %}—{% endif %}
         </td>
         <td class="delta">
@@ -50,7 +51,7 @@
                 <span class="cached">cached · would have been
                   ₹{{ '%.2f'|format(a.amount + a.cached_saving) }}</span>
               {% endif %}
-            {% else %}<span class="meta">no rate</span>{% endif %}
+            {% else %}<span class="meta">no rate set</span>{% endif %}
           </td>
         {% endif %}
       </tr>
@@ -64,7 +65,7 @@
         {% if live %}
           {{ act.calls }} call{{ '' if act.calls == 1 else 's' }} ·
           {{ act.tokens }} tokens
-        {% else %}<span class="meta">not recorded</span>{% endif %}
+        {% else %}<span class="meta">nothing recorded yet</span>{% endif %}
       </td>
       <td></td>
       {% if act.rates.configured %}
@@ -80,39 +81,39 @@
 <dl class="order cost-facts">
   <dt>Pages</dt><dd>{{ case.pages_total or act.pages or '—' }}</dd>
   <dt>Certificates</dt><dd>{{ docs|length }}</dd>
-  <dt>Entries typed</dt><dd>{{ entries|length }}</dd>
-  <dt>Model calls</dt>
+  <dt>Entries read</dt><dd>{{ entries|length }}</dd>
+  <dt>Requests made</dt>
   <dd>{{ act.calls if live else '—' }}
-    <span class="meta">retries included</span></dd>
-  <dt>API time</dt>
+    <span class="meta">retries counted</span></dd>
+  <dt>Time spent waiting</dt>
   <dd>{% if act.wall_ms %}{{ (act.wall_ms / 1000)|round(1) }} s{% else %}—{% endif %}</dd>
 </dl>
 
 {% if not act.rates.configured %}
   <p class="rate-warning">
-    <strong>Rate card not configured</strong> — rupee figures are withheld rather
-    than estimated. Add your per-unit rates from dashboard.sarvam.ai → Billing to
+    <strong>No rates set yet</strong> — so we leave the rupee columns out rather than
+    guess at them. Add your per-unit rates from dashboard.sarvam.ai → Billing to
     <code>config/rates.yml</code> and this table prices itself.
   </p>
 {% else %}
   <p class="meta">
-    Rates: {{ act.rates.source or 'unnamed source' }}
-    {% if act.rates.retrieved %} · retrieved {{ act.rates.retrieved }}{% endif %}.
+    Rates from {{ act.rates.source or 'an unnamed source' }}
+    {% if act.rates.retrieved %} · fetched {{ act.rates.retrieved }}{% endif %}.
   </p>
 {% endif %}
 
 <p class="meta">
-  Estimate basis: {{ est.basis }}. Actuals are one row per real HTTP request,
-  including every rung of the truncation ladder — a case that needed eleven calls
-  for four blocks cost eleven calls, and hiding that would make this a brochure.
+  Where the estimate comes from: {{ est.basis }}. The actual figures are one row per
+  real request, retries included. A case that needed eleven requests for four blocks
+  cost eleven requests — we would rather show you that than round it off.
 </p>
 
 {% if ledger %}
   <details class="ledger">
-    <summary class="meta">per-call ledger ({{ ledger|length }} rows)</summary>
+    <summary class="meta">Every request, one by one ({{ ledger|length }})</summary>
     <div class="table-scroll">
       <table class="entries">
-        <thead><tr><th>#</th><th>Stage</th><th>Model</th><th>Rung</th>
+        <thead><tr><th>#</th><th>Step</th><th>Model</th><th>Attempt</th>
           <th>In</th><th>Out</th><th>Pages</th><th>ms</th><th>Cached</th></tr></thead>
         <tbody>
           {% for r in ledger %}

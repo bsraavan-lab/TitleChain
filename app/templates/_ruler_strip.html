@@ -6,12 +6,15 @@
          {% if ruler_oob %}hx-swap-oob="true"{% endif %}
          {{ 'open' if tab in ('documents', 'chain') or docs|length > 1 }}>
   <summary>
-    <span class="section-title">Coverage</span>
+    <span class="section-title">Years covered</span>
     <span class="meta">{{ view.completeness.coverage_arithmetic }}</span>
   </summary>
   {% if view.coverage and view.coverage.bands %}
     {% include "_ruler.html" %}
   {% else %}
-    <p class="empty">No search window has been read from this case yet.</p>
+    <p class="empty">
+      We have not read the dates this certificate covers yet. They usually arrive
+      with the first page.
+    </p>
   {% endif %}
 </details>

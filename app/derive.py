@@ -149,46 +149,53 @@ def build_chain(entries: list[Entry], edges: list[Edge]) -> list[ChainNode]:
 
 # ── rulebook.py ───────────────────────────────────────────────────────────────
 
-# rule_id → (name, the plain-language obligation the rule enforces). The checklist
-# renders the obligation, not the name: "CANCELLED_INSTRUMENT" is our word.
+# rule_id → (short name, what the check is looking for, said plainly). The
+# checklist and the report render both: the name so a check can be referred to,
+# the sentence so nobody has to be told what it means.
 RULEBOOK: dict[str, tuple[str, str]] = {
-    "R1": ("CANCELLED_INSTRUMENT",
-           "A document cancelled by another document on this case must not be read "
-           "as a live encumbrance."),
-    "R2": ("LIVE_ENCUMBRANCE",
-           "A mortgage, charge or lien with no matching discharge or release is open."),
-    "R3": ("WINDOW_INSUFFICIENT",
-           "Every parent document named must fall inside a search window this case "
-           "covers."),
-    "R4": ("DANGLING_PARENT",
-           "Every parent document named must be present as an entry on this case."),
-    "R5": ("CHAIN_BREAK",
-           "The claimant of one transfer must appear as the executant of the next."),
-    "R6": ("SURVEY_DRIFT",
-           "Survey numbers must not change across entries without a subdivision or "
-           "partition deed."),
-    "R7": ("EXTENT_MISMATCH",
-           "Schedule extent must not change without a partition instrument."),
-    "R8": ("STALE_EC",
-           "A certificate issued long ago does not cover transactions since."),
-    "R9": ("STRUCTURAL_GAP",
-           "Every required field must have been read from the certificate."),
-    "R10": ("ENTRY_COUNT_MISMATCH",
-            "Extracted entries must match the certificate's own declared count."),
+    "R1": ("Cancelled documents",
+           "A document that another document cancels must not be treated as a live "
+           "claim on the property."),
+    "R2": ("Open claims",
+           "A mortgage, charge or lien with nothing on record to close it is still "
+           "hanging over the property."),
+    "R3": ("Years covered",
+           "Every earlier document the certificate names should fall inside the "
+           "years this case covers."),
+    "R4": ("Missing documents",
+           "Every earlier document the certificate names should be here, so that "
+           "somebody has actually read it."),
+    "R5": ("Chain of owners",
+           "Whoever received the property in one sale should be the one passing it "
+           "on in the next."),
+    "R6": ("Survey numbers",
+           "Survey numbers should not change from one entry to the next unless a "
+           "subdivision or partition explains it."),
+    "R7": ("Property size",
+           "The extent of the property should not change unless a partition "
+           "explains it."),
+    "R8": ("Certificate age",
+           "A certificate issued a while ago says nothing about what has happened "
+           "since."),
+    "R9": ("Blank fields",
+           "Every field we rely on should actually have been read off the page."),
+    "R10": ("Entry count",
+            "The number of entries we read should match the number the certificate "
+            "says it has."),
 }
 
 # Rules with no implementation in this rulebook version. They report
 # NOT_EVALUABLE with `implemented=False` rather than silently not appearing —
 # "we do not check this" is information the advocate needs before she signs.
 UNIMPLEMENTED: dict[str, str] = {
-    "R5": "Party-name clustering is required to follow a claimant into the next "
-          "transfer, and it is not implemented in rulebook v1.0. Check the "
-          "executant/claimant columns by hand.",
-    "R6": "Subdivision and partition semantics are not implemented in rulebook "
-          "v1.0. The survey numbers per entry are listed under Chain → survey "
-          "numbers; no drift verdict is asserted.",
-    "R7": "Schedule extent is not persisted in v1.0, so no extent comparison is "
-          "possible. Read the schedule against the source crops.",
+    "R5": "Following one person from a sale into the next one needs name matching "
+          "we have not built yet. For now, read the From and To columns yourself — "
+          "they are under What we read.",
+    "R6": "We do not handle subdivisions and partitions yet, so we will not call a "
+          "changed survey number right or wrong. Every number is laid out per entry "
+          "under How it connects, for you to read.",
+    "R7": "We do not keep the property's extent yet, so there is nothing to compare "
+          "it against. Read the schedule against the page crops instead.",
 }
 
 
@@ -229,12 +236,12 @@ def r1(entries: list[Entry], edges: list[Edge], ec_for: EcFor) -> list[RuleRun]:
             # pass — the cancelled instrument is unexamined.
             runs.append(_run(
                 "R1", f"R1:unresolved={ed.to_doc_no}", "NOT_EVALUABLE",
-                f"Cancellation of {ed.to_doc_no} cannot be confirmed",
+                f"We cannot confirm that {ed.to_doc_no} was cancelled",
                 f"Entry {src.sr_no if src else '?'} ({src.doc_no if src else '?'}) "
-                f"states that it cancels {ed.to_doc_no}, which is not present on this "
-                f"case. Whether {ed.to_doc_no} was a live encumbrance is unexamined.",
-                reason=f"{ed.to_doc_no} is named as cancelled but is not an entry on "
-                       f"this case, so the instrument it extinguishes cannot be read.",
+                f"says it cancels {ed.to_doc_no}, but {ed.to_doc_no} is not here — so "
+                f"nobody has checked whether it was a live claim in the first place.",
+                reason=f"{ed.to_doc_no} is named as cancelled, but it is not one of "
+                       f"the entries here, so we cannot read what it did.",
                 inputs=[RuleInput(label=f"entry {src.sr_no} remarks" if src else "remarks",
                                   value=(src.remarks or "")[:200] if src else "",
                                   source_entry_id=ed.from_entry_id)],
@@ -249,25 +256,25 @@ def r1(entries: list[Entry], edges: list[Edge], ec_for: EcFor) -> list[RuleRun]:
         shown = [
             RuleInput(label=f"entry {src.sr_no} remarks",
                       value=(src.remarks or "")[:200], source_entry_id=src.db_id),
-            RuleInput(label=f"entry {tgt.sr_no} nature",
+            RuleInput(label=f"what entry {tgt.sr_no} is",
                       value=tgt.nature or "not read", source_entry_id=tgt.db_id),
-            RuleInput(label="condition",
-                      value=f"a remark naming {tgt.doc_no} that states cancellation "
-                            f"→ matched"),
+            RuleInput(label="what we looked for",
+                      value=f"a remark naming {tgt.doc_no} that says it was "
+                            f"cancelled → found"),
         ]
         runs.append(_run(
             "R1", f"R1:cancelled={tgt.doc_no}", "REVIEW",
             f"{tgt.doc_no} was cancelled by {src.doc_no}",
             f"Entry {src.sr_no} ({src.doc_no}) cancels {tgt.doc_no} "
-            f"({tgt.nature}). Read linearly this looks like a live encumbrance; "
-            f"it is not.",
+            f"({tgt.nature}). Read straight down the page, {tgt.doc_no} looks like a "
+            f"live claim. It is not one.",
             severity="material", inputs=shown, evidence=ev,
             pages=_pages([src, tgt], ec_for)))
         runs.append(_run(
             "R1", f"R1:confirmed={tgt.doc_no}", "PASS",
-            f"Cancellation of {tgt.doc_no} is confirmed in-document",
-            f"Cancellation of {tgt.doc_no} is confirmed inside this certificate "
-            f"by {src.doc_no}.",
+            f"{tgt.doc_no} was cancelled, and this certificate says so",
+            f"{src.doc_no}, on this same certificate, cancels {tgt.doc_no}. That is "
+            f"confirmation from the document itself.",
             severity="confirmation", inputs=shown, evidence=ev,
             pages=_pages([src, tgt], ec_for)))
 
@@ -275,13 +282,13 @@ def r1(entries: list[Entry], edges: list[Edge], ec_for: EcFor) -> list[RuleRun]:
         remarked = [e for e in entries if e.remarks]
         return [_run(
             "R1", "R1:none", "NOT_APPLICABLE",
-            "No cancellation is recorded on this case",
-            "No entry's remarks state that it cancels another document.",
-            reason=(f"{len(remarked)} of {len(entries)} entries carry remarks; none of "
-                    f"them state a cancellation."
+            "Nothing here cancels anything else",
+            "No entry's remarks say it cancels another document.",
+            reason=(f"{len(remarked)} of {len(entries)} entries carry remarks, and "
+                    f"none of them mentions a cancellation."
                     if remarked else
-                    "No entry on this case carries remarks, which is where a "
-                    "cancellation cross-reference is recorded."),
+                    "No entry here carries remarks at all, and remarks are where a "
+                    "cancellation would be noted."),
             inputs=[RuleInput(label="entries with remarks",
                               value=f"{len(remarked)} of {len(entries)}")])]
     return runs
@@ -353,9 +360,9 @@ def r2(entries: list[Entry], edges: list[Edge], ec_for: EcFor) -> list[RuleRun]:
 
     for e in encumbrances:
         shown = [
-            RuleInput(label="instrument", value=e.doc_no or f"entry {e.sr_no}",
+            RuleInput(label="document", value=e.doc_no or f"entry {e.sr_no}",
                       source_entry_id=e.db_id),
-            RuleInput(label="nature", value=e.nature or "not read",
+            RuleInput(label="what it is", value=e.nature or "not read",
                       source_entry_id=e.db_id),
             RuleInput(label="remarks", value=(e.remarks or "—")[:200],
                       source_entry_id=e.db_id),
@@ -376,10 +383,10 @@ def r2(entries: list[Entry], edges: list[Edge], ec_for: EcFor) -> list[RuleRun]:
                         and ed.from_entry_id in by_id), None)
             runs.append(_run(
                 "R2", f"R2:enc={e.doc_no}", "PASS",
-                f"{e.doc_no} was cancelled, not left open",
-                f"{e.doc_no} ({e.nature}) is cancelled by "
+                f"{e.doc_no} was cancelled, not left hanging",
+                f"{e.doc_no} ({e.nature}) was cancelled by "
                 f"{tgt.doc_no if tgt else 'another document on this case'}, so it is "
-                f"not an open encumbrance.",
+                f"not a claim on the property any more.",
                 severity="confirmation", inputs=shown,
                 evidence=(e.db_id, tgt.db_id if tgt else None),
                 pages=_pages([e], ec_for)))
@@ -387,39 +394,39 @@ def r2(entries: list[Entry], edges: list[Edge], ec_for: EcFor) -> list[RuleRun]:
             d = dischargers[0]
             runs.append(_run(
                 "R2", f"R2:enc={e.doc_no}", "PASS",
-                f"{e.doc_no} is discharged by {d.doc_no}",
-                f"{e.doc_no} ({e.nature}) is discharged or released by {d.doc_no} "
-                f"({d.nature}), which names it.",
+                f"{e.doc_no} has been cleared by {d.doc_no}",
+                f"{e.doc_no} ({e.nature}) was discharged or released by {d.doc_no} "
+                f"({d.nature}), which names it directly.",
                 severity="confirmation",
-                inputs=shown + [RuleInput(label="discharged by",
+                inputs=shown + [RuleInput(label="cleared by",
                                           value=f"{d.doc_no} ({d.nature})",
                                           source_entry_id=d.db_id)],
                 evidence=(e.db_id, d.db_id), pages=_pages([e, d], ec_for)))
         else:
             runs.append(_run(
                 "R2", f"R2:enc={e.doc_no}", "FAIL",
-                f"{e.doc_no} is an open encumbrance",
-                f"Entry {e.sr_no} ({e.doc_no}) is a {e.nature}. No discharge or "
-                f"release naming it appears on this case, so on the face of this "
-                f"record it is still open.",
+                f"{e.doc_no} is still an open claim",
+                f"Entry {e.sr_no} ({e.doc_no}) is a {e.nature}. Nothing on this case "
+                f"releases it by name, so on this record it is still open.",
                 severity="blocking",
                 inputs=shown + [RuleInput(
-                    label="condition",
-                    value="a later discharge or release naming this document → "
-                          "not found")],
+                    label="what we looked for",
+                    value="a later release or discharge naming this document → "
+                          "none found")],
                 evidence=(e.db_id,), pages=_pages([e], ec_for)))
 
     for e in unreadable:
         runs.append(_run(
             "R2", f"R2:unread-nature=ec:{ec_for(e) or 0}/sr:{e.sr_no}",
             "NOT_EVALUABLE",
-            f"Entry {e.sr_no} · nature could not be read",
+            f"Entry {e.sr_no} — we could not read what kind of document this is",
             f"Entry {e.sr_no} ({e.doc_no or 'document number not read'}) has no "
-            f"nature, so whether it creates an encumbrance is unknown.",
-            reason="The nature cell could not be read, so this entry could not be "
-                   "classified. Read it against the source before relying on the "
-                   "absence of an encumbrance finding.",
-            inputs=[RuleInput(label="nature", value="null",
+            f"document type we could read, so we cannot say whether it puts a claim "
+            f"on the property.",
+            reason="That cell did not come through, so we could not classify this "
+                   "entry. Check it against the page before you take 'no claims "
+                   "found' at face value.",
+            inputs=[RuleInput(label="what it is", value="blank",
                               source_entry_id=e.db_id)],
             evidence=(e.db_id,), pages=_pages([e], ec_for)))
 
@@ -429,15 +436,15 @@ def r2(entries: list[Entry], edges: list[Edge], ec_for: EcFor) -> list[RuleRun]:
     if unclassified:
         return [_run(
             "R2", "R2:unclassified", "NOT_EVALUABLE",
-            f"{len(unclassified)} entries could not be classified",
-            "No mortgage, charge or lien was recognised, but not every nature on "
-            "this case is one this rulebook knows.",
-            reason="Unrecognised natures: "
+            f"{_n(len(unclassified), 'entry', 'entries')} we could not classify",
+            "We did not recognise a mortgage, charge or lien here — but some of "
+            "these document types are ones we do not know yet.",
+            reason="Types we did not recognise: "
                    + "; ".join(f"{e.doc_no or e.sr_no} — {e.nature}"
                                for e in unclassified[:5])
-                   + ". Read these against the source rather than treating silence "
+                   + ". Read these against the page rather than treating our silence "
                      "as a clean result.",
-            inputs=[RuleInput(label=f"entry {e.sr_no} nature",
+            inputs=[RuleInput(label=f"what entry {e.sr_no} is",
                               value=e.nature or "—", source_entry_id=e.db_id)
                     for e in unclassified],
             evidence={e.db_id for e in unclassified},
@@ -445,11 +452,11 @@ def r2(entries: list[Entry], edges: list[Edge], ec_for: EcFor) -> list[RuleRun]:
 
     return [_run(
         "R2", "R2:none", "NOT_APPLICABLE",
-        "No encumbrance instrument on this case",
+        "Nothing here puts a claim on the property",
         f"None of the {len(entries)} entries is a mortgage, charge, lien or "
         f"deposit of title deeds.",
-        reason=f"Every nature on this case was read and classified, and none of the "
-               f"{len(entries)} is an encumbrance instrument.",
+        reason=f"We read and classified all {len(entries)} entries, and not one of "
+               f"them creates a claim on the property.",
         inputs=[RuleInput(label=f"entry {e.sr_no}",
                           value=f"{e.nature} → {kinds.get(e.db_id)}",
                           source_entry_id=e.db_id) for e in entries])]
@@ -486,75 +493,78 @@ def r3(docs: list[ECDoc], entries: list[Entry], ec_for: EcFor) -> list[RuleRun]:
     prs = [(e, pr) for e in entries for pr in e.pr_numbers]
     solo = len(docs) <= 1
     first = docs[0] if docs else None
-    shown = [RuleInput(label=f"{d.label} window", value=d.window) for d in docs]
+    shown = [RuleInput(label=f"years {d.label} covers", value=d.window) for d in docs]
 
     if not wins:
         return [_run(
             "R3", "R3:no-window", "NOT_EVALUABLE",
-            ("This certificate does not state a search period" if solo else
-             "No certificate on this case states a search period"),
-            ("No search period could be read from this certificate, so no parent "
-             "year can be placed inside or outside it." if solo else
-             "No certificate on this case states a search period, so no parent "
-             "year can be placed inside or outside one."),
-            reason="The search-period field is blank or unreadable. Sufficiency "
-                   "cannot be computed — check the certificate header against the "
-                   "source page.",
+            ("This certificate does not say which years it covers" if solo else
+             "None of these certificates says which years it covers"),
+            ("We could not read the years this certificate covers, so we cannot tell "
+             "you whether the earlier documents fall inside them." if solo else
+             "None of the certificates here says which years it covers, so we cannot "
+             "place an earlier document inside or outside them."),
+            reason="The search-period field is blank, or it did not come through. "
+                   "Check the header against the page — without those dates there is "
+                   "no way to work out what is covered.",
             inputs=shown,
             pages=[PageRef(ec_id=first.ec_id if first else None, page_num=1)])]
 
     if not prs:
         return [_run(
             "R3", "R3:no-parents", "NOT_APPLICABLE",
-            "No parent document is named on this case",
-            (f"This certificate covers {first.window} and names no parent document."
+            "This certificate does not point back to any earlier document",
+            (f"It covers {first.window} and names no earlier document."
              if solo and first else
-             f"The {len(docs)} certificates on this case name no parent document."),
-            reason="There is no parent year to place inside or outside the window. "
-                   "Silence about the chain is not evidence about the chain — this "
-                   "rule can say nothing either way.",
+             f"None of the {len(docs)} certificates here names an earlier document."),
+            reason="There is no earlier year to place inside or outside the window. "
+                   "Silence about the chain is not evidence about the chain, so this "
+                   "check cannot say anything either way.",
             inputs=shown,
             pages=[PageRef(ec_id=first.ec_id if first else None, page_num=1)])]
 
     outside = [(e, pr) for e, pr in prs if not _covered(pr.year, wins)]
     earliest_start = min(s for s, _, _ in wins)
     shown += [
-        RuleInput(label="parent years found",
+        RuleInput(label="years of the earlier documents",
                   value=", ".join(str(pr.year) for _, pr in prs)),
-        RuleInput(label="condition",
-                  value=(f"any parent year < {earliest_start} → "
-                         f"{len(outside)} matched" if solo else
-                         f"any parent year outside every window above → "
-                         f"{len(outside)} matched")),
+        RuleInput(label="what we looked for",
+                  value=(f"anything earlier than {earliest_start} → "
+                         f"{len(outside)} found" if solo else
+                         f"anything outside every set of years above → "
+                         f"{len(outside)} found")),
     ]
 
     if not outside:
         return [_run(
             "R3", "R3:covered", "PASS",
-            ("Every parent document falls inside this certificate's window" if solo
-             else "Every parent document falls inside a window on this case"),
-            (f"All {len(prs)} parent links resolve within {first.window}."
+            ("Every earlier document falls inside the years this certificate covers"
+             if solo else
+             "Every earlier document falls inside the years you have covered"),
+            (f"All {_n(len(prs), 'link')} back to earlier documents sit inside "
+             f"{first.window}."
              if solo and first else
-             f"All {len(prs)} parent links resolve inside one of the "
-             f"{len(wins)} windows on this case."),
+             f"All {_n(len(prs), 'link')} back to earlier documents sit inside one of "
+             f"the {_n(len(wins), 'window')} you have."),
             inputs=shown, evidence={e.db_id for e, _ in prs},
             pages=_pages([e for e, _ in prs], ec_for))]
 
     earliest = min(outside, key=lambda t: t[1].year)[1]
     return [_run(
         "R3", f"R3:gap={earliest.year}-{earliest_start - 1}", "FAIL",
-        "Search window insufficient",
-        (f"{_n(len(outside), 'parent document')} "
-         f"{'predates' if len(outside) == 1 else 'predate'} this certificate's "
-         f"search period. "
-         f"{'It is' if len(outside) == 1 else 'The earliest is'} {earliest.doc_no}. "
-         f"This certificate cannot evidence the chain before {earliest_start}."
+        "This certificate does not reach far enough back",
+        (f"{_n(len(outside), 'earlier document')} "
+         f"{'sits' if len(outside) == 1 else 'sit'} before the years this "
+         f"certificate covers. "
+         f"{'It is' if len(outside) == 1 else 'The oldest is'} {earliest.doc_no}. "
+         f"Nothing here can tell you what happened before {earliest_start}."
          if solo else
-         f"{_n(len(outside), 'parent document')} "
-         f"{'falls' if len(outside) == 1 else 'fall'} outside every search window "
-         f"on this case. "
-         f"{'It is' if len(outside) == 1 else 'The earliest is'} {earliest.doc_no}. "
-         f"Nothing on this case evidences the chain before {earliest_start}."),
+         f"{_n(len(outside), 'earlier document')} "
+         f"{'falls' if len(outside) == 1 else 'fall'} outside every set of years you "
+         f"have. "
+         f"{'It is' if len(outside) == 1 else 'The oldest is'} {earliest.doc_no}. "
+         f"Nothing on this case can tell you what happened before "
+         f"{earliest_start}."),
         severity="blocking", inputs=shown,
         evidence={e.db_id for e, _ in outside},
         pages=_pages([e for e, _ in outside], ec_for))]
@@ -576,10 +586,11 @@ def r4(entries: list[Entry], edges: list[Edge], ec_for: EcFor) -> list[RuleRun]:
     if not pr_edges:
         return [_run(
             "R4", "R4:none", "NOT_APPLICABLE",
-            "No parent document is named on this case",
-            "No entry names a prior document, so there is no parent link to resolve.",
-            reason="The PR Number / முந்தைய ஆவண எண் column is empty on every entry.",
-            inputs=[RuleInput(label="parent links found", value="0")])]
+            "Nothing here points back to an earlier document",
+            "No entry names an earlier document, so there is no link to follow.",
+            reason="The prior-document column (PR Number / முந்தைய ஆவண எண்) is empty "
+                   "on every entry.",
+            inputs=[RuleInput(label="links back to earlier documents", value="none")])]
 
     # Group by target document: two entries naming the same parent is one obligation.
     grouped: dict[str, list[Edge]] = {}
@@ -594,21 +605,21 @@ def r4(entries: list[Entry], edges: list[Edge], ec_for: EcFor) -> list[RuleRun]:
         named_by = ", ".join(f"entry {s.sr_no}" for s in sources) or "an entry"
         resolved = next((ed for ed in group if ed.resolved_entry_id), None)
         shown = [
-            RuleInput(label="named by", value=named_by,
+            RuleInput(label="pointed to by", value=named_by,
                       source_entry_id=sources[0].db_id if sources else None),
-            RuleInput(label="parent document", value=doc_no),
+            RuleInput(label="earlier document", value=doc_no),
         ]
         if resolved:
             tgt = by_id.get(resolved.resolved_entry_id)
             runs.append(_run(
                 "R4", f"R4:resolved={doc_no}", "PASS",
-                f"Parent {doc_no} is present and examined",
-                f"Parent link to {doc_no} resolves to an entry inside this "
-                f"certificate. Verified.",
+                f"{doc_no} is here, and it has been read",
+                f"The link back to {doc_no} lands on an entry inside this "
+                f"certificate. Nothing to chase.",
                 severity="confirmation",
                 inputs=shown + [RuleInput(
-                    label="resolves to",
-                    value=f"entry {tgt.sr_no} ({tgt.nature or 'nature not read'})"
+                    label="which lands on",
+                    value=f"entry {tgt.sr_no} ({tgt.nature or 'type not read'})"
                           if tgt else "an entry on this case",
                     source_entry_id=resolved.resolved_entry_id)],
                 evidence=(resolved.from_entry_id, resolved.resolved_entry_id),
@@ -616,13 +627,13 @@ def r4(entries: list[Entry], edges: list[Edge], ec_for: EcFor) -> list[RuleRun]:
         else:
             runs.append(_run(
                 "R4", f"R4:parent={doc_no}", "REVIEW",
-                f"Parent {doc_no} is not present on this case",
-                f"{named_by.capitalize()} names {doc_no} as a parent document. It is "
-                f"not present in any certificate on this case and has not been "
-                f"examined.",
+                f"{doc_no} is named, but you do not have it",
+                f"{named_by.capitalize()} points back to {doc_no} as an earlier "
+                f"document. It is not in any certificate here, so nobody has read "
+                f"what is inside it.",
                 severity="material",
-                inputs=shown + [RuleInput(label="condition",
-                                          value=f"an entry with doc_no {doc_no} → "
+                inputs=shown + [RuleInput(label="what we looked for",
+                                          value=f"an entry for {doc_no} → "
                                                 f"not found")],
                 evidence={ed.from_entry_id for ed in group},
                 pages=_pages(sources, ec_for)))
@@ -634,35 +645,34 @@ def r4(entries: list[Entry], edges: list[Edge], ec_for: EcFor) -> list[RuleRun]:
 def r8(header: ECHeader, ec_id: int | None) -> list[RuleRun]:
     key = f"R8:stale=ec:{ec_id or 0}"
     shown = [
-        RuleInput(label="issue date", value=header.issue_date or "not read"),
-        RuleInput(label="threshold", value=f"{STALE_DAYS} days"),
+        RuleInput(label="issued on", value=header.issue_date or "not read"),
+        RuleInput(label="we flag anything older than", value=f"{STALE_DAYS} days"),
     ]
     issued = _parse_date(header.issue_date)
     if not issued:
         return [_run(
             "R8", f"R8:no-date=ec:{ec_id or 0}", "NOT_EVALUABLE",
-            "This certificate's issue date could not be read",
-            "Without an issue date, how much has happened since this certificate "
-            "was produced cannot be established.",
+            "We could not read when this certificate was issued",
+            "Without an issue date, we cannot tell you how much may have happened "
+            "since it was produced.",
             reason=(f"The issue date reads {header.issue_date!r}, which is not a date "
-                    f"this rule can parse."
+                    f"we can make sense of."
                     if header.issue_date else
-                    "No issue date was read from this certificate."),
+                    "No issue date came through from this certificate."),
             inputs=shown, pages=[PageRef(ec_id=ec_id, page_num=1)])]
 
     days = (date.today() - issued).days
-    shown.append(RuleInput(label="age", value=f"{days} days"))
+    shown.append(RuleInput(label="how old that makes it", value=f"{days} days"))
     if days > STALE_DAYS:
         return [_run(
-            "R8", key, "REVIEW", f"Certificate is {days} days old",
-            f"Certificate issued {header.issue_date} — {days} days ago "
-            f"(flagged beyond {STALE_DAYS}). Transactions since then are not "
-            f"covered.",
+            "R8", key, "REVIEW", f"This certificate is {days} days old",
+            f"Issued {header.issue_date}, {days} days ago. We flag anything past "
+            f"{STALE_DAYS} days, because nothing registered since then appears here.",
             severity="informational", inputs=shown,
             pages=[PageRef(ec_id=ec_id, page_num=1)])]
     return [_run(
-        "R8", key, "PASS", f"Certificate is current ({days} days old)",
-        f"Issued {header.issue_date}, within the {STALE_DAYS}-day threshold.",
+        "R8", key, "PASS", f"This certificate is recent ({days} days old)",
+        f"Issued {header.issue_date}, inside the {STALE_DAYS}-day mark we use.",
         inputs=shown, pages=[PageRef(ec_id=ec_id, page_num=1)])]
 
 
@@ -682,10 +692,10 @@ def r9(entries: list[Entry], ec_id: int | None) -> list[RuleRun]:
     if not entries:
         return [_run(
             "R9", "R9:no-entries", "NOT_APPLICABLE",
-            "No entry was read from this certificate",
-            "There is no entry to check for completeness.",
-            reason="Stage ② returned no numbered registration entry, so no required "
-                   "field can be tested.")]
+            "We did not read any entries from this certificate",
+            "There is nothing here to check for missing fields.",
+            reason="No numbered registration entry came through, so there was no "
+                   "field to test.")]
 
     runs: list[RuleRun] = []
     for e in entries:
@@ -695,16 +705,16 @@ def r9(entries: list[Entry], ec_id: int | None) -> list[RuleRun]:
             label = fld.replace("_", " ")
             runs.append(_run(
                 "R9", f"R9:ec:{ec_id or 0}/sr:{e.sr_no}/{fld}", "REVIEW",
-                f"Entry {e.sr_no} · {label} could not be read",
-                f"Entry {e.sr_no}: {label} could not be read. Review against the "
-                f"source.",
+                f"Entry {e.sr_no} — we could not read the {label}",
+                f"Entry {e.sr_no}: the {label} did not come through. Have a look at "
+                f"the page and type in what it says.",
                 severity="material",
                 inputs=[
                     RuleInput(label="entry", value=f"{e.sr_no} "
                               f"({e.doc_no or 'document number not read'})",
                               source_entry_id=e.db_id),
-                    RuleInput(label=label, value="null", source_entry_id=e.db_id),
-                    RuleInput(label="layout confidence",
+                    RuleInput(label=label, value="blank", source_entry_id=e.db_id),
+                    RuleInput(label="scan quality",
                               value=f"{e.source.confidence:.3f}"
                                     if e.source.confidence is not None else "not reported",
                               source_entry_id=e.db_id),
@@ -715,10 +725,10 @@ def r9(entries: list[Entry], ec_id: int | None) -> list[RuleRun]:
         return runs
     return [_run(
         "R9", f"R9:complete=ec:{ec_id or 0}", "PASS",
-        f"Every required field was read on all {len(entries)} entries",
-        f"Document number, nature and date of registration are present on all "
-        f"{len(entries)} entries.",
-        inputs=[RuleInput(label="required fields",
+        f"Nothing is missing on any of the {len(entries)} entries",
+        f"Document number, document type and date of registration are all there, on "
+        f"every one of the {len(entries)} entries.",
+        inputs=[RuleInput(label="fields we need",
                           value=", ".join(f.replace('_', ' ') for f in REQUIRED_FIELDS)),
                 RuleInput(label="entries checked", value=str(len(entries)))],
         pages=_pages(entries, _fixed_ec(ec_id)))]
@@ -730,28 +740,29 @@ def r10(header: ECHeader, entries: list[Entry], ec_id: int | None) -> list[RuleR
     key = f"R10:count=ec:{ec_id or 0}"
     dec = header.declared_entry_count
     shown = [
-        RuleInput(label="declared by the certificate",
+        RuleInput(label="the certificate says it has",
                   value=str(dec) if dec is not None else "not stated"),
-        RuleInput(label="extracted", value=str(len(entries))),
+        RuleInput(label="we read", value=str(len(entries))),
     ]
     if dec is None:
         return [_run(
             "R10", f"R10:no-count=ec:{ec_id or 0}", "NOT_EVALUABLE",
-            "This certificate does not state its own entry count",
-            "Without the certificate's declared count there is no independent "
-            "checksum on whether a whole entry was lost.",
-            reason="No 'Number of Entries / பதிவுகளின் எண்ணிக்கை' value was found in "
-                   "the digitised text, so the checksum could not be run.",
+            "This certificate does not say how many entries it has",
+            "Without that number, we have no independent way to tell whether a whole "
+            "entry was missed.",
+            reason="We could not find a 'Number of Entries / பதிவுகளின் எண்ணிக்கை' "
+                   "value in the text, so there was nothing to compare against.",
             inputs=shown)]
     if dec != len(entries):
         return [_run(
-            "R10", key, "FAIL", "Entry count does not match the certificate",
-            f"This certificate declares {dec} entries; {len(entries)} were "
-            f"extracted. Entries may have been lost.",
+            "R10", key, "FAIL", "The entry count does not match",
+            f"This certificate says it has {dec} entries. We read {len(entries)}. "
+            f"Something may have been missed — check the pages before you rely on "
+            f"this.",
             severity="blocking", inputs=shown)]
     return [_run(
-        "R10", key, "PASS", f"Entry count matches ({dec})",
-        f"Entry count matches the certificate's own declaration ({dec}).",
+        "R10", key, "PASS", f"All {dec} entries accounted for",
+        f"We read {dec} entries, which is exactly what the certificate says it has.",
         severity="confirmation", inputs=shown)]
 
 
@@ -760,7 +771,7 @@ def r10(header: ECHeader, entries: list[Entry], ec_id: int | None) -> list[RuleR
 def unimplemented(rule_id: str) -> RuleRun:
     return _run(
         rule_id, f"{rule_id}:unimplemented", "NOT_EVALUABLE",
-        f"{RULEBOOK[rule_id][0].replace('_', ' ').capitalize()} — not checked",
+        f"{RULEBOOK[rule_id][0]} — we do not check this yet",
         RULEBOOK[rule_id][1],
         reason=UNIMPLEMENTED[rule_id], implemented=False)
 
@@ -806,9 +817,9 @@ def build_coverage(header: ECHeader, entries: list[Entry]) -> Coverage:
             start_year=start, end_year=end,
             axis_min=min(pr_years or [date.today().year]) - 1,
             axis_max=date.today().year, ticks=[], sufficient=None,
-            headline="This certificate does not state a search period.",
-            detail="Coverage cannot be computed. Check the certificate header "
-                   "against the source page.")
+            headline="This certificate does not say which years it covers.",
+            detail="Without those dates there is no way to work out what it covers. "
+                   "Check the header against the page.")
 
     axis_min = min([start] + pr_years) - 2
     axis_max = max(end, date.today().year)
@@ -824,31 +835,34 @@ def build_coverage(header: ECHeader, entries: list[Entry]) -> Coverage:
     if not pr_years:
         return Coverage(start_year=start, end_year=end, axis_min=axis_min,
                         axis_max=axis_max, ticks=ticks, sufficient=None,
-                        headline="No parent documents are named in this certificate.",
+                        headline="This certificate does not point back to any earlier "
+                                 "document.",
                         detail=f"It covers {header.search_period_start} → "
-                               f"{header.search_period_end}. That is a statement about "
-                               f"this window, not about the chain before it.")
+                               f"{header.search_period_end}. That tells you about those "
+                               f"years — not about the chain before it.")
     if not outside:
         # Ticks are deduped by year; the sentence counts DOCUMENTS, as the note
         # above requires — five parents sharing two years is five links, not two.
         return Coverage(start_year=start, end_year=end, axis_min=axis_min,
                         axis_max=axis_max, ticks=ticks, sufficient=True,
-                        headline="Every parent document named here falls inside this "
-                                 "certificate's window.",
-                        detail=f"{_n(len(inside_docs), 'parent link')} "
-                               f"{'resolves' if len(inside_docs) == 1 else 'resolve'} within "
-                               f"{header.search_period_start} → {header.search_period_end}.")
+                        headline="Every earlier document named here falls inside the "
+                                 "years this certificate covers.",
+                        detail=f"{_n(len(inside_docs), 'link')} back to earlier "
+                               f"documents, "
+                               f"{'and it sits' if len(inside_docs) == 1 else 'and they all sit'} "
+                               f"inside {header.search_period_start} → "
+                               f"{header.search_period_end}.")
     return Coverage(
         start_year=start, end_year=end, axis_min=axis_min, axis_max=axis_max,
         ticks=ticks, sufficient=False,
         headline="This certificate cannot support a 13-year search.",
         detail=(f"It covers {header.search_period_start} → {header.search_period_end}. "
-                f"{_n(len(outside_docs), 'parent document')} "
+                f"{_n(len(outside_docs), 'earlier document')} "
                 f"{'is' if len(outside_docs) == 1 else 'are'} named, "
-                f"{'from' if len(outside_docs) == 1 else 'the earliest from'} "
+                f"{'from' if len(outside_docs) == 1 else 'the oldest from'} "
                 f"{min(t.year for t in outside)}. "
                 f"{'It does not fall' if len(outside_docs) == 1 else 'None of them fall'} "
-                f"inside this window."))
+                f"inside that window."))
 
 
 def build_order(header: ECHeader, entries: list[Entry], coverage: Coverage) -> OrderBlock | None:
@@ -924,27 +938,28 @@ def build_coverage_case(docs: list[ECDoc], entries: list[Entry]) -> Coverage:
     else:
         outside = [pr for e in entries for pr in e.pr_numbers
                    if not _covered(pr.year, wins)]
-        joined = " · ".join(f"{s}–{e}" for s, e, _ in wins) or "no stated window"
+        joined = " · ".join(f"{s}–{e}" for s, e, _ in wins) or "no years we could read"
         if not wins or not pr_years:
             sufficient = None
-            headline = (f"{len(docs)} certificates on this case; coverage cannot be "
-                        f"computed.")
-            detail = (f"Windows: {joined}. "
-                      f"{'No parent document is named.' if not pr_years else ''} "
-                      f"That is a statement about these windows, not about the chain.")
+            headline = (f"{len(docs)} certificates here, and we still cannot work out "
+                        f"the years.")
+            detail = (f"They cover {joined}. "
+                      f"{'No earlier document is named.' if not pr_years else ''} "
+                      f"That tells you about those years, not about the chain.")
         elif outside:
             sufficient = False
-            headline = (f"The {len(docs)} certificates on this case still do not "
-                        f"cover the chain.")
-            detail = (f"They cover {joined}. {len(outside)} parent documents fall "
-                      f"outside every one of them, the earliest from "
-                      f"{min(pr.year for pr in outside)}.")
+            headline = (f"Even together, these {len(docs)} certificates do not cover "
+                        f"the whole chain.")
+            detail = (f"They cover {joined}. "
+                      f"{_n(len(outside), 'earlier document')} "
+                      f"{'sits' if len(outside) == 1 else 'sit'} outside all of them, "
+                      f"the oldest from {min(pr.year for pr in outside)}.")
         else:
             sufficient = True
-            headline = ("Every parent document named on this case falls inside a "
-                        "window it covers.")
-            detail = (f"{len(pr_years)} parent years resolve across {len(wins)} "
-                      f"certificates covering {joined}.")
+            headline = ("Every earlier document named here falls inside the years you "
+                        "have covered.")
+            detail = (f"{_n(len(pr_years), 'earlier year')}, all covered by the "
+                      f"{_n(len(wins), 'certificate')} you have ({joined}).")
 
     return Coverage(
         start_year=bands[0].start_year if bands else None,
@@ -988,22 +1003,36 @@ def _plural(n: int, one: str, many: str | None = None) -> str:
 
 
 def build_readiness(runs: list[RuleRun], c: Completeness) -> Readiness:
-    """Gates, not a score. A file is signable or it is not."""
+    """Gates, not a score. A file is signable or it is not.
+
+    Each gate says one thing when it is met and another when it is not, because a
+    single label cannot do both jobs: "0 parent documents unexamined ✓" is how a
+    machine reports good news, not how a person does.
+    """
     fails = [r for r in runs if r.outcome == "FAIL"]
     unexamined = max(c.links_named - c.links_examined, 0)
     uncovered = max(c.years_required - c.years_covered, 0)
     pending = max(c.review_total - c.review_done, 0)
+
+    def gate(id: str, ok: bool, met: str, unmet: str, tab: str) -> Gate:
+        return Gate(id=id, label=met if ok else unmet, passed=ok, tab=tab)
+
     return Readiness(gates=[
-        Gate(id="G1", label=_plural(len(fails), "blocking finding"),
-             passed=not fails, tab="review"),
-        Gate(id="G2", label=f"{_plural(unexamined, 'parent document')} unexamined",
-             passed=unexamined == 0, tab="documents"),
-        Gate(id="G3", label=f"{_plural(uncovered, 'year')} uncovered",
-             passed=uncovered == 0, tab="documents"),
-        Gate(id="G4", label=f"{_plural(pending, 'item')} not reviewed",
-             passed=pending == 0, tab="review"),
-        Gate(id="G5", label=f"{_plural(c.unread_pages, 'page')} unread",
-             passed=c.unread_pages == 0, tab="entries"),
+        gate("G1", not fails,
+             "nothing is blocking",
+             f"{_plural(len(fails), 'thing')} to resolve first", "review"),
+        gate("G2", unexamined == 0,
+             "every document is here",
+             f"{_plural(unexamined, 'document')} nobody has read", "documents"),
+        gate("G3", uncovered == 0,
+             "all the years are covered",
+             f"{_plural(uncovered, 'year')} not covered", "documents"),
+        gate("G4", pending == 0,
+             "you have been through everything",
+             f"{_plural(pending, 'item')} you have not checked", "review"),
+        gate("G5", c.unread_pages == 0,
+             "every page was read",
+             f"{_plural(c.unread_pages, 'page')} we could not read", "entries"),
     ])
 
 
@@ -1076,8 +1105,8 @@ def build_requests(docs: list[ECDoc], entries: list[Entry],
             because=r.message, closes=[r.key],
             sro=sro, village=village,
             superseded_by=ec_key if inside else None,
-            alternative=(f"The certificate requested above covers "
-                         f"{ec_from}–{ec_to} and would examine this document."
+            alternative=(f"The certificate above covers {ec_from}–{ec_to}, so "
+                         f"ordering that one covers this document too."
                          if inside else None)))
     return requests
 

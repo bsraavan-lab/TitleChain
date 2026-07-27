@@ -9,14 +9,14 @@
 <section class="refusal">
   <p class="answer-kicker a-warn">
     <span class="glyph" aria-hidden="true">⊘</span>
-    {{ 'Refused' if case.status == 'REFUSED' else 'Failed' }}
+    {{ 'Nothing read' if case.status == 'REFUSED' else 'Did not finish' }}
   </p>
 
   <h1 class="answer-headline">
     {%- if case.status == 'REFUSED' -%}
-      Nothing was read from this certificate.
+      We could not read anything from this file.
     {%- else -%}
-      This certificate could not be processed.
+      Something went wrong while we were reading this.
     {%- endif -%}
   </h1>
 
@@ -26,7 +26,7 @@
      reasoning is the exact failure this product exists to refuse. #}
   {% if refusal_checks %}
     <div class="checks">
-      <p class="checks-label">What we looked for</p>
+      <p class="checks-label">Here is what we looked for</p>
       <ul>
         {% for c in refusal_checks %}
           <li><span class="x" aria-hidden="true">✗</span> {{ c }}</li>
@@ -35,13 +35,28 @@
     </div>
   {% endif %}
 
+  {# Two different apologies, because these are two different faults. REFUSED means
+     we read the file and could not find a certificate in it — worth suggesting a
+     better scan. FAILED means something broke at our end, and telling her to
+     rescan a perfectly good document would be blaming her for our bug. #}
+  <p class="refusal-reassure">
+    {%- if case.status == 'REFUSED' -%}
+      This is as often about the scan as about the certificate. A faint copy or a
+      page photographed at an angle will do it, and a sharper scan of the same
+      document usually reads straight through.
+    {%- else -%}
+      This one is on us, not on your file. Nothing you did caused it and nothing has
+      been lost, so the same file is worth another go in a moment.
+    {%- endif -%}
+  </p>
+
   {# A div, not a p — same reason as home.html: a <form> start tag closes an open
      <p>, which put these buttons outside the element meant to lay them out. #}
   <div class="refusal-actions">
-    <a class="btn btn-primary" href="/">Upload a different file</a>
+    <a class="btn btn-primary" href="/">Try another file</a>
     {% for key, s in SAMPLES.items() %}
       <form method="post" action="/sample/{{ key }}" class="inline">
-        <button class="btn btn-ghost" type="submit">Open {{ s.label }}</button>
+        <button class="btn btn-ghost" type="submit">See {{ s.label }} working</button>
       </form>
     {% endfor %}
   </div>

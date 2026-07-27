@@ -16,7 +16,7 @@
    provenance, so it now lives where provenance is read (on each finding, and
    in the report), not in permanent chrome. #}
 <header class="bar">
-  <a class="wordmark" href="/" title="All cases">
+  <a class="wordmark" href="/" title="Back to your cases">
     <img src="/static/logo-mark.png" alt="" width="20" height="23">
     <span>TitleChain</span>
   </a>
@@ -26,7 +26,7 @@
   <div class="bar-actions">
     {% block bar_actions %}{% endblock %}
     <button class="kbd-hint" type="button" data-open-palette
-            aria-label="Open the command palette">
+            aria-label="Search your cases">
       <kbd>⌘</kbd><kbd>K</kbd>
     </button>
   </div>
@@ -36,14 +36,14 @@
 
 {# Recognition over recall, and the only navigation a keyboard user needs.
    Native <dialog>: focus trap, Escape and backdrop dismissal come free. #}
-<dialog id="palette" class="palette" aria-label="Command palette">
+<dialog id="palette" class="palette" aria-label="Search your cases">
   <input id="palette-input" type="text" autocomplete="off" spellcheck="false"
-         placeholder="Jump to a property, or type a command…">
+         placeholder="Start typing a property, village or survey number…">
   <ul id="palette-list" class="palette-list" role="listbox"></ul>
   <p class="palette-foot">
-    <span><kbd>↑</kbd><kbd>↓</kbd> move</span>
-    <span><kbd>↵</kbd> open</span>
-    <span><kbd>esc</kbd> close</span>
+    <span><kbd>↑</kbd><kbd>↓</kbd> to browse</span>
+    <span><kbd>↵</kbd> to open</span>
+    <span><kbd>esc</kbd> to close</span>
   </p>
 </dialog>
 

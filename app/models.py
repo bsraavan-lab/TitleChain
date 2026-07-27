@@ -36,11 +36,13 @@ SEVERITY_ORDER = ["blocking", "material", "informational", "confirmation"]
 # did not make.
 RuleOutcome = Literal["FAIL", "REVIEW", "PASS", "NOT_APPLICABLE", "NOT_EVALUABLE"]
 
+# Each word has to read correctly twice: alone on a badge, and after a number in
+# the count line ("2 failed · 3 to review · 1 couldn't check").
 OUTCOME_UI: dict[str, dict[str, str]] = {
     "FAIL":           {"word": "Failed", "glyph": "✕", "cls": "out-fail"},
-    "REVIEW":         {"word": "Needs review", "glyph": "⚠", "cls": "out-review"},
+    "REVIEW":         {"word": "To review", "glyph": "⚠", "cls": "out-review"},
     "PASS":           {"word": "Passed", "glyph": "✓", "cls": "out-pass"},
-    "NOT_EVALUABLE":  {"word": "Could not check", "glyph": "⚠", "cls": "out-unknown"},
+    "NOT_EVALUABLE":  {"word": "Couldn't check", "glyph": "⚠", "cls": "out-unknown"},
     "NOT_APPLICABLE": {"word": "Not applicable", "glyph": "—", "cls": "out-na"},
 }
 # Worst first. NOT_EVALUABLE ranks above PASS deliberately: "we could not check
@@ -385,9 +387,12 @@ class DocumentRequest(BaseModel):
 
     @property
     def title(self) -> str:
+        """Written as the errand, not as the document type. This heading is the
+        first thing she reads on the card, and "Certified copy · document 4451/2005"
+        does not tell her what to do with her afternoon."""
         if self.kind == "CERTIFIED_COPY":
-            return f"Certified copy · document {self.doc_no}"
-        return (f"Encumbrance Certificate · {self.sro or '—'} SRO · "
+            return f"Order a certified copy of {self.doc_no}"
+        return (f"Order another certificate — {self.sro or '—'} SRO, "
                 f"{self.village or '—'}")
 
     @property
@@ -472,22 +477,27 @@ class Completeness(BaseModel):
     @property
     def chain_arithmetic(self) -> str:
         if not self.links_named:
-            return "no parent document is named on this case"
-        return (f"{self.links_examined} of {self.links_named} parent documents "
-                f"examined")
+            return "nothing here points back to an earlier document"
+        return (f"{self.links_examined} of the {self.links_named} earlier documents "
+                f"are here")
 
     @property
     def coverage_arithmetic(self) -> str:
         if not self.years_required:
-            return "no search window could be read"
-        return (f"{self.years_covered} of {self.years_required} years covered "
+            return "we could not read the years this certificate covers"
+        return (f"{self.years_covered} of the {self.years_required} years you need "
                 f"({self.span_from}–{self.span_to})")
 
 
 class Gate(BaseModel):
-    """One condition that must hold before an opinion can be signed."""
+    """One condition that must hold before an opinion can be signed.
+
+    The label is written for the state it is in — "3 documents nobody has read"
+    when unmet, "every document accounted for" when met. One string that has to
+    serve both ends up reading like neither ("0 documents unexamined ✓").
+    """
     id: str
-    label: str            # what it says when unmet — "5 parent documents unexamined"
+    label: str
     passed: bool
     tab: str = "review"   # where the work of closing it happens
 
@@ -510,14 +520,15 @@ class Readiness(BaseModel):
         """What the rail says. The gate chips beside it carry the detail, so the
         label does not repeat them — a pinned header that restates itself is a
         pinned header that is too tall."""
-        return "Ready to opine" if self.ready else "Not ready to opine"
+        return "Ready to sign off" if self.ready else "Not ready to sign off yet"
 
     @property
     def headline(self) -> str:
         """The prose form, for the report and the case list."""
         if self.ready:
-            return "Ready to opine"
-        return "Not ready to opine — " + ", ".join(g.label for g in self.unmet[:3])
+            return "Ready to sign off"
+        return ("Not ready to sign off yet — "
+                + ", ".join(g.label for g in self.unmet[:3]))
 
 
 class DerivedView(BaseModel):
@@ -553,7 +564,7 @@ class DerivedView(BaseModel):
             return fails[0].message
         if self.coverage:
             return self.coverage.headline
-        return "No entries were read from this case."
+        return "We did not read any entries from this case."
 
     def closer_for(self, key: str) -> Optional[DocumentRequest]:
         """The document that would resolve this finding. A parent superseded by a

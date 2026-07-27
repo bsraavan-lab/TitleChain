@@ -12,8 +12,8 @@
 {% if surveys and entries %}
 <section class="section">
   <h2 class="section-title">
-    Survey numbers across transactions
-    <span class="count count-quiet">{{ surveys|length }} distinct</span>
+    Which survey numbers appear where
+    <span class="count count-quiet">{{ surveys|length }} in total</span>
   </h2>
   <div class="table-scroll">
     <table class="matrix">
@@ -42,9 +42,10 @@
     </table>
   </div>
   <p class="meta">
-    A row of dots is a survey number the certificate header searched but that
-    appears in no entry's schedule. Descriptive only — rulebook
-    {{ view.rulebook_version }} asserts no subdivision or partition verdict (R6).
+    A row of nothing but dots is a survey number the certificate says it searched,
+    but which turns up in no entry. This table only shows you what is where. We do
+    not yet judge whether a changed number means a subdivision or a partition, so
+    that reading is yours to make.
   </p>
 </section>
 {% endif %}

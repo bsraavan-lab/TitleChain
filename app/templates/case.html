@@ -11,7 +11,7 @@
 {% block bar_context %}
 <details class="switcher">
   <summary>
-    <span class="sw-name">{{ case.property_key or 'Untitled case' }}</span>
+    <span class="sw-name">{{ case.property_key or 'New case' }}</span>
     {% if header and header.sro %}<span class="sw-sub">{{ header.sro }} SRO</span>{% endif %}
     {% if docs|length > 1 %}
       <span class="sw-sub">{{ docs|length }} certificates</span>
@@ -20,13 +20,13 @@
   </summary>
   <div class="switcher-menu">
     {% if other_cases %}
-      <p class="menu-label">Other cases</p>
+      <p class="menu-label">Your other cases</p>
       {% for c in other_cases %}
-        <a href="/case/{{ c.id }}">{{ c.property_key or 'Untitled case' }}</a>
+        <a href="/case/{{ c.id }}">{{ c.property_key or 'New case' }}</a>
       {% endfor %}
     {% endif %}
-    <p class="menu-label">Go</p>
-    <a href="/">All cases</a>
+    <p class="menu-label">Elsewhere</p>
+    <a href="/">See all your cases</a>
   </div>
 </details>
 {% endblock %}
@@ -34,7 +34,7 @@
 {% block bar_actions %}
   {% if not processing and case.status not in ('FAILED', 'REFUSED') %}
     <a class="btn btn-ghost" href="/report/{{ case.id }}" target="_blank"
-       rel="noopener" data-shortcut="e">Export report</a>
+       rel="noopener" data-shortcut="e">Open the report</a>
   {% endif %}
 {% endblock %}
 

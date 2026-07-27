@@ -106,10 +106,10 @@ def load_entries(ec_id: int) -> list[Entry]:
 # Editable fields. Deliberately short: correction is for what the pipeline
 # misread, not a general-purpose document editor.
 EDITABLE = {
-    "doc_no": "Document no.",
-    "date_registration": "Date of registration",
-    "date_execution": "Date of execution",
-    "nature": "Nature",
+    "doc_no": "Document number",
+    "date_registration": "Date registered",
+    "date_execution": "Date signed",
+    "nature": "What it is",
     "market_value": "Market value",
     "remarks": "Remarks",
 }
@@ -200,11 +200,13 @@ def case_of_entry(entry_id: int) -> int | None:
 
 # ── review state: append-only, keyed on the finding's subject ─────────────────
 
+# Written in her voice, because she is the one choosing between them and the
+# report prints her choice back as a statement she stands behind.
 REVIEW_STATES = {
-    "reviewed": "Reviewed",
-    "accepted": "Accepted risk",
-    "awaiting_document": "Awaiting a document",
-    "open": "Reopened",
+    "reviewed": "I have checked this",
+    "accepted": "I am accepting the risk",
+    "awaiting_document": "Waiting on a document",
+    "open": "Still open",
 }
 
 

@@ -9,7 +9,7 @@
         data-evidence="{{ entry_id }}"
         hx-get="/entry/{{ entry_id }}/edit/{{ field }}"
         hx-target="closest td" hx-swap="innerHTML"
-        title="{{ 'Not read — click to enter it from the page' if not value
-                  else 'Click to correct' }}">
+        title="{{ 'We could not read this — click to type what the page says'
+                  if not value else 'Click to fix this' }}">
   {{ value if value else '—' }}
 </button>

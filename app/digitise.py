@@ -263,7 +263,8 @@ def digitise(path: Path, *, pages_total: int, language: str = LANGUAGE,
     cached = find_cached(path, language)
     if cached:
         pages, markdown = read_dir(cached)
-        say(len(pages), f"Reading {len(pages)} pages (cached digitisation)")
+        say(len(pages), f"Reading {len(pages)} pages (we have read this file "
+                        f"before, so it is instant)")
         # Recorded as a call that cost nothing. A cache hit is the most interesting
         # number on the cost panel, and it can only be shown if it is logged.
         _record(stage="digitise", model="document-intelligence",

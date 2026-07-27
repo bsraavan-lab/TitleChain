@@ -22,19 +22,19 @@
       <span class="rail-where">page {{ row.page_num }}</span>
     {% else %}
       <span class="rail-kicker">Certificate</span>
-      <span class="rail-where">{{ doc.filename if doc else 'not yet read' }}</span>
+      <span class="rail-where">{{ doc.filename if doc else 'reading it now…' }}</span>
     {% endif %}
   </div>
 
   <div class="rail-tools">
     {% if is_ev %}
-      <div class="seg" role="group" aria-label="Evidence view">
+      <div class="seg" role="group" aria-label="How much of the page to show">
         <button class="{{ 'on' if view != 'page' }}" type="button"
                 hx-get="/evidence/{{ row.id }}?view=crop"
-                hx-target="#rail" hx-swap="innerHTML">Crop</button>
+                hx-target="#rail" hx-swap="innerHTML">Close up</button>
         <button class="{{ 'on' if view == 'page' }}" type="button"
                 hx-get="/evidence/{{ row.id }}?view=page"
-                hx-target="#rail" hx-swap="innerHTML">In context</button>
+                hx-target="#rail" hx-swap="innerHTML">Whole page</button>
       </div>
       <button class="icon-btn" type="button" title="Back to the certificate"
               hx-get="/case/{{ case_id }}/rail?page={{ row.page_num }}"
@@ -67,8 +67,8 @@
            them, so the evidence layer is not opaque to a screen reader — the
            rare accessibility win that falls out of the data model. #}
         <img src="/crop/{{ row.id }}.png"
-             alt="Entry {{ row.sr_no }}: document {{ row.doc_no or 'not read' }},
-                  {{ row.nature or 'nature not read' }}, registered
+             alt="Entry {{ row.sr_no }}: document {{ row.doc_no or 'number not read' }},
+                  {{ row.nature or 'type not read' }}, registered
                   {{ row.date_registration or 'date not read' }}.">
       {% endif %}
     </figure>
@@ -80,7 +80,8 @@
   {% else %}
     <div class="rail-empty">
       <div class="skeleton-page" aria-hidden="true"></div>
-      <p>The certificate appears here as soon as the first page is read.</p>
+      <p>Your certificate appears here as soon as the first page is read — usually
+        a few seconds.</p>
     </div>
   {% endif %}
 </div>
@@ -93,16 +94,17 @@
     <span class="mono">block …{{ row.block_id[-8:] }}</span>
     {% if row.block_confidence %}
       <span class="sep">·</span>
-      <span class="mono">layout {{ '%.2f'|format(row.block_confidence) }}</span>
+      <span class="mono">scan {{ '%.2f'|format(row.block_confidence) }}</span>
     {% endif %}
   </p>
   {% if row.block_confidence %}
   <details class="note">
-    <summary>What layout confidence is not</summary>
-    <p>It is Sarvam's detection score for the whole block, not a per-cell score.
-      A block reporting 0.96 dropped three date cells in this very document —
-      which is why completeness is checked by our own validator (R9), and why a
-      cell we could not read is shown as a task rather than a blank.</p>
+    <summary>What this scan score does and does not tell you</summary>
+    <p>It says how confident the page reader was that it found this block of the
+      table — not how well it read each cell inside it. A block scoring 0.96 lost
+      three date cells in this very document. That is why we check every field
+      ourselves, and why anything we could not read shows up as a job for you rather
+      than as an empty space.</p>
   </details>
   {% endif %}
 </div>

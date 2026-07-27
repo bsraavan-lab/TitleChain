@@ -29,7 +29,7 @@
 
   {% if expanded %}
     <div class="check-detail">
-      <h4>What this rule checked</h4>
+      <h4>What we checked</h4>
       <p class="rule-statement">{{ RULEBOOK[run.rule_id][1] }}</p>
 
       {% if run.inputs %}
@@ -38,31 +38,32 @@
             <dt>{{ i.label }}</dt>
             <dd>
               <span class="val">{{ i.value or '—' }}</span>
-              {% if i.source_entry_id %}{{ source_button(i.source_entry_id) }}{% endif %}
+              {% if i.source_entry_id %}
+                {{ source_button(i.source_entry_id, 'See it on the page') }}
+              {% endif %}
             </dd>
           {% endfor %}
         </dl>
       {% else %}
-        <p class="meta">This rule read no values on this case.</p>
+        <p class="meta">This check had no values to read on this case.</p>
       {% endif %}
 
       {% if run.reason %}
-        <h4>Why nothing was concluded</h4>
+        <h4>Why we could not answer this</h4>
         <p class="rule-reason">{{ run.reason }}</p>
         {% if not run.implemented %}
           <p class="meta">
-            Not implemented in rulebook {{ run.rulebook_version }}. This is stated
-            rather than omitted: a check we did not run must never look like a
-            check that passed.
+            We do not check this yet. We would rather tell you than leave it out —
+            a check we skipped should never look like one that passed.
           </p>
         {% endif %}
       {% endif %}
 
       {% if run.evidence_entry_ids or run.pages %}
-        <h4>Evidence</h4>
+        <h4>See it for yourself</h4>
         <p class="rule-evidence">
           {% for eid in run.evidence_entry_ids %}
-            {{ source_button(eid, 'entry crop') }}
+            {{ source_button(eid, 'This entry on the page') }}
           {% endfor %}
           {% for p in run.pages %}
             {% if p.ec_id %}{{ page_button(p.ec_id, p.page_num) }}{% endif %}
@@ -72,7 +73,7 @@
 
       {% set closer = view.closer_for(run.key) %}
       {% if closer %}
-        <h4>What closes this</h4>
+        <h4>What would settle this</h4>
         <p class="rule-closes">
           {{ closer.title }}
           {% if closer.date_from %}
@@ -80,17 +81,17 @@
           {% endif %}
         </p>
         <p class="rule-closes-actions">
-          {{ copy_button(closer.as_text, 'copy order text') }}
+          {{ copy_button(closer.as_text, 'Copy this request') }}
           <button class="link" type="button"
                   hx-get="/case/{{ case.id }}/tab/documents"
                   hx-target="#tab-body" hx-swap="outerHTML"
                   hx-push-url="/case/{{ case.id }}?tab=documents">
-            upload it now →
+            Add the document now →
           </button>
         </p>
       {% endif %}
 
-      <h4>Review</h4>
+      <h4>Your call</h4>
       <form class="review-form" hx-post="/review" hx-target="#tab-body"
             hx-swap="outerHTML">
         <input type="hidden" name="case_id" value="{{ case.id }}">
@@ -106,17 +107,17 @@
             </label>
           {% endfor %}
         </div>
-        <label class="sr-only" for="note-{{ run.key }}">Review note</label>
+        <label class="sr-only" for="note-{{ run.key }}">Your note on this check</label>
         <textarea id="note-{{ run.key }}" name="note" rows="2"
-                  placeholder="Note for the record — appears in the exported report"
+                  placeholder="Add a note for the file — it appears in the report you hand over"
                   >{{ rv.note if rv and rv.note else '' }}</textarea>
-        <button class="btn" type="submit">save review</button>
+        <button class="btn" type="submit">Save to the file</button>
       </form>
 
       {% set history = review_by_key.get(run.key, []) %}
       {% if history %}
         <details class="review-history">
-          <summary class="meta">review history ({{ history|length }})</summary>
+          <summary class="meta">Everything you have noted here ({{ history|length }})</summary>
           <ul>
             {% for h in history %}
               <li>
@@ -127,13 +128,14 @@
             {% endfor %}
           </ul>
           <p class="meta">
-            Append-only. A review is never overwritten or deleted.
+            We keep every version. Nothing you record here is ever overwritten or
+            deleted.
           </p>
         </details>
       {% endif %}
 
-      <p class="meta">{{ run.rule_id }} {{ RULEBOOK[run.rule_id][0] }} ·
-        rulebook {{ run.rulebook_version }} · key <code>{{ run.key }}</code></p>
+      <p class="meta">Check {{ run.rule_id }} · {{ RULEBOOK[run.rule_id][0] }} ·
+        rulebook {{ run.rulebook_version }} · <code>{{ run.key }}</code></p>
     </div>
   {% endif %}
 </li>
