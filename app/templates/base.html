@@ -8,18 +8,45 @@
   <link rel="apple-touch-icon" href="/static/logo-mark.png">
   <link rel="stylesheet" href="/static/style.css">
   <script src="/static/htmx.min.js" defer></script>
+  <script src="/static/app.js" defer></script>
 </head>
 <body>
-  <header class="topbar">
-    <a class="wordmark" href="/">
-      <img src="/static/logo-mark.png" alt="" width="22" height="25" class="mark">
-      <span>TitleChain</span>
-    </a>
-    <span class="topbar-right">
-      {% block topbar %}{% endblock %}
-      <span class="meta">rulebook {{ RULEBOOK_VERSION }}</span>
-    </span>
-  </header>
-  <main>{% block content %}{% endblock %}</main>
+{# The bar carries three things and nothing else: where I am, what I can do,
+   how to move. `rulebook v1.0` used to sit here on every screen — it is
+   provenance, so it now lives where provenance is read (on each finding, and
+   in the report), not in permanent chrome. #}
+<header class="bar">
+  <a class="wordmark" href="/" title="All cases">
+    <img src="/static/logo-mark.png" alt="" width="20" height="23">
+    <span>TitleChain</span>
+  </a>
+
+  {% block bar_context %}{% endblock %}
+
+  <div class="bar-actions">
+    {% block bar_actions %}{% endblock %}
+    <button class="kbd-hint" type="button" data-open-palette
+            aria-label="Open the command palette">
+      <kbd>⌘</kbd><kbd>K</kbd>
+    </button>
+  </div>
+</header>
+
+<main>{% block content %}{% endblock %}</main>
+
+{# Recognition over recall, and the only navigation a keyboard user needs.
+   Native <dialog>: focus trap, Escape and backdrop dismissal come free. #}
+<dialog id="palette" class="palette" aria-label="Command palette">
+  <input id="palette-input" type="text" autocomplete="off" spellcheck="false"
+         placeholder="Jump to a property, or type a command…">
+  <ul id="palette-list" class="palette-list" role="listbox"></ul>
+  <p class="palette-foot">
+    <span><kbd>↑</kbd><kbd>↓</kbd> move</span>
+    <span><kbd>↵</kbd> open</span>
+    <span><kbd>esc</kbd> close</span>
+  </p>
+</dialog>
+
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
 </body>
 </html>

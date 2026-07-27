@@ -1,0 +1,109 @@
+{# ── THE DOCUMENT RAIL ────────────────────────────────────────────────────────
+   One component, two modes, identical shell — so switching between them never
+   moves a control under the cursor.
+
+     document  the certificate itself, browsable. This is what the rail shows on
+               arrival. The previous build left this half of the screen holding
+               one grey sentence until the first click, which made the largest
+               surface on the page the emptiest.
+     evidence  one entry's region, pinned. Crop first, because that is the
+               answer; "in context" second, because a crop with no page around
+               it is as unfalsifiable as no crop at all.
+
+   A pane, never a modal: she checks several findings against the page in
+   sequence, and a modal forces open / close / lose-place on every one.
+#}
+{% set is_ev = (mode == 'evidence' and row) %}
+
+<div class="rail-head">
+  <div class="rail-title">
+    {% if is_ev %}
+      <span class="rail-kicker">Entry {{ row.sr_no }}</span>
+      <span class="rail-where">page {{ row.page_num }}</span>
+    {% else %}
+      <span class="rail-kicker">Certificate</span>
+      <span class="rail-where">{{ doc.filename if doc else 'not yet read' }}</span>
+    {% endif %}
+  </div>
+
+  <div class="rail-tools">
+    {% if is_ev %}
+      <div class="seg" role="group" aria-label="Evidence view">
+        <button class="{{ 'on' if view != 'page' }}" type="button"
+                hx-get="/evidence/{{ row.id }}?view=crop"
+                hx-target="#rail" hx-swap="innerHTML">Crop</button>
+        <button class="{{ 'on' if view == 'page' }}" type="button"
+                hx-get="/evidence/{{ row.id }}?view=page"
+                hx-target="#rail" hx-swap="innerHTML">In context</button>
+      </div>
+      <button class="icon-btn" type="button" title="Back to the certificate"
+              hx-get="/case/{{ case_id }}/rail?page={{ row.page_num }}"
+              hx-target="#rail" hx-swap="innerHTML">✕</button>
+    {% elif doc and page_count > 1 %}
+      <div class="pager">
+        <button class="icon-btn" type="button" title="Previous page"
+                {{ 'disabled' if page <= 1 }}
+                hx-get="/case/{{ case_id }}/rail?page={{ page - 1 }}"
+                hx-target="#rail" hx-swap="innerHTML">‹</button>
+        <span class="pager-n">{{ page }} <i>/ {{ page_count }}</i></span>
+        <button class="icon-btn" type="button" title="Next page"
+                {{ 'disabled' if page >= page_count }}
+                hx-get="/case/{{ case_id }}/rail?page={{ page + 1 }}"
+                hx-target="#rail" hx-swap="innerHTML">›</button>
+      </div>
+    {% endif %}
+  </div>
+</div>
+
+<div class="rail-view">
+  {% if is_ev %}
+    <figure class="shot">
+      {% if view == 'page' %}
+        <img src="/pageview/{{ row.id }}.png"
+             alt="Page {{ row.page_num }} of the certificate, with the region for
+                  entry {{ row.sr_no }} outlined.">
+      {% else %}
+        {# The alt text is the typed field values from this very block. We have
+           them, so the evidence layer is not opaque to a screen reader — the
+           rare accessibility win that falls out of the data model. #}
+        <img src="/crop/{{ row.id }}.png"
+             alt="Entry {{ row.sr_no }}: document {{ row.doc_no or 'not read' }},
+                  {{ row.nature or 'nature not read' }}, registered
+                  {{ row.date_registration or 'date not read' }}.">
+      {% endif %}
+    </figure>
+  {% elif doc %}
+    <figure class="shot">
+      <img src="/page/{{ case_id }}/{{ page }}.png" loading="lazy"
+           alt="Page {{ page }} of the certificate.">
+    </figure>
+  {% else %}
+    <div class="rail-empty">
+      <div class="skeleton-page" aria-hidden="true"></div>
+      <p>The certificate appears here as soon as the first page is read.</p>
+    </div>
+  {% endif %}
+</div>
+
+{% if is_ev %}
+<div class="rail-foot">
+  <p class="prov">
+    <span class="mono">page {{ row.page_num }}</span>
+    <span class="sep">·</span>
+    <span class="mono">block …{{ row.block_id[-8:] }}</span>
+    {% if row.block_confidence %}
+      <span class="sep">·</span>
+      <span class="mono">layout {{ '%.2f'|format(row.block_confidence) }}</span>
+    {% endif %}
+  </p>
+  {% if row.block_confidence %}
+  <details class="note">
+    <summary>What layout confidence is not</summary>
+    <p>It is Sarvam's detection score for the whole block, not a per-cell score.
+      A block reporting 0.96 dropped three date cells in this very document —
+      which is why completeness is checked by our own validator (R9), and why a
+      cell we could not read is shown as a task rather than a blank.</p>
+  </details>
+  {% endif %}
+</div>
+{% endif %}

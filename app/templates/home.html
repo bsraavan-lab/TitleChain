@@ -1,53 +1,118 @@
 {% extends "base.html" %}
+{% import "_rule.html" as r %}
+{% block title %}Cases — TitleChain{% endblock %}
+
 {% block content %}
-<div class="home">
+{# Two audiences share this screen and they want opposite things: a first-time
+   user wants to be told what this is and given something to drop; a returning
+   user wants the file she was in the middle of. Rather than build two pages,
+   the upload IS the first row of the case list — "start a new case" is always
+   at the top of the page, and it never costs the list its position. #}
+<div class="page page-home">
 
-  <div class="home-brand">
-    <img src="/static/logo.png" alt="TitleChain" width="220" height="156">
-  </div>
+  {% if not summaries %}
+  <section class="welcome">
+    <img src="/static/logo.png" alt="TitleChain" width="132" height="94" class="welcome-mark">
+    <h1>Does this certificate cover the chain you are about to sign on?</h1>
+    <p class="lede">
+      Drop a Tamil Nadu Encumbrance Certificate. TitleChain reads it, computes what
+      its search window can and cannot evidence, and shows you the region of the
+      page behind every finding.
+    </p>
+  </section>
+  {% endif %}
 
-  <form class="dropzone" method="post" action="/upload" enctype="multipart/form-data"
-        id="dropform">
+  <form class="dropzone {{ 'compact' if summaries }}" method="post" action="/upload"
+        enctype="multipart/form-data" id="dropform" data-dropzone>
     <label for="file">
-      <strong>Drop an Encumbrance Certificate here</strong>
-      <span class="dz-sub">PDF, JPEG or PNG · up to 50 MB</span>
-      <span class="btn">choose file</span>
+      <span class="dz-icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor"
+             stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 16V4m0 0L7.5 8.5M12 4l4.5 4.5"></path>
+          <path d="M4 15v3.5A1.5 1.5 0 0 0 5.5 20h13a1.5 1.5 0 0 0 1.5-1.5V15"></path>
+        </svg>
+      </span>
+      <span class="dz-text">
+        <strong>{{ 'Drop a certificate, or choose a file' if summaries
+                   else 'Drop an Encumbrance Certificate here' }}</strong>
+        <span class="dz-sub">PDF, JPEG or PNG · up to 50 MB</span>
+      </span>
+      <span class="btn btn-primary" aria-hidden="true">Choose file</span>
     </label>
     <input id="file" type="file" name="file" accept=".pdf,.jpg,.jpeg,.png"
            onchange="document.getElementById('dropform').submit()">
   </form>
 
   {% if rejected %}
-    <p class="reject" role="alert">⚠ {{ rejected }}</p>
+    {# Named, specific, and rendered where the file was dropped. Never a modal:
+       the fix is to choose a different file, and that control is right here. #}
+    <p class="reject" role="alert">
+      <span class="glyph" aria-hidden="true">▲</span>{{ rejected }}
+    </p>
   {% endif %}
 
   <p class="samples">
-    or open a sample:
+    <span class="samples-label">No certificate to hand?</span>
     {% for key, s in SAMPLES.items() %}
       <form method="post" action="/sample/{{ key }}" class="inline">
-        <button class="btn-quiet" type="submit">{{ s.label }}</button>
+        <button class="btn btn-ghost" type="submit">{{ s.label }}</button>
       </form>
     {% endfor %}
   </p>
 
-  {% if cases %}
+  {% if summaries %}
   <section class="cases">
-    <h2>Your cases</h2>
+    <h2 class="section-title">Cases <span class="count">{{ summaries|length }}</span></h2>
+
+    {# Rows lead with property identity and chain state, never the filename.
+       `ec2_pacollege.pdf` means nothing to her; *Puliyampatti, survey 95/2* is
+       how the file sits in her head. The row is also the restart proof: it is
+       rendered from SQLite, so its presence after a relaunch IS the memory
+       demonstration — which is why it no longer needs a caption saying so. #}
     <ul class="case-list">
-      {% for c in cases %}
-      <li>
+      {% for s in summaries %}
+      {% set c = s.case %}
+      {% set cov = s.view.coverage if s.view else None %}
+      <li class="case-row {{ 'is-processing' if s.processing }}">
         <a href="/case/{{ c.id }}">
-          <span class="case-name">{{ c.property_key or 'Untitled case' }}</span>
-          <span class="case-state">
-            {% if c.status == 'READY' %}opened
-            {% elif c.status == 'FAILED' or c.status == 'REFUSED' %}needs attention
-            {% else %}{{ c.status_detail or c.status|lower }}{% endif %}
+          <span class="case-state
+              {{- ' st-bad'  if cov and cov.sufficient is false
+                 else ' st-good' if cov and cov.sufficient
+                 else ' st-fail' if c.status in ('FAILED', 'REFUSED')
+                 else ' st-wait' }}" aria-hidden="true">
+            {%- if s.processing %}◴{% elif c.status in ('FAILED','REFUSED') %}⊘
+            {%- elif cov and cov.sufficient is false %}▲{% elif cov and cov.sufficient %}✓
+            {%- else %}·{% endif -%}
+          </span>
+
+          <span class="case-id">
+            <span class="case-name">{{ c.property_key or 'Untitled case' }}</span>
+            <span class="case-sub">
+              {%- if s.header and s.header.sro %}{{ s.header.sro }} SRO{% endif -%}
+              {%- if s.header and s.header.search_period_start %}
+                <span class="sep">·</span>{{ s.header.search_period_start }}
+                → {{ s.header.search_period_end }}{% endif -%}
+            </span>
+          </span>
+
+          {% if cov %}{{ r.spark(cov) }}{% else %}<span class="spark"></span>{% endif %}
+
+          <span class="case-verdict">
+            {%- if s.processing -%}
+              <span class="chip chip-wait"><span class="spinner" aria-hidden="true"></span>
+                {{ c.status_detail or 'Reading' }}</span>
+            {%- elif c.status in ('FAILED', 'REFUSED') -%}
+              <span class="chip chip-fail">Needs attention</span>
+            {%- elif s.view and s.view.open_items -%}
+              <span class="chip chip-open">{{ s.view.open_items|length }} open</span>
+            {%- elif s.view -%}
+              <span class="chip chip-clear">Nothing open</span>
+            {%- endif -%}
           </span>
         </a>
       </li>
       {% endfor %}
     </ul>
-    <p class="meta">Cases are read from disk. They survive a restart — that is the point.</p>
   </section>
   {% endif %}
 </div>

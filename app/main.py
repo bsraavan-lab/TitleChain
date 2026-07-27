@@ -61,13 +61,48 @@ def case_context(request: Request, case_id: int) -> dict:
         "corrections": store.corrections_for(ec_row["id"]) if ec_row else [],
         "unread": store.unread_chunks(ec_row["id"]) if ec_row else [],
         "refusal_checks": json.loads(case["refusal_checks"] or "null"),
+        # Recognition over recall: the switcher lists the other open properties
+        # by name, so moving between files never routes through the home screen.
+        "other_cases": [c for c in store.case_list() if c["id"] != case_id],
     }
 
 
 def _entry(entry_id: int):
-    row = db.one("SELECT e.*, d.file_path FROM entries e "
+    row = db.one("SELECT e.*, d.file_path, d.case_id, d.page_count FROM entries e "
                  "JOIN ec_documents d ON d.id = e.ec_id WHERE e.id = ?", (entry_id,))
     return row
+
+
+def _document(case_id: int):
+    return db.one("SELECT * FROM ec_documents WHERE case_id = ? ORDER BY id LIMIT 1",
+                  (case_id,))
+
+
+def case_summaries() -> list[dict]:
+    """The case list is the returning user's landing screen, so it carries the
+    answer, not the filename: chain state, what is still open, and the same
+    search-window rule the case page draws — at 1/8 the size.
+
+    Deriving per row is cheap (entries are already typed and in memory) and it
+    keeps ONE source of truth for the verdict. A denormalised `cases.verdict`
+    column would be a second one, and the two would disagree the first time the
+    rulebook version changed.
+    """
+    out: list[dict] = []
+    for case in store.case_list():
+        summary = {"case": case, "header": None, "view": None,
+                   "processing": case["status"] in PROCESSING}
+        try:
+            header, ec_row = store.load_header(case["id"])
+            entries = store.load_entries(ec_row["id"]) if ec_row else []
+            summary["header"] = header
+            if header and entries:
+                summary["view"] = derive_mod.derive(header, entries)
+                summary["entry_count"] = len(entries)
+        except Exception:                       # a row written by an older
+            pass                                # extractor must not 500 the list
+        out.append(summary)
+    return out
 
 
 # ── screens ──────────────────────────────────────────────────────────────────
@@ -75,8 +110,26 @@ def _entry(entry_id: int):
 @app.get("/", response_class=HTMLResponse)
 def home(request: Request, rejected: str | None = None):
     return templates.TemplateResponse(request, "home.html", {
-        "request": request, "cases": store.case_list(), "rejected": rejected,
+        "request": request, "summaries": case_summaries(), "rejected": rejected,
     })
+
+
+@app.get("/palette.json")
+def palette():
+    """Feeds the command palette. Recognition over recall: she picks a property
+    by name instead of remembering where it sat in a list."""
+    cases = []
+    for c in store.case_list():
+        header, _ = store.load_header(c["id"])
+        cases.append({
+            "id": c["id"],
+            "label": c["property_key"] or "Untitled case",
+            "sub": f"{header.sro} SRO" if header and header.sro else c["status"].lower(),
+        })
+    return {
+        "cases": cases,
+        "commands": [{"label": "All cases", "kind": "Go", "href": "/"}],
+    }
 
 
 @app.post("/upload")
@@ -147,14 +200,47 @@ def correct(request: Request, entry_id: int = Form(...), field: str = Form(...),
     return templates.TemplateResponse(request, "_derived.html", ctx)
 
 
-# ── evidence ─────────────────────────────────────────────────────────────────
+# ── the document rail ────────────────────────────────────────────────────────
+# One component, two modes. `document` browses the certificate itself and is
+# what the rail shows on arrival — the old build left this half of the screen
+# empty until the first click, which is the largest piece of dead space in the
+# product. `evidence` pins one entry's region. Both are the same HTML shell, so
+# switching between them never moves the controls.
+
+def _rail(request: Request, *, mode: str, case_id: int, page: int = 1,
+          row=None, view: str = "crop"):
+    doc = _document(case_id)
+    return templates.TemplateResponse(request, "_rail.html", {
+        "request": request, "mode": mode, "doc": doc, "case_id": case_id,
+        "page": max(1, min(page, (doc["page_count"] if doc else 1) or 1)),
+        "page_count": (doc["page_count"] if doc else 1) or 1,
+        "row": row, "view": view,
+    })
+
+
+@app.get("/case/{case_id}/rail", response_class=HTMLResponse)
+def rail(request: Request, case_id: int, page: int = 1):
+    return _rail(request, mode="document", case_id=case_id, page=page)
+
 
 @app.get("/evidence/{entry_id}", response_class=HTMLResponse)
 def evidence(request: Request, entry_id: int, view: str = "crop"):
     row = _entry(entry_id)
-    return templates.TemplateResponse(request, "_evidence.html", {
-        "request": request, "row": row, "view": view,
-    })
+    if not row:
+        return HTMLResponse("<p class='rail-empty'>That entry is no longer available.</p>")
+    return _rail(request, mode="evidence", case_id=row["case_id"],
+                 page=row["page_num"], row=row, view=view)
+
+
+@app.get("/page/{case_id}/{page_num}.png")
+def document_page(case_id: int, page_num: int):
+    """The certificate itself, unmarked. Rendered lazily, one page at a time."""
+    doc = _document(case_id)
+    if not doc or not doc["file_path"]:
+        return Response(status_code=404)
+    png = crops.page_rect(doc["file_path"], page_num, None)
+    return Response(png, media_type="image/png",
+                    headers={"Cache-Control": "max-age=3600"})
 
 
 @app.get("/crop/{entry_id}.png")
