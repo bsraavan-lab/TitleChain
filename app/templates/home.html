@@ -3,14 +3,18 @@
 {% block title %}Cases — TitleChain{% endblock %}
 
 {% block content %}
-{# Two audiences share this screen and they want opposite things: a first-time
-   user wants to be told what this is and given something to drop; a returning
-   user wants the file she was in the middle of. Rather than build two pages,
-   the upload IS the first row of the case list — "start a new case" is always
-   at the top of the page, and it never costs the list its position. #}
+{# One home screen, and it never rearranges itself. The mark, the question and
+   the full-size drop target render the same on the first visit and the
+   fiftieth; uploading a certificate adds a row to the list UNDERNEATH them and
+   changes nothing above it.
+
+   The old build swapped in a second, compact home the moment a case existed —
+   welcome block gone, drop target shrunk to a strip, its wording rewritten — so
+   coming back from a case landed on a screen she had not seen before, and the
+   input she returned to use was not where she left it. A landing screen that
+   moves under you is one you have to re-read every time. #}
 <div class="page page-home">
 
-  {% if not summaries %}
   <section class="welcome">
     <img src="/static/logo.png" alt="TitleChain" width="132" height="94" class="welcome-mark">
     <h1>Does this certificate cover the chain you are about to sign on?</h1>
@@ -20,9 +24,8 @@
       page behind every finding.
     </p>
   </section>
-  {% endif %}
 
-  <form class="dropzone {{ 'compact' if summaries }}" method="post" action="/upload"
+  <form class="dropzone" method="post" action="/upload"
         enctype="multipart/form-data" id="dropform" data-dropzone>
     <label for="file">
       <span class="dz-icon" aria-hidden="true">
@@ -33,8 +36,7 @@
         </svg>
       </span>
       <span class="dz-text">
-        <strong>{{ 'Drop a certificate, or choose a file' if summaries
-                   else 'Drop an Encumbrance Certificate here' }}</strong>
+        <strong>Drop an Encumbrance Certificate here</strong>
         <span class="dz-sub">PDF, JPEG or PNG · up to 50 MB</span>
       </span>
       <span class="btn btn-primary" aria-hidden="true">Choose file</span>

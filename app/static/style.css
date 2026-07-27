@@ -239,9 +239,10 @@ main { padding: var(--s6) var(--s5) var(--s8); }
 .count-warn { background: var(--stamp-soft); color: var(--stamp); }
 
 /* ── HOME ──────────────────────────────────────────────────────────────────
-   The upload is the first row of the case list, not a hero above it. For a
-   returning user the list is the page; for a first-time user the welcome block
-   above it does the explaining, and disappears the moment there is a case.    */
+   One screen at one size. The welcome block and the drop target measure the
+   same with no cases and with fifty; the case list grows beneath them. There
+   is no compact second home to learn, so returning from a case lands on the
+   screen she left.                                                           */
 
 .welcome { text-align: center; padding: var(--s8) 0 var(--s6); }
 .welcome-mark { width: 132px; height: auto; margin: 0 auto var(--s5);
@@ -256,23 +257,17 @@ main { padding: var(--s6) var(--s5) var(--s8); }
   border-radius: var(--r4); padding: var(--s7) var(--s5); text-align: center;
   transition: border-color 140ms var(--ease), background 140ms var(--ease);
 }
-.dropzone.compact { padding: var(--s4); border-radius: var(--r3); }
 .dropzone:hover, .dropzone:focus-within, .dropzone.is-over {
   border-color: var(--endorse); background: var(--endorse-soft);
 }
-.dropzone label { display: flex; align-items: center; justify-content: center;
-                  gap: var(--s4); cursor: pointer; }
-.dropzone.compact label { justify-content: flex-start; }
+.dropzone label { display: flex; flex-direction: column; align-items: center;
+                  justify-content: center; gap: var(--s3); cursor: pointer; }
 .dz-icon { display: grid; place-items: center; width: 36px; height: 36px;
            flex: none; border-radius: var(--r2); background: var(--sunk);
            color: var(--ink-2); }
-.dz-text { display: grid; gap: 2px; text-align: left; }
-.dz-text strong { font-size: 15px; font-weight: 600; letter-spacing: -0.01em; }
+.dz-text { display: grid; gap: 2px; text-align: center; justify-items: center; }
+.dz-text strong { font-size: 17px; font-weight: 600; letter-spacing: -0.01em; }
 .dz-sub { color: var(--ink-3); font-size: 12px; }
-.dropzone.compact .btn { margin-left: auto; }
-.dropzone:not(.compact) label { flex-direction: column; gap: var(--s3); }
-.dropzone:not(.compact) .dz-text { text-align: center; justify-items: center; }
-.dropzone:not(.compact) .dz-text strong { font-size: 17px; }
 .dropzone input[type=file] { position: absolute; width: 1px; height: 1px; opacity: 0; }
 
 /* Rejected at the dropzone, named, in place. Never a modal: the fix is to pick
