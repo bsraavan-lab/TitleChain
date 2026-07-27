@@ -4,18 +4,23 @@
    else 'Know what your certificate can prove' }} — TitleChain{% endblock %}
 
 {% block content %}
-{# Two audiences share this screen and they want opposite things: a first-time
-   user wants to be told what this is and given something to drop; a returning
-   user wants the file she was in the middle of. Rather than build two pages,
-   the upload IS the first row of the case list — "start a new case" is always
-   at the top of the page, and it never costs the list its position.
+{# One home screen, and it never rearranges itself. The mark, the question and
+   the full-size drop target render the same on the first visit and the
+   fiftieth; uploading a certificate adds a row to the list UNDERNEATH them and
+   changes nothing above it.
 
-   The welcome copy answers four questions before she scrolls: what am I up
-   against, why does it matter, what do I get back, and why should I believe
-   any of it. #}
+   The old build swapped in a second, compact home the moment a case existed —
+   welcome block gone, drop target shrunk to a strip, its wording rewritten — so
+   coming back from a case landed on a screen she had not seen before, and the
+   input she returned to use was not where she left it. A landing screen that
+   moves under you is one you have to re-read every time.
+
+   The copy is ordered to answer four questions before she scrolls: what am I up
+   against, why does it matter, what do I get back, and why should I believe any
+   of it. The last two live at the foot of the page rather than above the list,
+   so they are there to be read without ever pushing her own cases down. #}
 <div class="page page-home">
 
-  {% if not summaries %}
   <section class="welcome">
     <img src="/static/logo.png" alt="TitleChain" width="132" height="94" class="welcome-mark">
     <h1>How much of this property's past can this certificate actually prove?</h1>
@@ -30,9 +35,8 @@
       the exact spot on the page it came from.
     </p>
   </section>
-  {% endif %}
 
-  <form class="dropzone {{ 'compact' if summaries }}" method="post" action="/upload"
+  <form class="dropzone" method="post" action="/upload"
         enctype="multipart/form-data" id="dropform" data-dropzone>
     <label for="file">
       <span class="dz-icon" aria-hidden="true">
@@ -42,9 +46,9 @@
           <path d="M4 15v3.5A1.5 1.5 0 0 0 5.5 20h13a1.5 1.5 0 0 0 1.5-1.5V15"></path>
         </svg>
       </span>
+      {# One wording, every visit — same reason the block above never moves. #}
       <span class="dz-text">
-        <strong>{{ 'Drop another certificate, or choose a file' if summaries
-                   else 'Drop your certificate here' }}</strong>
+        <strong>Drop your certificate here</strong>
         <span class="dz-sub">PDF, JPEG or PNG, up to 50 MB · reading starts the
           moment you pick it</span>
       </span>
@@ -73,63 +77,6 @@
       </form>
     {% endfor %}
   </div>
-
-  {% if not summaries %}
-  {# Benefits, not features. Each heading is something she gets back; each line
-     says how, in her words, without naming a single piece of our machinery. #}
-  <section class="pitch">
-    <h2 class="section-title">What you get back</h2>
-    <ul class="pitch-list">
-      <li>
-        <h3>Know what this certificate leaves out</h3>
-        <p>Which years it covers, which it does not, and every earlier document it
-          points at but nobody has read. All on one screen, in plain words.</p>
-      </li>
-      <li>
-        <h3>Turn a gap into one errand</h3>
-        <p>When something is missing, the request arrives already filled in:
-          sub-registrar office, village, survey numbers, dates. Copy it, paste it
-          into TNREGINET, and drop the certificate back here when it turns up.</p>
-      </li>
-      <li>
-        <h3>Hand over a record, not a promise</h3>
-        <p>One report carries the checks that ran, the ones that could not, and
-          whatever you noted along the way. It goes in the file, and it goes to the
-          bank.</p>
-      </li>
-    </ul>
-  </section>
-
-  {# Trust, stated as three things we refuse to do. Vaguer reassurance would
-     read as marketing, which is the one thing this screen cannot afford. #}
-  <section class="pitch pitch-trust">
-    <h2 class="section-title">Why you can rely on it</h2>
-    <ul class="pitch-list">
-      <li>
-        <h3>Nothing is guessed</h3>
-        <p>Findings come from fixed checks written in code, not from a language
-          model's opinion. The same certificate gives you the same answer every
-          time you open it.</p>
-      </li>
-      <li>
-        <h3>Every finding shows its source</h3>
-        <p>Click any line and the exact region of the scanned page appears beside
-          it. If we cannot show you where something came from, we do not claim
-          it.</p>
-      </li>
-      <li>
-        <h3>It admits what it could not read</h3>
-        <p>If we could not make out a date, it stays blank and waits for you to fill
-          it in. A check that could not run says so, and says why. Nothing here
-          quietly counts as a pass.</p>
-      </li>
-    </ul>
-    <p class="pitch-foot">
-      TitleChain shows you what a certificate does and does not evidence. It does not
-      give an opinion on title. That judgement stays yours.
-    </p>
-  </section>
-  {% endif %}
 
   {% if summaries %}
   <section class="cases">
@@ -186,5 +133,60 @@
     </ul>
   </section>
   {% endif %}
+
+  {# Benefits, not features. Each heading is something she gets back; each line
+     says how, in her words, without naming a single piece of our machinery. #}
+  <section class="pitch">
+    <h2 class="section-title">What you get back</h2>
+    <ul class="pitch-list">
+      <li>
+        <h3>Know what this certificate leaves out</h3>
+        <p>Which years it covers, which it does not, and every earlier document it
+          points at but nobody has read. All on one screen, in plain words.</p>
+      </li>
+      <li>
+        <h3>Turn a gap into one errand</h3>
+        <p>When something is missing, the request arrives already filled in:
+          sub-registrar office, village, survey numbers, dates. Copy it, paste it
+          into TNREGINET, and drop the certificate back here when it turns up.</p>
+      </li>
+      <li>
+        <h3>Hand over a record, not a promise</h3>
+        <p>One report carries the checks that ran, the ones that could not, and
+          whatever you noted along the way. It goes in the file, and it goes to the
+          bank.</p>
+      </li>
+    </ul>
+  </section>
+
+  {# Trust, stated as three things we refuse to do. Vaguer reassurance would
+     read as marketing, which is the one thing this screen cannot afford. #}
+  <section class="pitch pitch-trust">
+    <h2 class="section-title">Why you can rely on it</h2>
+    <ul class="pitch-list">
+      <li>
+        <h3>Nothing is guessed</h3>
+        <p>Findings come from fixed checks written in code, not from a language
+          model's opinion. The same certificate gives you the same answer every
+          time you open it.</p>
+      </li>
+      <li>
+        <h3>Every finding shows its source</h3>
+        <p>Click any line and the exact region of the scanned page appears beside
+          it. If we cannot show you where something came from, we do not claim
+          it.</p>
+      </li>
+      <li>
+        <h3>It admits what it could not read</h3>
+        <p>If we could not make out a date, it stays blank and waits for you to fill
+          it in. A check that could not run says so, and says why. Nothing here
+          quietly counts as a pass.</p>
+      </li>
+    </ul>
+    <p class="pitch-foot">
+      TitleChain shows you what a certificate does and does not evidence. It does not
+      give an opinion on title. That judgement stays yours.
+    </p>
+  </section>
 </div>
 {% endblock %}
