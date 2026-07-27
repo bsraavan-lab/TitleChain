@@ -1,0 +1,12 @@
+<nav id="tabs" class="tabs" hx-swap-oob="true" aria-label="Case views">
+  {% for name, label in tabs %}
+    {% set n = tab_counts.get(name, 0) %}
+    <button class="tab {{ 'on' if name == tab }}" type="button"
+            aria-current="{{ 'page' if name == tab else 'false' }}"
+            hx-get="/case/{{ case.id }}/tab/{{ name }}"
+            hx-target="#tab-body" hx-swap="outerHTML"
+            hx-push-url="/case/{{ case.id }}?tab={{ name }}">
+      {{ label }}{% if n %}<span class="tab-count">{{ n }}</span>{% endif %}
+    </button>
+  {% endfor %}
+</nav>

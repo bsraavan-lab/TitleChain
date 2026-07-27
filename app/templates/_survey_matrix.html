@@ -1,0 +1,50 @@
+{# Descriptive, and captioned as such. R6 SURVEY_DRIFT is not implemented in
+   rulebook v1.0, so no drift verdict is asserted here — the matrix shows which
+   survey numbers appear on which entry and lets the advocate see the rest. #}
+{% set surveys = [] %}
+{% for d in docs %}{% for s in d.header.survey_details %}
+  {% if s not in surveys %}{% set _ = surveys.append(s) %}{% endif %}
+{% endfor %}{% endfor %}
+{% for e in entries %}{% for sch in e.schedules %}{% for s in sch.survey_nos %}
+  {% if s not in surveys %}{% set _ = surveys.append(s) %}{% endif %}
+{% endfor %}{% endfor %}{% endfor %}
+
+{% if surveys and entries %}
+<section class="section">
+  <h2 class="section-title">
+    Survey numbers across transactions
+    <span class="count count-quiet">{{ surveys|length }} distinct</span>
+  </h2>
+  <div class="table-scroll">
+    <table class="matrix">
+      <thead>
+        <tr>
+          <th>Survey no.</th>
+          {% for e in entries %}
+            <th>{{ e.doc_no or ('entry ' ~ e.sr_no) }}</th>
+          {% endfor %}
+        </tr>
+      </thead>
+      <tbody>
+        {% for s in surveys|sort %}
+          <tr>
+            <th>{{ s }}</th>
+            {% for e in entries %}
+              {% set present = e.schedules and s in (e.schedules[0].survey_nos or []) %}
+              <td class="{{ 'cell-on' if present else 'cell-off' }}">
+                <span aria-hidden="true">{{ '●' if present else '·' }}</span>
+                <span class="sr-only">{{ 'present' if present else 'absent' }}</span>
+              </td>
+            {% endfor %}
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <p class="meta">
+    A row of dots is a survey number the certificate header searched but that
+    appears in no entry's schedule. Descriptive only — rulebook
+    {{ view.rulebook_version }} asserts no subdivision or partition verdict (R6).
+  </p>
+</section>
+{% endif %}

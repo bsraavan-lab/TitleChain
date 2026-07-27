@@ -1,0 +1,31 @@
+{# The graph's click targets, as real buttons: keyboard-reachable, screen-reader
+   readable, and the same two actions the design promises — an examined node opens
+   its crop, a hollow node opens the errand that would fill it. #}
+<ul class="graph-nodes">
+  {% for n in graph.nodes %}
+    <li class="gn {{ 'gn-examined' if n.examined else 'gn-unexamined' }}">
+      {% if n.entry_id %}
+        <button class="gn-btn" type="button"
+                hx-get="/evidence/{{ n.entry_id }}" hx-target="#rail"
+                hx-swap="innerHTML">
+          <span class="gn-dot" aria-hidden="true">●</span>
+          <span class="gn-doc">{{ n.doc_no }}</span>
+          <span class="gn-nature">{{ n.nature or 'nature not read' }}</span>
+          {% if n.ec_label %}<span class="gn-ec">{{ n.ec_label }}</span>{% endif %}
+          {% if n.cancelled %}<span class="tag-cancelled">⊘ cancelled</span>{% endif %}
+          {% if n.open_encumbrance %}<span class="tag-open">open encumbrance</span>{% endif %}
+        </button>
+      {% else %}
+        <button class="gn-btn" type="button"
+                hx-get="/case/{{ case.id }}/tab/documents"
+                hx-target="#tab-body" hx-swap="outerHTML"
+                hx-push-url="/case/{{ case.id }}?tab=documents">
+          <span class="gn-dot" aria-hidden="true">○</span>
+          <span class="gn-doc">{{ n.doc_no }}</span>
+          <span class="gn-nature">not on this case — unexamined</span>
+          <span class="gn-order">order this →</span>
+        </button>
+      {% endif %}
+    </li>
+  {% endfor %}
+</ul>

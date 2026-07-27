@@ -1,0 +1,130 @@
+{# Estimated before, actual after. Rupee columns appear only when a rate card is
+   configured; otherwise units only, and the panel says so. Inventing a per-token
+   rate to fill a total is the class of fabrication this codebase refuses. #}
+{% set est = cost_estimate %}
+{% set act = cost_actual %}
+{% set live = act.calls > 0 %}
+
+<table class="cost">
+  <thead>
+    <tr>
+      <th>Stage</th><th>Billed in</th><th>Estimated</th><th>Actual</th><th>Δ</th>
+      {% if act.rates.configured %}<th>Cost</th>{% endif %}
+    </tr>
+  </thead>
+  <tbody>
+    {% for a in act.lines %}
+      {% set e = est.lines[loop.index0] %}
+      <tr class="{{ 'row-idle' if not a.ran and not e.ran }}">
+        <td>
+          {{ a.label }}
+          {% if a.models and a.models != [''] %}
+            <span class="meta">{{ a.models | join(' · ') }}</span>
+          {% endif %}
+        </td>
+        <td class="meta">{{ a.unit }}</td>
+        <td>{{ e.quantity if e.ran else '—' }}</td>
+        <td>
+          {% if a.ran %}
+            {{ a.quantity }}
+            <span class="meta">{{ a.calls }} call{{ '' if a.calls == 1 else 's' }}</span>
+            {% if a.cached_calls %}
+              <span class="cached">{{ a.cached_calls }} cached</span>
+            {% endif %}
+          {% elif live %}
+            <span class="meta">not run</span>
+          {% else %}—{% endif %}
+        </td>
+        <td class="delta">
+          {% if a.ran and e.ran and e.tokens and a.tokens %}
+            {{ '%+d'|format(((a.tokens - e.tokens) / e.tokens * 100)|round|int) }}%
+          {% elif a.ran and e.ran and e.pages and a.pages %}
+            {{ '%+d'|format(((a.pages - e.pages) / e.pages * 100)|round|int) }}%
+          {% else %}—{% endif %}
+        </td>
+        {% if act.rates.configured %}
+          <td class="money">
+            {% if a.amount is not none %}
+              ₹{{ '%.2f'|format(a.amount) }}
+              {% if a.cached_saving %}
+                <span class="cached">cached · would have been
+                  ₹{{ '%.2f'|format(a.amount + a.cached_saving) }}</span>
+              {% endif %}
+            {% else %}<span class="meta">no rate</span>{% endif %}
+          </td>
+        {% endif %}
+      </tr>
+    {% endfor %}
+  </tbody>
+  <tfoot>
+    <tr>
+      <th>Total</th><th></th>
+      <td>{{ est.calls }} calls · {{ est.tokens|int }} tokens</td>
+      <td>
+        {% if live %}
+          {{ act.calls }} call{{ '' if act.calls == 1 else 's' }} ·
+          {{ act.tokens }} tokens
+        {% else %}<span class="meta">not recorded</span>{% endif %}
+      </td>
+      <td></td>
+      {% if act.rates.configured %}
+        <td class="money">
+          {% if act.total is not none %}₹{{ '%.2f'|format(act.total) }}
+          {% else %}<span class="meta">—</span>{% endif %}
+        </td>
+      {% endif %}
+    </tr>
+  </tfoot>
+</table>
+
+<dl class="order cost-facts">
+  <dt>Pages</dt><dd>{{ case.pages_total or act.pages or '—' }}</dd>
+  <dt>Certificates</dt><dd>{{ docs|length }}</dd>
+  <dt>Entries typed</dt><dd>{{ entries|length }}</dd>
+  <dt>Model calls</dt>
+  <dd>{{ act.calls if live else '—' }}
+    <span class="meta">retries included</span></dd>
+  <dt>API time</dt>
+  <dd>{% if act.wall_ms %}{{ (act.wall_ms / 1000)|round(1) }} s{% else %}—{% endif %}</dd>
+</dl>
+
+{% if not act.rates.configured %}
+  <p class="rate-warning">
+    <strong>Rate card not configured</strong> — rupee figures are withheld rather
+    than estimated. Add your per-unit rates from dashboard.sarvam.ai → Billing to
+    <code>config/rates.yml</code> and this table prices itself.
+  </p>
+{% else %}
+  <p class="meta">
+    Rates: {{ act.rates.source or 'unnamed source' }}
+    {% if act.rates.retrieved %} · retrieved {{ act.rates.retrieved }}{% endif %}.
+  </p>
+{% endif %}
+
+<p class="meta">
+  Estimate basis: {{ est.basis }}. Actuals are one row per real HTTP request,
+  including every rung of the truncation ladder — a case that needed eleven calls
+  for four blocks cost eleven calls, and hiding that would make this a brochure.
+</p>
+
+{% if ledger %}
+  <details class="ledger">
+    <summary class="meta">per-call ledger ({{ ledger|length }} rows)</summary>
+    <div class="table-scroll">
+      <table class="entries">
+        <thead><tr><th>#</th><th>Stage</th><th>Model</th><th>Rung</th>
+          <th>In</th><th>Out</th><th>Pages</th><th>ms</th><th>Cached</th></tr></thead>
+        <tbody>
+          {% for r in ledger %}
+            <tr>
+              <td>{{ loop.index }}</td><td>{{ r.stage }}</td><td>{{ r.model or '—' }}</td>
+              <td>{{ r.ladder_rung or '—' }}</td><td>{{ r.tokens_in or 0 }}</td>
+              <td>{{ r.tokens_out or 0 }}</td><td>{{ r.pages or 0 }}</td>
+              <td>{{ r.ms or 0 }}</td><td>{{ '✓' if r.cached else '' }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </details>
+{% endif %}

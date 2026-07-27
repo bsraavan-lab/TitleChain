@@ -1,0 +1,71 @@
+{# Inline SVG, server-rendered, no library and no CDN — the geometry arrives as
+   numbers from layout.py and this template only draws.
+
+   The SVG is aria-hidden and the nested list below it is the accessible
+   equivalent, which is the pattern the coverage ruler already uses: a picture for
+   the eye, a sentence for everything else. #}
+{% set g = graph %}
+<div class="graph-scroll">
+  <svg class="graph" viewBox="0 0 {{ g.width }} {{ g.height }}"
+       width="{{ g.width }}" height="{{ g.height }}" aria-hidden="true"
+       xmlns="http://www.w3.org/2000/svg">
+
+    {# year axis #}
+    <line class="g-axis" x1="0" y1="26" x2="{{ g.width }}" y2="26"></line>
+    {% for t in g.ticks %}
+      <line class="g-tick" x1="{{ t.x }}" y1="20" x2="{{ t.x }}" y2="32"></line>
+      <text class="g-year" x="{{ t.x }}" y="14" text-anchor="middle">{{ t.year }}</text>
+    {% endfor %}
+
+    {# edges first, so nodes sit on top of them #}
+    {% for e in g.edges %}
+      <path class="g-edge g-{{ e.kind|lower }} {{ 'g-resolved' if e.resolved else 'g-dangling' }}"
+            d="{{ e.path }}" fill="none"></path>
+    {% endfor %}
+
+    {% for n in g.nodes %}
+      <g class="g-node {{ 'g-examined' if n.examined else 'g-unexamined' }}
+                {{ 'g-cancelled' if n.cancelled }} {{ 'g-open' if n.open_encumbrance }}">
+        <title>{{ n.title }}</title>
+        {% if n.shape == 'square' %}
+          <rect x="{{ n.x - 10 }}" y="{{ n.y - 10 }}" width="20" height="20" rx="2"></rect>
+        {% elif n.shape == 'diamond' %}
+          <rect x="{{ n.x - 9 }}" y="{{ n.y - 9 }}" width="18" height="18" rx="2"
+                transform="rotate(45 {{ n.x }} {{ n.y }})"></rect>
+        {% elif n.shape == 'bar' %}
+          <rect x="{{ n.x - 13 }}" y="{{ n.y - 7 }}" width="26" height="14" rx="7"></rect>
+        {% elif n.shape == 'ring' %}
+          <circle cx="{{ n.x }}" cy="{{ n.y }}" r="11" class="g-ring"></circle>
+        {% else %}
+          <circle cx="{{ n.x }}" cy="{{ n.y }}" r="11"></circle>
+        {% endif %}
+
+        {% if n.cancelled or n.shape == 'slash' %}
+          <line class="g-slash" x1="{{ n.x - 13 }}" y1="{{ n.y + 13 }}"
+                x2="{{ n.x + 13 }}" y2="{{ n.y - 13 }}"></line>
+        {% endif %}
+        {% if n.corrected %}
+          <text class="g-mark" x="{{ n.x + 13 }}" y="{{ n.y - 10 }}">✎</text>
+        {% endif %}
+
+        <text class="g-label" x="{{ n.x }}" y="{{ n.y + 27 }}"
+              text-anchor="middle">{{ n.label }}</text>
+      </g>
+    {% endfor %}
+  </svg>
+</div>
+
+<p class="graph-key">
+  <span class="k-node k-examined"></span> examined
+  <span class="k-node k-unexamined"></span> named but not on this case
+  <span aria-hidden="true">⊘</span> cancelled
+  <span class="k-shape">▭ transfer · ◆ mortgage or charge · ▬ lease · ○ other</span>
+</p>
+
+{% if g.undated %}
+  <p class="meta">
+    Not drawn, because no year could be read from the document number:
+    {{ g.undated | join(', ') }}. They are listed rather than placed at a guessed
+    point on the axis.
+  </p>
+{% endif %}

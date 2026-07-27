@@ -1,0 +1,4 @@
+{# The verdict strip, arriving out of band after a correction or a review. Same
+   template, so the meters can never render one way inline and another after an
+   edit. #}
+{% set oob = true %}{% include "_verdict.html" %}

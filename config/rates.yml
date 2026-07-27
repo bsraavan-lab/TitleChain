@@ -1,0 +1,30 @@
+# Sarvam per-unit rates. NOT SHIPPED WITH VALUES ON PURPOSE.
+#
+# The Sarvam pricing surface reports billing UNITS per model — Document
+# Intelligence per page, sarvam-105b / sarvam-30b per million tokens,
+# transliteration per character — but the exact per-unit rate depends on your plan.
+# So this file ships empty and the Processing tab shows units only until you fill
+# it in. Nothing here is guessed on your behalf: a rupee figure computed from an
+# invented rate is worse than no rupee figure.
+#
+# Fill from: https://dashboard.sarvam.ai → Billing
+# Then set `source` and `retrieved` so the panel can say where the numbers came
+# from and how old they are.
+
+source:                     # e.g. "dashboard.sarvam.ai → Billing, starter tier"
+retrieved:                  # e.g. 2026-07-26
+currency: INR
+
+per_page:
+  # document-intelligence: 0.50
+
+per_million_tokens:
+  # sarvam-105b:
+  #   input: 0.0
+  #   output: 0.0
+  # sarvam-30b:
+  #   input: 0.0
+  #   output: 0.0
+
+per_character:
+  # mayura: 0.0

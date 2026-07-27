@@ -1,0 +1,11 @@
+{# One POST, three regions. The cell is the hx-target; the rail and the active tab
+   arrive out of band, because a correction changes the meters, the gate line and
+   the checklist as well as the value. Seeing all three move IS the memory proof,
+   not a stand-in for it. #}
+{% include "_cell.html" %}
+<div id="tab-body" hx-swap-oob="true" class="{{ 'flash' if just_corrected }}">
+  {% include "_tab_body.html" %}
+</div>
+{% include "_tabs_oob.html" %}
+{% include "_rail_oob.html" %}
+{% include "_ruler_oob.html" %}

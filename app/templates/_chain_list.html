@@ -1,0 +1,30 @@
+{% from "_macros.html" import source_button %}
+{% macro node(n) %}
+  <li class="chain-node {{ 'examined' if n.examined else 'unexamined' }}">
+    <span class="dot" aria-hidden="true">{{ '●' if n.examined else '○' }}</span>
+    <span class="chain-doc">{{ n.doc_no }}</span>
+    <span class="chain-nature">{{ n.nature or 'not present on this case' }}</span>
+    {% if n.cancelled_by %}
+      <span class="tag-cancelled">⊘ cancelled by {{ n.cancelled_by }}</span>
+    {% endif %}
+    {% if n.entry_id %}
+      {{ source_button(n.entry_id) }}
+    {% else %}
+      <button class="link" type="button"
+              hx-get="/case/{{ case.id }}/tab/documents"
+              hx-target="#tab-body" hx-swap="outerHTML"
+              hx-push-url="/case/{{ case.id }}?tab=documents">order this →</button>
+    {% endif %}
+    {% if n.children %}
+      <ul class="chain">{% for c in n.children %}{{ node(c) }}{% endfor %}</ul>
+    {% endif %}
+  </li>
+{% endmacro %}
+
+<ul class="chain chain-root">
+  {% for n in view.chain %}{{ node(n) }}{% endfor %}
+</ul>
+<p class="meta">
+  ○ named as a parent but not present on this case — unexamined. Each one is a
+  button, because a hole in the chain is an errand, not a decoration.
+</p>
