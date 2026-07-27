@@ -20,9 +20,15 @@
 
     {% if c.start_year and c.end_year %}
       <div class="ruler-band" style="left:{{ c.band_left }}%; width:{{ c.band_width }}%"></div>
-      <span class="band-edge" style="left:{{ c.band_left }}%">{{ c.start_year }}</span>
-      <span class="band-edge end"
-            style="left:{{ c.band_left + c.band_width }}%">{{ c.end_year }}</span>
+      {# A short window — the case this product exists to flag — leaves no room
+         for a label at each end. One centred label, never two overlapping ones. #}
+      {% if c.band_is_narrow %}
+        <span class="band-edge" style="left:{{ c.band_centre }}%">{{ c.band_label }}</span>
+      {% else %}
+        <span class="band-edge" style="left:{{ c.band_left }}%">{{ c.start_year }}</span>
+        <span class="band-edge end"
+              style="left:{{ c.band_left + c.band_width }}%">{{ c.end_year }}</span>
+      {% endif %}
     {% endif %}
   </div>
 

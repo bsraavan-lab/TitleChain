@@ -1,7 +1,13 @@
 {% extends "base.html" %}
 {% block title %}{{ case.property_key or 'Case' }} — TitleChain{% endblock %}
 {% block topbar %}
-  <span class="meta">{{ header.sro ~ ' SRO · ' ~ header.village if header else case.property_key }}</span>
+  {# An unread SRO or village is a null, and "None SRO · None" is what a bare
+     concatenation makes of it. Drop the parts that were not read; if neither
+     was, fall back to the case name rather than printing a lone separator. #}
+  {% set parts = [] %}
+  {% if header and header.sro %}{% set _ = parts.append(header.sro ~ ' SRO') %}{% endif %}
+  {% if header and header.village %}{% set _ = parts.append(header.village) %}{% endif %}
+  <span class="meta">{{ parts | join(' · ') or case.property_key }}</span>
 {% endblock %}
 
 {% block content %}

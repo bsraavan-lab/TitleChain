@@ -21,14 +21,17 @@
     <p class="reject" role="alert">⚠ {{ rejected }}</p>
   {% endif %}
 
-  <p class="samples">
-    or open a sample:
+  {# A div, not a p: the HTML parser closes an open <p> at a <form> start tag, so
+     the buttons ended up OUTSIDE .samples and the flex row never applied to them —
+     label on one line, two buttons touching on the next. #}
+  <div class="samples">
+    <span>or open a sample:</span>
     {% for key, s in SAMPLES.items() %}
       <form method="post" action="/sample/{{ key }}" class="inline">
         <button class="btn-quiet" type="submit">{{ s.label }}</button>
       </form>
     {% endfor %}
-  </p>
+  </div>
 
   {% if cases %}
   <section class="cases">
