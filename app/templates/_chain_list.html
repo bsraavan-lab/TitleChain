@@ -5,7 +5,7 @@
     <span class="chain-doc">{{ n.doc_no }}</span>
     <span class="chain-nature">{{ n.nature or 'you do not have this one yet' }}</span>
     {% if n.cancelled_by %}
-      <span class="tag-cancelled">⊘ cancelled by {{ n.cancelled_by }}</span>
+      <span class="chip chip-clear">⊘ cancelled by {{ n.cancelled_by }}</span>
     {% endif %}
     {% if n.entry_id %}
       {{ source_button(n.entry_id, 'See it on the page') }}

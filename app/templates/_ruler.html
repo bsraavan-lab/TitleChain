@@ -55,10 +55,15 @@
   {% endif %}
 </div>
 
-<p class="ruler-key" aria-hidden="true">
-  <span class="k-band"></span> covered by a certificate you have
-  {% if c.ticks %}<span class="k-tick"></span> a document none of them cover{% endif %}
-  <span class="k-req"></span> the years you need covered
+{# Same key component as the case rule (`.rule-key` / `.key`), and the same two
+   swatches: one mark means one thing across both charts. Each entry is wrapped,
+   or the swatch is its own flex item and wraps away from the words it labels. #}
+<p class="rule-key" aria-hidden="true">
+  <span class="key"><i class="sw-window"></i>covered by a certificate you have</span>
+  {% if c.ticks %}
+    <span class="key"><i class="sw-out"></i>a document none of them cover</span>
+  {% endif %}
+  <span class="key"><i class="k-req"></i>the years you need covered</span>
 </p>
 
 <p class="coverage-detail">{{ c.detail }}</p>

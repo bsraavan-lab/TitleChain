@@ -80,17 +80,39 @@ words the eye reads as text.
 ```
 Button      32h · 12px pad · 6 radius · 13/500 · scale(.975) on :active
   quiet     26h · 8px pad · 12px
+  tiny      22h · min 28w · 7px pad · 4 radius · 11/500 mono · on = --endorse-soft
 Icon button 26 × 26 · 4 radius
 Segmented   22h inner · 6 radius outer / 4 inner · on-state = paper + 1px ring
 Chip        22h · 9px pad · 20 radius · 11/500
+Link        13px · --endorse · underline at 2px offset · hover → --ink · plain --ink-2 in print
 Bar         52h · sticky · same bg as page + blur · 1px bottom hairline
 Rail        max-height calc(100vh - 88px) · sticky top 68 · head 44h · view bg --sunk
 Rule        78h · parents lane 38h · axis at 38 · window band 11h at 39
+Ruler       axis at 44 · ticks own 0–44 · bands 12h at 50+20n · name inside its band
 Spark       92 × 14 · hairline at y=6 · window 4h · ticks 12h
 Finding     grid 84px / 1fr · 16px 12px pad · 8 radius · blocking msg 15/500, others 14/400
 Answer      kicker 11/600 caps 0.09em · headline 33px serif -0.02em max 20ch · detail 15px
 Section     title 11/600 caps 0.09em + 1px bottom hairline + 16px gap
+Severity edge  3px solid, left, on every card or section that carries one
 ```
+
+## One name per thing
+
+Every mark and control in the product has exactly one class and one rule:
+
+- **`.link`** is the only way back to the page — `_macros.html` `source_button` /
+  `page_button`, used by the chain, entries, encumbrance cards, rule rows, timeline
+  and the report. Never a bare `<button>`, never a second "see the source" style.
+- **`.rule-key` / `.key` / `.sw-*`** is the key for *both* charts. A swatch means the
+  same thing on the case rule and on the coverage ruler.
+- **`.chip` + `chip-open` / `chip-clear` / `chip-fail` / `chip-wait`** is the only
+  badge family. Not `.tag`, not a bespoke pill.
+- **`.shot` / `.evidence-fig`** are one image treatment: `margin: 0`, r2, 1px pure-rgba
+  inset outline.
+
+Rename a component and its rule renames with it, in the same commit. Three separate
+components had been renamed in the templates and left behind in the stylesheet, so
+they rendered with no styling at all until 2026-07-28.
 
 ## Rules that must hold
 
@@ -106,3 +128,24 @@ Section     title 11/600 caps 0.09em + 1px bottom hairline + 16px gap
    hue with lightness-only steps, so it stays a token swap if that ever changes.
 7. **No CDN, no webfont, no icon library.** Four typographic glyphs (`▲ ● ⚑ ✓ ○ ⊘`) and two
    inline SVGs.
+8. **Nothing bolder than 600.** The sheet builds hierarchy from size + weight + colour, and
+   600 is the top of it. A 700 anywhere is a second bold register.
+9. **One border weight in the chrome.** `--rule-soft / --rule-line / --rule-firm` change the
+   *tone* of a hairline, never its width. Widths above 1px belong to chart marks only
+   (`.ruler-required`, `.k-req`, the SVG strokes, the spinner).
+10. **Every state, on every control.** A control that has `:hover` has `:focus-visible` too,
+    and a drop target lights on `:focus-within` exactly as it does on hover — the two
+    dropzones in this product are the same control and must not disagree.
+
+## Checks worth re-running
+
+Both catch the failure mode this codebase actually has — markup and stylesheet drifting apart:
+
+```bash
+# 1. classes the templates emit that no rule matches
+#    (jinja-built names like `enc-{{ }}` and `g-{{ }}` are expected noise)
+# 2. rules that match no markup — dead weight, and the thing that silently
+#    overrode the live .chip rule in July
+```
+Both were run against every flow — home, five case tabs, working, merged, refusal,
+report, and 390px — on 2026-07-28.
