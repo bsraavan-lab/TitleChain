@@ -12,8 +12,10 @@
           <span class="gn-doc">{{ n.doc_no }}</span>
           <span class="gn-nature">{{ n.nature or 'we could not read what this is' }}</span>
           {% if n.ec_label %}<span class="gn-ec">{{ n.ec_label }}</span>{% endif %}
-          {% if n.cancelled %}<span class="tag-cancelled">⊘ cancelled</span>{% endif %}
-          {% if n.open_encumbrance %}<span class="tag-open">still an open claim</span>{% endif %}
+          {% if n.cancelled %}<span class="chip chip-clear">⊘ cancelled</span>{% endif %}
+          {% if n.open_encumbrance %}
+            <span class="chip chip-open">▲ still an open claim</span>
+          {% endif %}
         </button>
       {% else %}
         <button class="gn-btn" type="button"

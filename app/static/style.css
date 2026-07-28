@@ -142,7 +142,7 @@ li { list-style: none; }
             border: 0; padding: 6px; cursor: pointer; border-radius: var(--r1); }
 .kbd-hint:hover { background: var(--folder); }
 kbd { font: 500 10px/1 var(--sans); color: var(--ink-3); background: var(--sunk);
-      border: 1px solid var(--rule-soft); border-radius: 3px; padding: 3px 5px;
+      border: 1px solid var(--rule-soft); border-radius: var(--r1); padding: 3px 5px;
       min-width: 17px; text-align: center; display: inline-block; }
 
 /* the case switcher — the property IS the identity of the screen */
@@ -200,6 +200,31 @@ main { padding: var(--s6) var(--s5) var(--s8); }
 .btn[disabled] { opacity: .4; pointer-events: none; }
 .btn[hidden] { display: none; }   /* inline-flex would otherwise beat [hidden] */
 
+/* ── .link — the way back to the page ──────────────────────────────────────
+   Every "See it on the page" and "How to order it" in the product is this one
+   class, from `_macros.html`: the chain, the entries table, the encumbrance
+   cards, the rule rows, the timeline and the printed report. It had no rule at
+   all, so all of them rendered as a default grey <button> — a chrome-coloured
+   box sitting inside a sentence, and inside a table cell it forced the column
+   wide and the row tall. The very same action, one list above, rendered
+   correctly as `.gn-order`.
+
+   It is a <button> because it swaps the rail rather than navigating, but it is
+   a link to the reader, so it reads as one. Endorsement blue: this is the route
+   into the certificate's own window, which is what that colour means here. */
+.link {
+  font: inherit; font-size: 13px; background: none; border: 0; padding: 0;
+  color: var(--endorse); text-decoration: underline; text-underline-offset: 2px;
+  text-decoration-thickness: 1px; cursor: pointer; text-align: left;
+  border-radius: var(--r1); transition: color 120ms var(--ease);
+}
+.link:hover { color: var(--ink); }
+/* On paper the rail cannot be swapped, so a control that offers to is noise in
+   the artifact that leaves the building. The words stay, the affordance goes. */
+@media print {
+  .link { color: var(--ink-2); text-decoration: none; }
+}
+
 .icon-btn {
   display: inline-flex; align-items: center; justify-content: center;
   width: 26px; height: 26px; border-radius: var(--r1); border: 1px solid transparent;
@@ -207,7 +232,29 @@ main { padding: var(--s6) var(--s5) var(--s8); }
   cursor: pointer; transition: background 140ms var(--ease);
 }
 .icon-btn:hover { background: var(--folder); color: var(--ink); }
+.icon-btn:active { transform: scale(0.94); }
 .icon-btn[disabled] { color: var(--ink-4); pointer-events: none; }
+
+/* page numbers — a row of them under a certificate, and again under the evidence
+   pane. Undefined until now, so both rows rendered as default browser buttons.
+   Mono, because they are positions in a document and read down a row as numbers.
+   The on-state is endorsement blue rather than a filled ink: this marks "the page
+   you are looking at", which is the certificate's own window, and a filled button
+   here would be a second primary on a view that already has one. */
+.btn-tiny {
+  display: inline-flex; align-items: center; justify-content: center;
+  height: 22px; min-width: 28px; padding: 0 7px; border-radius: var(--r1);
+  border: 1px solid var(--rule-line); background: var(--paper);
+  color: var(--ink-2); font: 500 11px/1 var(--mono);
+  font-variant-numeric: tabular-nums; cursor: pointer;
+  transition: background 140ms var(--ease), border-color 140ms var(--ease),
+              color 140ms var(--ease), transform 90ms var(--ease);
+}
+.btn-tiny:hover { color: var(--ink); border-color: var(--rule-firm);
+                  background: var(--folder); }
+.btn-tiny:active { transform: scale(0.94); }
+.btn-tiny.on { background: var(--endorse-soft); border-color: var(--endorse);
+               color: var(--endorse); }
 
 /* segmented control — two views of one thing, so one control, not two buttons */
 .seg { display: inline-flex; background: var(--sunk); border-radius: var(--r2);
@@ -218,6 +265,7 @@ main { padding: var(--s6) var(--s5) var(--s8); }
   cursor: pointer; transition: background 140ms var(--ease), color 140ms var(--ease);
 }
 .seg button:hover { color: var(--ink); }
+.seg button:active { transform: scale(0.96); }
 .seg button.on { background: var(--paper); color: var(--ink);
                  box-shadow: 0 0 0 1px var(--rule-soft); }
 
@@ -456,8 +504,8 @@ main { padding: var(--s6) var(--s5) var(--s8); }
         gap: var(--s3) var(--s5); }
 .spec > div { display: grid; gap: 3px; min-width: 0; }
 .spec .wide { grid-column: 1 / -1; }
-.spec dt { font-size: 11px; letter-spacing: 0.04em; text-transform: uppercase;
-           color: var(--ink-3); font-weight: 600; }
+.spec dt { font: 600 11px/1 var(--sans); letter-spacing: 0.09em;
+           text-transform: uppercase; color: var(--ink-3); }
 .spec dd { font-size: 14px; color: var(--ink); word-break: break-word; }
 .spec dd.lead { font-size: 15px; font-weight: 600; }
 
@@ -507,23 +555,27 @@ main { padding: var(--s6) var(--s5) var(--s8); }
 .cleared[open] > summary .caret { transform: rotate(180deg); }
 .findings.quiet .finding-msg { color: var(--ink-2); font-size: 13px; }
 
-/* ── chain ─────────────────────────────────────────────────────────────── */
+/* ── chain ─────────────────────────────────────────────────────────────────
+   These rules were written against `.node-line / .node-dot / .node-doc`, which
+   `_chain_list.html` has not emitted for some time — it emits `.chain-node /
+   .dot / .chain-doc`. Same-named-nothing, so the whole list fell back to browser
+   defaults: UA bullets beside our own ● / ○ glyphs, no indent rhythm, no
+   unexamined state. The names below are the ones the template actually renders. */
 
 .chain .chain { margin-left: 9px; padding-left: var(--s4);
                 border-left: 1px solid var(--rule-line); }
-.node-line { display: flex; align-items: baseline; gap: var(--s2); flex-wrap: wrap;
-             padding: 5px 0; }
-.node-dot { width: 10px; font-size: 9px; line-height: 1; flex: none;
-            color: var(--ink-2); }
-.node-doc { font-weight: 600; font-size: 13px; }
-.node-nature { color: var(--ink-2); font-size: 13px; }
-.unexamined > .node-line .node-dot,
-.unexamined > .node-line .node-doc { color: var(--ink-4); }
-.unexamined > .node-line .node-nature { color: var(--ink-4); font-style: italic; }
-.node-src { opacity: 0; transition: opacity 120ms var(--ease); }
-.node-line:hover .node-src, .node-src:focus-visible { opacity: 1; }
-.tag { font-size: 11px; font-weight: 600; padding: 2px 7px; border-radius: 20px; }
-.tag-cancelled { background: var(--fee-soft); color: var(--fee); }
+.chain-node { display: flex; align-items: baseline; gap: var(--s2); flex-wrap: wrap;
+              padding: 5px 0; }
+/* the nested list is a child of the <li>, so it must break the flex row rather
+   than sit inside it as a sibling of the document number */
+.chain-node > .chain { flex-basis: 100%; }
+.chain-node > .dot { width: 10px; font-size: 9px; line-height: 1; flex: none;
+                     color: var(--ink-2); }
+.chain-doc { font-weight: 600; font-size: 13px; font-variant-numeric: tabular-nums; }
+.chain-nature { color: var(--ink-2); font-size: 13px; }
+.unexamined > .dot,
+.unexamined > .chain-doc { color: var(--ink-4); }
+.unexamined > .chain-nature { color: var(--ink-4); font-style: italic; }
 .legend { margin-top: var(--s3); color: var(--ink-4); font-size: 11px; }
 .legend i { font-style: normal; margin-right: 4px; }
 
@@ -554,6 +606,11 @@ main { padding: var(--s6) var(--s5) var(--s8); }
    glyphs that happen to be digits. */
 .entries .num { width: 34px; color: var(--ink-3); text-align: right; }
 .entries .src { width: 88px; }
+/* The evidence link keeps the width of its words. This table already scrolls
+   rather than crush a column — a "See it on the page" broken over three lines
+   was doing precisely what the min-width above exists to prevent, and it set the
+   height of every row in the table. */
+.entries .link { white-space: nowrap; }
 /* Tamil is content, English is chrome. Never transform or letter-space it. */
 .ta { font-family: var(--tamil); font-size: 13px; line-height: 1.6;
       letter-spacing: normal; }
@@ -564,7 +621,7 @@ main { padding: var(--s6) var(--s5) var(--s8); }
         text-align: left; cursor: text; max-width: 100%; }
 .cell:hover, .cell:focus { border-color: var(--rule-firm); background: var(--sunk); }
 /* Absence becomes a task, not a blank. */
-.cell-null { color: var(--stamp); font-weight: 700; border-color: var(--stamp);
+.cell-null { color: var(--stamp); font-weight: 600; border-color: var(--stamp);
              background: var(--stamp-soft); cursor: pointer; }
 .row-unread td { background: var(--stamp-soft); color: var(--stamp);
                  font-weight: 600; }
@@ -578,7 +635,7 @@ main { padding: var(--s6) var(--s5) var(--s8); }
                     outline-offset: 0; }
 
 .corrections { padding: var(--s4) var(--s3) 0; font-size: 13px; }
-.corrections h3 { font: 600 11px/1 var(--sans); letter-spacing: 0.08em;
+.corrections h3 { font: 600 11px/1 var(--sans); letter-spacing: 0.09em;
                   text-transform: uppercase; color: var(--ink-3);
                   margin-bottom: var(--s3); }
 .corrections li { padding: 4px 0; color: var(--ink-2); }
@@ -619,12 +676,19 @@ main { padding: var(--s6) var(--s5) var(--s8); }
 
 .rail-view { overflow: auto; padding: var(--s4); background: var(--sunk);
              flex: 1 1 auto; min-height: 220px; }
-.shot { margin: 0; }
+/* Two <figure>s show evidence in this pane — a crop (`.shot`) and a whole page
+   (`.evidence-fig`) — and only the first had a rule. The second kept the UA
+   default `margin: 1em 40px`, so the same scan sat 40px further in on one view
+   than the other, inside a 380px rail, with none of the outline that keeps a
+   white page from bleeding into a white surface. They are one thing; one rule. */
+.shot, .evidence-fig { margin: 0; }
 /* A pure rgba outline, never a tinted near-black — a tint reads as dirt on the
    edge of a scan. */
-.shot img { display: block; width: 100%; height: auto; border-radius: var(--r2);
-            outline: 1px solid rgba(0, 0, 0, 0.10); outline-offset: -1px;
-            background: var(--paper); }
+.shot img, .evidence-fig img {
+  display: block; width: 100%; height: auto; border-radius: var(--r2);
+  outline: 1px solid rgba(0, 0, 0, 0.10); outline-offset: -1px;
+  background: var(--paper); }
+.evidence-fig figcaption { margin-top: var(--s2); }
 .rail-empty { display: grid; gap: var(--s4); place-items: center;
               padding: var(--s6) var(--s4); color: var(--ink-3); font-size: 13px;
               text-align: center; }
@@ -648,7 +712,7 @@ main { padding: var(--s6) var(--s5) var(--s8); }
 .skeleton-list { display: grid; gap: var(--s4); }
 .skeleton-list li { display: grid; grid-template-columns: 84px 1fr; gap: var(--s4);
                     padding: var(--s3) 0; }
-.sk { display: block; height: 11px; border-radius: 3px; background: var(--sunk); }
+.sk { display: block; height: 11px; border-radius: var(--r1); background: var(--sunk); }
 .sk-a { width: 56px; } .sk-b { width: 82%; } .sk-c { width: 61%; }
 
 .spinner { display: inline-block; width: 11px; height: 11px; border-radius: 50%;
@@ -669,12 +733,12 @@ main { padding: var(--s6) var(--s5) var(--s8); }
 .refusal .answer-detail, .refusal .checks { max-width: 62ch; }
 .checks { margin-top: var(--s5); padding: var(--s4); background: var(--paper);
           border: 1px solid var(--rule-line); border-radius: var(--r3); }
-.checks-label { font: 600 11px/1 var(--sans); letter-spacing: 0.08em;
+.checks-label { font: 600 11px/1 var(--sans); letter-spacing: 0.09em;
                 text-transform: uppercase; color: var(--ink-3);
                 margin-bottom: var(--s3); }
 .checks li { display: flex; gap: var(--s2); padding: 3px 0; color: var(--ink-2);
              font-size: 13px; }
-.checks .x { color: var(--seal); font-weight: 700; }
+.checks .x { color: var(--seal); font-weight: 600; }
 /* The one place the product is allowed to console. It sits between the reasons
    and the recovery buttons, because that is the order she needs them in: what
    happened, that it is probably fixable, what to press. */
@@ -701,8 +765,8 @@ main { padding: var(--s6) var(--s5) var(--s8); }
                    padding: 9px var(--s4); border-radius: var(--r2); cursor: pointer;
                    font-size: 13px; }
 .palette-list li[aria-selected="true"] { background: var(--folder); }
-.palette-list .pk { font-size: 11px; letter-spacing: 0.09em; text-transform: uppercase;
-                    color: var(--ink-4); margin-left: auto; }
+.palette-list .pk { font: 600 11px/1 var(--sans); letter-spacing: 0.09em;
+                    text-transform: uppercase; color: var(--ink-4); margin-left: auto; }
 .palette-foot { display: flex; gap: var(--s4); padding: 10px var(--s5);
                 border-top: 1px solid var(--rule-soft); color: var(--ink-4);
                 font-size: 11px; }
@@ -839,10 +903,13 @@ main { padding: var(--s6) var(--s5) var(--s8); }
 .case-head { position: sticky; top: 52px; z-index: 6; background: var(--ledger);
              padding-bottom: 1px; }
 
+/* The severity edge. One device, so one width everywhere it appears: the verdict
+   rail, an encumbrance card, a merge band, a required section. It was 5 / 4 / 3 / 2
+   in four places, which reads as four different emphases for the same idea. */
 .verdict-rail {
   padding: var(--s4); margin-bottom: 0;
   background: var(--paper); border: 1px solid var(--rule-line);
-  border-left: 5px solid var(--ink-3);
+  border-left: 3px solid var(--ink-3);
   border-radius: var(--r2) var(--r2) 0 0;
 }
 .verdict-rail.v-bad  { border-left-color: var(--seal); }
@@ -854,7 +921,7 @@ main { padding: var(--s6) var(--s5) var(--s8); }
   display: flex; align-items: baseline; gap: var(--s4); flex-wrap: wrap;
   font-size: 21px;
 }
-.vr-verdict strong { font-weight: 700; }
+.vr-verdict strong { font-weight: 600; }
 .vr-actions { margin-left: auto; font-size: 14px; }
 .vr-waiting { margin: var(--s2) 0 0; }
 
@@ -872,7 +939,7 @@ main { padding: var(--s6) var(--s5) var(--s8); }
              background: var(--sunk); overflow: hidden; }
 .meter-bar i { display: block; height: 100%; background: var(--stamp); }
 .meter-full .meter-bar i { background: var(--fee); }
-.meter-pct { font-variant-numeric: tabular-nums; font-weight: 700; font-size: 14px; }
+.meter-pct { font-variant-numeric: tabular-nums; font-weight: 600; font-size: 14px; }
 .meter-note { grid-column: 1 / -1; font-size: 12px; color: var(--ink-3); }
 
 .vr-gate { margin: var(--s2) 0 0; font-size: 15px; display: flex;
@@ -888,18 +955,71 @@ main { padding: var(--s6) var(--s5) var(--s8); }
 .ruler-strip > summary .section-title { margin: 0; }
 .ruler-strip[open] > summary { margin-bottom: var(--s2); }
 
-/* multi-band ruler additions */
-.band-name { position: absolute; font-size: 10px; font-weight: 700;
-             color: var(--endorse); transform: translate(2px, -14px);
-             white-space: nowrap; }
+/* ── the coverage ruler ────────────────────────────────────────────────────
+   The multi-band cousin of `.rule`: one band per certificate on a shared year
+   axis, so the GAPS between the bands are the case. It renders on every tab of
+   every case, inside `.ruler-strip`.
+
+   Only four of its dozen classes were ever written — `.ruler` itself had no
+   rule, so it was not a positioned ancestor, and every absolutely-positioned
+   child inside it resolved against `.ruler-strip` instead and stacked in one
+   place. What the advocate actually saw was the year labels running together as
+   a line of wrapping italic text with no axis under them, and the key reading as
+   the run-on sentence "covered by a certificate you have a document none of them
+   cover the years you need covered".
+
+   Geometry is the template's: the container is 104px + 20 per extra band, bands
+   sit at 50 + 20n, so the axis is at 44 and the ticks own everything above it. */
+
+.ruler { position: relative; margin-top: var(--s2); }
+
+/* a year some document was registered in. Bottom-aligned to the axis, so the
+   mark touches the line and the label sits clear above it. */
+.tick { position: absolute; top: 0; height: 44px; transform: translateX(-50%);
+        display: flex; flex-direction: column; align-items: center;
+        justify-content: flex-end; gap: var(--s1); }
+.tick em { font: 600 11px/1 var(--mono); font-style: normal; white-space: nowrap;
+           font-variant-numeric: tabular-nums; }
+.tick i { display: block; width: 2px; height: 14px; border-radius: 1px; }
+/* outside every band is the whole point of the chart, so it takes the seal */
+.tick.outside em { color: var(--seal); }
+.tick.outside i  { background: var(--seal); }
+.tick.inside  em { color: var(--fee); }
+.tick.inside  i  { background: var(--fee); }
+
+.ruler-axis { position: absolute; top: 44px; left: 0; right: 0; height: 1px;
+              background: var(--rule-firm); }
+
+/* a span one certificate actually covers — the same fill and edge as `.rw` on
+   the case rule, because it is the same fact drawn at a different scale */
+.ruler-band { position: absolute; height: 12px; border-radius: 2px;
+              background: color-mix(in srgb, var(--endorse) 22%, transparent);
+              border: 1px solid var(--endorse); }
+.band-edge { position: absolute; transform: translateX(-50%);
+             font: 600 11px/1 var(--mono); color: var(--endorse);
+             white-space: nowrap; font-variant-numeric: tabular-nums; }
+/* Inside its own band, not above it. Lifted clear of the band the label named
+   its lane at y-14 — which is above the axis, in the ticks' half of the chart,
+   and on a two-certificate case "EC-A" landed on top of the 2019 tick. The two
+   registers never share a row: that is the whole reason this mark reads. */
+.band-name { position: absolute; font: 600 10px/1 var(--sans);
+             color: var(--endorse); transform: translate(5px, 1px);
+             white-space: nowrap; pointer-events: none; }
 .band-missing { position: absolute; left: 0; font-size: 12px;
                 color: var(--stamp); font-weight: 600; }
 .ruler-required { position: absolute; height: 0; border-top: 2px dotted var(--ink-3); }
 .ruler-required span { position: absolute; top: 3px; left: 0; font-size: 11px;
                        color: var(--ink-3); white-space: nowrap; }
-.k-req { display: inline-block; width: 18px; height: 0;
-         border-top: 2px dotted var(--ink-3); margin-right: 4px;
-         vertical-align: middle; }
+
+/* The key is `.rule-key` — the case rule's, unchanged. `.k-band` and `.k-tick`
+   were a second set of swatches for the same two marks; the ruler now uses
+   `.sw-window` and `.sw-out` like every other chart, and only the required-span
+   swatch is its own, because only this chart draws one. */
+.k-req { width: 18px; height: 0; border-top: 2px dotted var(--ink-3); }
+.rule-key { margin-top: var(--s3); }
+
+.coverage-detail { margin-top: var(--s3); font-size: 14px; line-height: 1.55;
+                   color: var(--ink-2); max-width: 62ch; }
 
 /* ── tabs ─────────────────────────────────────────────────────────────────── */
 
@@ -914,7 +1034,9 @@ main { padding: var(--s6) var(--s5) var(--s8); }
   background: none; border: 0; border-bottom: 3px solid transparent;
   padding: var(--s2) var(--s4); color: var(--ink-2); white-space: nowrap;
 }
+.tab { transition: color 140ms var(--ease), border-color 140ms var(--ease); }
 .tab:hover { color: var(--ink); }
+.tab:active { color: var(--ink); }
 .tab.on { color: var(--ink); border-bottom-color: var(--ink); }
 .tab-count {
   display: inline-block; margin-left: 6px; min-width: 18px; padding: 0 5px;
@@ -931,7 +1053,9 @@ main { padding: var(--s6) var(--s5) var(--s8); }
 .check-head { display: flex; gap: var(--s2); align-items: baseline;
               flex-wrap: wrap; }
 .outcome { display: inline-flex; align-items: baseline; gap: 5px; font-size: 12px;
-           font-weight: 700; white-space: nowrap; min-width: 116px; }
+           font-weight: 600; white-space: nowrap; min-width: 116px; }
+.outcome .glyph { font-size: 10px; }
+.outcome-word { font-weight: inherit; }
 /* Scoped to the badge and the summary counts ONLY. Put these on the row itself and
    the severity colour bleeds into the rule's inputs and evidence, where red means
    nothing and reads as alarm. */
@@ -947,26 +1071,28 @@ main { padding: var(--s6) var(--s5) var(--s8); }
                color: var(--ink); display: flex; gap: var(--s2);
                align-items: baseline; }
 .check-title:hover .check-what { text-decoration: underline; }
-.rule-tag { font-size: 11px; font-weight: 700; color: var(--ink-3);
-            border: 1px solid var(--rule-line); border-radius: 3px; padding: 0 4px; }
+.rule-tag { font-size: 11px; font-weight: 600; color: var(--ink-3);
+            border: 1px solid var(--rule-line); border-radius: var(--r1); padding: 0 4px; }
 .check-msg { margin: 2px 0 0 116px; color: var(--ink-2); font-size: 14px; }
 .out-na .check-msg, .check.out-na .check-msg { color: var(--ink-3); }
 .check.is-reviewed { opacity: .72; }
-.review-flag { font-size: 11px; font-weight: 700; color: var(--fee);
+.review-flag { font-size: 11px; font-weight: 600; color: var(--fee);
                border: 1px solid var(--fee-line); border-radius: 20px;
                padding: 1px 8px; }
 
 .check-detail { margin: var(--s4) 0 var(--s2) 116px; padding: var(--s4);
                 background: var(--folder); border-radius: var(--r2);
                 font-size: 14px; }
-.check-detail h4 { font-size: 11px; text-transform: uppercase;
-                   letter-spacing: .07em; color: var(--ink-3);
+.check-detail h4 { font: 600 11px/1 var(--sans); letter-spacing: 0.09em;
+                   text-transform: uppercase; color: var(--ink-3);
                    margin: var(--s4) 0 var(--s1); }
 .check-detail h4:first-child { margin-top: 0; }
 .rule-statement { color: var(--ink-2); font-style: italic; }
 .rule-inputs { display: grid; grid-template-columns: max-content 1fr;
                gap: 2px var(--s4); margin: 0; }
-.rule-inputs dt { color: var(--ink-3); }
+/* the same sentence-case label register as `.order dt` — these are the two
+   label→value grids in the product and they were 14px and 12px */
+.rule-inputs dt { color: var(--ink-3); font-size: 12px; }
 .rule-inputs dd { margin: 0; }
 .rule-inputs .val { font-variant-numeric: tabular-nums; }
 .rule-reason { color: var(--stamp); }
@@ -978,7 +1104,7 @@ main { padding: var(--s6) var(--s5) var(--s8); }
 .review-states { display: flex; gap: var(--s4); flex-wrap: wrap; }
 .radio { display: inline-flex; gap: 5px; align-items: center; font-size: 13px; }
 .review-form textarea { font: inherit; font-size: 14px; padding: 6px;
-                        border: 1px solid var(--rule-line); border-radius: 4px;
+                        border: 1px solid var(--rule-line); border-radius: var(--r2);
                         resize: vertical; }
 .review-form .btn { justify-self: start; }
 .review-history ul { margin: var(--s2) 0; padding-left: var(--s5); }
@@ -991,8 +1117,8 @@ main { padding: var(--s6) var(--s5) var(--s8); }
 .ec-card { border: 1px solid var(--rule-line); border-radius: var(--r2);
            padding: var(--s4); margin-bottom: var(--s2); }
 .ec-card h3 { font-size: 15px; display: flex; gap: var(--s2); align-items: baseline; }
-.ec-label { font-size: 11px; font-weight: 700; letter-spacing: .06em;
-            color: var(--paper); background: var(--ink); border-radius: 3px;
+.ec-label { font-size: 11px; font-weight: 600; letter-spacing: .06em;
+            color: var(--paper); background: var(--ink); border-radius: var(--r1);
             padding: 1px 6px; }
 .ec-meta { font-size: 14px; color: var(--ink-2); margin: 0; }
 .ec-file { margin: 0; }
@@ -1004,22 +1130,37 @@ main { padding: var(--s6) var(--s5) var(--s8); }
 .request h3 { font-size: 15px; display: flex; gap: var(--s2); align-items: baseline; }
 .req-n { display: inline-block; width: 20px; height: 20px; line-height: 20px;
          text-align: center; border-radius: 50%; background: var(--stamp);
-         color: var(--paper); font-size: 12px; font-weight: 700; }
+         color: var(--paper); font-size: 12px; font-weight: 600; }
 .req-why, .req-closes { font-size: 14px; color: var(--ink-2); max-width: 72ch; }
 .req-closes code, .ec-fulfils code, .check-detail code {
-  font-size: 12px; background: var(--sunk); border-radius: 3px; padding: 0 4px; }
+  font-size: 12px; background: var(--sunk); border-radius: var(--r1); padding: 0 4px; }
 .req-actions { display: flex; gap: var(--s4); align-items: center;
                flex-wrap: wrap; margin-top: var(--s2); }
+/* The second drop target in the product, and it disagreed with the first on
+   every count: 2px dashed against 1px, no fill change on hover, and — the part
+   that matters — :hover only, so a keyboard tabbing onto it got no feedback at
+   all while the home dropzone lit up. Same control, same treatment. */
 .req-drop { flex: 1; min-width: 260px; }
-.req-drop label { display: block; border: 2px dashed var(--rule-line);
+.req-drop label { display: block; border: 1px dashed var(--rule-firm);
                   border-radius: var(--r2); padding: var(--s4);
-                  text-align: center; cursor: pointer; background: var(--ledger); }
-.req-drop label:hover { border-color: var(--endorse); }
+                  text-align: center; cursor: pointer; background: var(--ledger);
+                  transition: border-color 140ms var(--ease),
+                              background 140ms var(--ease); }
+.req-drop label:hover, .req-drop:focus-within label {
+  border-color: var(--endorse); background: var(--endorse-soft); }
 .drop-hint { font-size: 13px; color: var(--ink-2); }
 .req-drop input[type=file] { position: absolute; width: 1px; height: 1px; opacity: 0; }
 .superseded ul { margin: var(--s2) 0; padding-left: var(--s5); font-size: 14px; }
 
-.band-merge { border-left: 4px solid var(--fee); }
+/* `.band` is the block that sits between the tabs and the tab body — the ruler
+   strip, and the merge result after a second certificate lands. Both carried the
+   class with nothing behind it, so neither had any separation from what follows. */
+.band { margin-bottom: var(--s5); }
+/* padding-left, which this never had: a 4px rule hard against the text read as a
+   printing error rather than as the same accent the sections beside it use. */
+.band-merge { border-left: 3px solid var(--fee); padding-left: var(--s4); }
+.merge-head { font-size: 14px; color: var(--ink-2); margin-top: var(--s2); }
+.merge-head strong { color: var(--ink); font-weight: 600; }
 .merge-h { font-size: 11px; font-weight: 600; text-transform: uppercase;
            letter-spacing: 0.09em; color: var(--ink-3);
            margin: var(--s4) 0 var(--s1); }
@@ -1038,8 +1179,12 @@ main { padding: var(--s6) var(--s5) var(--s8); }
           font-size: 14px; align-items: baseline; }
 .tl-row:first-child { border-top: 0; }
 .tl-date { font-variant-numeric: tabular-nums; color: var(--ink-2); }
-.tl-doc { font-weight: 700; font-variant-numeric: tabular-nums; }
+.tl-doc { font-weight: 600; font-variant-numeric: tabular-nums; }
 .tl-nature { color: var(--ink-2); }
+/* the two columns the timeline never styled: names are content and set in the
+   Tamil register, the source link is pushed to the end of the row */
+.tl-parties { color: var(--ink-2); min-width: 0; }
+.tl-src { justify-self: end; }
 .timeline-undated { margin-top: var(--s4); border-top: 1px solid var(--rule-line);
                     padding-top: var(--s4); }
 .timeline-undated h3 { font-size: 11px; font-weight: 600; text-transform: uppercase;
@@ -1048,14 +1193,14 @@ main { padding: var(--s6) var(--s5) var(--s8); }
 .matrix { border-collapse: collapse; font-size: 13px; }
 .matrix th, .matrix td { border: 1px solid var(--rule-line); padding: 4px 8px;
                          text-align: center; }
-.matrix thead th { background: var(--folder); font-size: 11px;
-                   text-transform: uppercase; letter-spacing: .05em;
+.matrix thead th { background: var(--folder); font: 600 11px/1.3 var(--sans);
+                   letter-spacing: 0.09em; text-transform: uppercase;
                    color: var(--ink-3); }
 .matrix tbody th { text-align: left; font-weight: 600;
                    font-variant-numeric: tabular-nums; }
 .cell-on { color: var(--fee); }
 .cell-off { color: var(--ink-3); background: var(--sunk); }
-.cell-flag { color: var(--stamp); font-weight: 700; background: var(--stamp-soft); }
+.cell-flag { color: var(--stamp); font-weight: 600; background: var(--stamp-soft); }
 .cell-note { color: var(--ink-2); }
 .cell-plain { color: var(--ink-3); font-variant-numeric: tabular-nums; }
 .grid tbody th { white-space: nowrap; }
@@ -1084,7 +1229,7 @@ main { padding: var(--s6) var(--s5) var(--s8); }
 .graph { display: block; }
 .g-axis { stroke: var(--rule-line); stroke-width: 2; }
 .g-tick { stroke: var(--ink-3); stroke-width: 1; }
-.g-year { font-size: 11px; fill: var(--ink-3); font-weight: 700; }
+.g-year { font-size: 11px; fill: var(--ink-3); font-weight: 600; }
 .g-label { font-size: 11px; fill: var(--ink-2); font-variant-numeric: tabular-nums; }
 
 .g-edge { stroke-width: 1.5; }
@@ -1118,14 +1263,17 @@ main { padding: var(--s6) var(--s5) var(--s8); }
           flex-wrap: wrap; }
 .gn-btn:hover { background: var(--folder); }
 .gn-dot { width: 1em; }
-.gn-doc { font-weight: 700; font-variant-numeric: tabular-nums; }
+.gn-doc { font-weight: 600; font-variant-numeric: tabular-nums; }
 .gn-nature { color: var(--ink-2); }
-.gn-ec { font-size: 11px; font-weight: 700; color: var(--paper);
-         background: var(--ink-3); border-radius: 3px; padding: 0 5px; }
+.gn-ec { font-size: 11px; font-weight: 600; color: var(--paper);
+         background: var(--ink-3); border-radius: var(--r1); padding: 0 5px; }
 .gn-unexamined .gn-dot, .gn-unexamined .gn-doc { color: var(--ink-3); }
 .gn-unexamined .gn-nature { font-style: italic; color: var(--ink-3); }
 .gn-order { margin-left: auto; color: var(--endorse); text-decoration: underline; }
-.tag-open { font-size: 12px; font-weight: 700; color: var(--seal); }
+/* `.tag` / `.tag-cancelled` / `.tag-open` were a third badge family beside the
+   documented chip and the count pill — and `.tag` itself was never emitted, so
+   its siblings rendered as tinted text with no pill around it. Both now use the
+   chip the system already defines. */
 .chain-as-list { margin-top: var(--s4); }
 .chain-as-list > summary { cursor: pointer; }
 
@@ -1133,7 +1281,7 @@ main { padding: var(--s6) var(--s5) var(--s8); }
 
 .enc-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
              gap: var(--s2); }
-.enc { border: 1px solid var(--rule-line); border-left: 4px solid var(--ink-3);
+.enc { border: 1px solid var(--rule-line); border-left: 3px solid var(--ink-3);
        border-radius: var(--r2); padding: var(--s4); }
 .enc h3 { font-size: 15px; font-variant-numeric: tabular-nums; margin: 0 0 2px; }
 .enc-status { font-size: 11px; font-weight: 600; text-transform: uppercase;
@@ -1154,10 +1302,12 @@ main { padding: var(--s6) var(--s5) var(--s8); }
 .cost { border-collapse: collapse; width: 100%; font-size: 14px; }
 .cost th, .cost td { text-align: left; vertical-align: top; padding: var(--s2);
                      border-top: 1px solid var(--rule-line); }
-.cost thead th { color: var(--ink-3); font-size: 11px; text-transform: uppercase;
-                 letter-spacing: .05em; border-top: 0; }
-.cost tfoot th, .cost tfoot td { border-top: 2px solid var(--rule-line);
-                                 font-weight: 700; }
+.cost thead th { color: var(--ink-3); font: 600 11px/1 var(--sans);
+                 letter-spacing: 0.09em; text-transform: uppercase; border-top: 0; }
+/* The total is separated by a firmer hairline, not a thicker one: doubling the
+   width would be a second border weight in a sheet that has exactly one. */
+.cost tfoot th, .cost tfoot td { border-top: 1px solid var(--rule-firm);
+                                 font-weight: 600; }
 .cost .meta { display: block; }
 .cost .delta, .cost .money { font-variant-numeric: tabular-nums; }
 .cost .row-idle { color: var(--ink-3); }
@@ -1170,7 +1320,16 @@ main { padding: var(--s6) var(--s5) var(--s8); }
 .case-docs, .case-pct { color: var(--ink-2); font-size: 14px;
                         font-variant-numeric: tabular-nums; }
 .case-list a { align-items: baseline; }
+/* The same gates the verdict rail shows, on paper. They carried `.gate-met` /
+   `.gate-unmet` with no rule behind either, so the report stated every gate in
+   one ink while the screen stated it in seal or fee — and inherited the '·' from
+   `.report ul li` on top of the ✓/✗ they already carry. Colour is never the only
+   carrier here, but it is never absent either. */
 .report-gates { list-style: none; padding: 0; }
+.report-gates li { padding-left: var(--s4); }
+.report-gates li::before { content: none; }
+.report-gates .gate-met   { color: var(--fee); }
+.report-gates .gate-unmet { color: var(--seal); font-weight: 600; }
 .report-rules { font-size: 12px; }
 .report-rules em { color: var(--ink-2); }
 
@@ -1179,8 +1338,8 @@ main { padding: var(--s6) var(--s5) var(--s8); }
 
 .empty { color: var(--ink-3); font-size: 13px; }
 .push  { margin-left: auto; }
-.section-required { border-left: 2px solid var(--stamp); padding-left: var(--s4); }
-.section-merge    { border-left: 2px solid var(--fee); padding-left: var(--s4); }
+.section-required { border-left: 3px solid var(--stamp); padding-left: var(--s4); }
+.section-merge    { border-left: 3px solid var(--fee); padding-left: var(--s4); }
 .strong { font-weight: 600; }
 .table-scroll { overflow-x: auto; }
 .not-read { color: var(--stamp); }
