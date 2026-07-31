@@ -97,7 +97,29 @@ Severity edge  3px solid, left, on every card or section that carries one
 Points      grid 18px / 1fr · 10px 0 pad · bottom hairline · 14/1.55 --ink-2
               lead-in <strong> 600 --ink · glyph 10px, centred in its column
 Facts       3-up · mono figure 26px tabular-nums · body 13px --ink-2
+Check tiers failed  17px title · 15px msg --ink · s4 pad · r3 · 3px --seal edge
+            open    14px title · 14px msg --ink-2 · s2 pad · top hairline
+            settled behind <details> · 13px msg --ink-3
+Subject chip 11px mono tabular-nums · --sunk · 1px --rule-line · r1 · 1px 6px
 ```
+
+**The checklist is tiered, and a family is one row.** Three weights, not one:
+the failed check is the whole answer to "can I sign this yet" and is the only
+17px title in the list; open work sits at 14px; settled work goes behind a
+`<details>` summary. It was sixteen rows of identical height and weight until
+2026-07-31, so FAILED and NOT APPLICABLE read the same and the eye had nowhere
+to land.
+
+Runs that share a rule, an outcome and a key family collapse to one row
+(`runs_grouped`), because R4 fires once per unresolved parent and five rows that
+differ only in the number inside them teach the eye to skim. The collapse is
+presentational only: every member keeps its key and stays individually
+expandable, citable and signable, one level down. A group states its case over
+the set — never the lead member's sentence, which names one subject and would
+contradict a title that just counted five.
+
+The report does **not** group. Its audit table carries a per-run "Signed off"
+cell, and an audit record's job is completeness, not speed of reading.
 
 **The home pitch is bullets, not paragraphs.** Each line is one bold lead-in plus
 one clause, and it stays that way. It was six prose paragraphs of three-to-four

@@ -180,6 +180,13 @@ class RuleRun(BaseModel):
         return OUTCOME_UI[self.outcome]
 
     @property
+    def subject(self) -> str:
+        """The bit of the key that varies within a family — `4451/2005` out of
+        `R4:parent=4451/2005`. It is what distinguishes one member of a group
+        from the next, and the only part worth printing on a grouped row."""
+        return self.key.split("=", 1)[1] if "=" in self.key else self.key
+
+    @property
     def is_open(self) -> bool:
         return self.outcome in OPEN_OUTCOMES
 
@@ -194,6 +201,68 @@ class RuleRun(BaseModel):
                        message=self.message,
                        evidence_entry_ids=self.evidence_entry_ids,
                        rulebook_version=self.rulebook_version, key=self.key)
+
+
+# What a collapsed family is called, keyed by the family part of the run key.
+# Written per family rather than generated, because "5 of R4" is a row number and
+# "5 earlier documents nobody has read" is the finding.
+GROUP_TITLES = {
+    "R4:parent": "{n} earlier documents are named that nobody has read",
+    "R2:enc": "{n} live claims sit on this property",
+    "R9": "{n} cells we could not read",
+}
+
+# The sentence under a collapsed title. The lead member's own message names its
+# one subject ("Entry 1 points back to 4451/2005…"), which contradicts a title
+# that has just counted five of them, so a group states its case over the set.
+GROUP_MESSAGES = {
+    "R4:parent": "Each is named on an entry as the document the property came "
+                 "through. None of them is in any certificate here, so nobody "
+                 "has read what is inside them.",
+    "R2:enc": "Each is a claim this certificate records and does not show "
+              "released.",
+    "R9": "The page reader returned these cells empty. They are blank here "
+          "rather than guessed.",
+}
+
+
+class ChecklistItem(BaseModel):
+    """One row of the checklist: either a single run, or a family of runs that
+    say the same thing about different subjects (see `runs_grouped`)."""
+    members: list[RuleRun]
+
+    @property
+    def lead(self) -> RuleRun:
+        return self.members[0]
+
+    @property
+    def grouped(self) -> bool:
+        return len(self.members) > 1
+
+    @property
+    def subjects(self) -> list[str]:
+        return [m.subject for m in self.members]
+
+    @property
+    def family(self) -> str:
+        return self.lead.key.split("=", 1)[0]
+
+    @property
+    def title(self) -> str:
+        """A group states the finding once, over a count. A lone run keeps the
+        title derive.py already wrote for it."""
+        if not self.grouped:
+            return self.lead.title
+        template = GROUP_TITLES.get(self.family)
+        if template is None:
+            return f"{len(self.members)} findings under {self.lead.rule_id}"
+        return template.format(n=len(self.members))
+
+    @property
+    def message(self) -> str:
+        if not self.grouped:
+            return self.lead.message
+        return GROUP_MESSAGES.get(self.family, self.lead.message)
 
 
 class Edge(BaseModel):
@@ -613,6 +682,36 @@ class DerivedView(BaseModel):
 
     def by_outcome(self, outcome: str) -> list[RuleRun]:
         return [r for r in self.runs if r.outcome == outcome]
+
+    @property
+    def runs_grouped(self) -> list["ChecklistItem"]:
+        """The checklist as it should be READ, rather than as it was computed.
+
+        R4 fires once per unresolved parent document, so a certificate naming
+        five of them produces five rows that differ only in the number inside
+        them — "4451/2005 is named, but you do not have it", four more times.
+        That is one finding about five documents, and rendering it as five
+        teaches the eye to skim the section where the eye should stop.
+
+        Runs collapse when they share a rule, an outcome AND a key family (the
+        part of the key before `=`), and only when there is more than one. The
+        members survive intact inside the group: each is still individually
+        addressable by key, so expanding a member, citing its evidence and
+        recording a note against it all work exactly as before.
+        """
+        out: list[ChecklistItem] = []
+        seen: set[str] = set()
+        for run in self.runs_ranked:
+            family = run.key.split("=", 1)[0]
+            if family in seen:
+                continue
+            kin = [r for r in self.runs_ranked
+                   if r.key.split("=", 1)[0] == family
+                   and r.rule_id == run.rule_id
+                   and r.outcome == run.outcome]
+            seen.add(family)
+            out.append(ChecklistItem(members=kin))
+        return out
 
     @property
     def outcome_counts(self) -> dict[str, int]:

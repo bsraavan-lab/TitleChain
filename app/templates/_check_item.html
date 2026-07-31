@@ -1,0 +1,56 @@
+{% from "_macros.html" import outcome_badge %}
+{# One row of the checklist, which may stand for several runs.
+
+   R4 fires once per unresolved parent, so a certificate naming five of them
+   produced five rows differing only in the number inside them. Five rows that
+   say the same sentence teach the eye to skim exactly where it should stop, so
+   the family collapses to one row and the five document numbers become the
+   evidence on it.
+
+   The members are NOT flattened away: each is still a real run with its own
+   key, so opening one, citing its crop and recording a note against it all
+   behave as they did. They live one level down, behind a summary.
+
+   A lone run renders through _rule_row.html untouched — same template the
+   single-row HTMX swap uses, so the list and the swap cannot drift apart. #}
+
+{% if not item.grouped %}
+  {% set run = item.lead %}
+  {% set expanded = (focus_key == run.key) %}
+  {% include "_rule_row.html" %}
+{% else %}
+<li class="check check-group {{ item.lead.ui.cls }}">
+  <div class="check-head">
+    {{ outcome_badge(item.lead) }}
+    <span class="check-title check-title-static">
+      <span class="check-what">{{ item.title }}</span>
+      <span class="rule-tag">{{ item.lead.rule_id }}</span>
+    </span>
+  </div>
+
+  <p class="check-msg">{{ item.message }}</p>
+
+  {# The subjects ARE the finding, so they are named on the collapsed row rather
+     than hidden behind it. They are identifiers, not buttons: a document nobody
+     has is a document with no crop to open — which is the whole point of R4 —
+     so making them look clickable would promise a page that does not exist. #}
+  <ul class="subject-chips">
+    {% for s in item.subjects %}
+      <li class="subject-chip">{{ s }}</li>
+    {% endfor %}
+  </ul>
+
+  {# Everything that can actually be done — the rule's working, what would settle
+     it, her note — stays one level down, one row per document, unchanged. #}
+  <details class="group-members">
+    <summary class="meta">Take them one at a time ({{ item.members|length }})</summary>
+    <ul class="checklist">
+      {% for m in item.members %}
+        {% set run = m %}
+        {% set expanded = (focus_key == m.key) %}
+        {% include "_rule_row.html" %}
+      {% endfor %}
+    </ul>
+  </details>
+</li>
+{% endif %}
