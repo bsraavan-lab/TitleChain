@@ -128,6 +128,42 @@ a click. If a point needs two lines, it is two points or it is cut. Figures lead
 the section because a stranger believes a number before prose — and the sample
 size is printed, never rounded into a rate (n=4 is a signal, not a base rate).
 
+## One row, one figure
+
+The product states the same object on every screen — **a status, a claim, a
+supporting detail** — and for a while it said it two ways. The home screen used
+an 18px glyph column with the claim inline; the checklist used a 116px
+status-word gutter with the claim on its own line and the detail indented past
+it. Side by side they read as two applications. There is now one of each:
+
+```
+.row            grid 20px / 1fr · gap 8 — the glyph column is 20px EVERYWHERE
+  .row-one      one line  · 10px 0 pad · bottom hairline · 14/1.55 --ink-2
+  .row-two      two lines · 8px 0 pad  · top hairline    · title 14/600
+  (settled reuses .row-two at 6px, set by .checklist-settled)
+.row-glyph      10px, centred in its column
+.row-title      14/600 --ink   ·  .row-detail 14/1.5 --ink-2, same left edge
+.status-word    11/600 caps 0.09em — the ONE uppercase register, inline
+.figure-value   26px mono tabular-nums -0.02em   ·  .figure-note 13px --ink-2
+.meter-pct      17px mono tabular-nums — a meter is a figure that draws its bar
+```
+
+**The status word is not a column.** It sits inline at the head of the claim and
+is printed only where it carries weight — `FAIL`, `NOT_EVALUABLE`. The rest are
+`terse` in `OUTCOME_UI`: the glyph and its colour carry them, and the word is
+still rendered `.sr-only` so colour is never the only carrier. A column printing
+"To review" eight times is noise; printing "Failed" once is the answer.
+
+**Glyphs come from the ratified six and nowhere else.** `OUTCOME_UI` ran on
+`✕ ⚠ —` until 2026-07-31, so the same severity was a ▲ on the home screen and a
+⚠ on the checklist, and REVIEW and NOT_EVALUABLE were drawn identically —
+two different answers, one mark. The mapping is now
+`FAIL ▲ · REVIEW ⚑ · NOT_EVALUABLE ○ · PASS ✓ · NOT_APPLICABLE ⊘`.
+
+**Numbers are counted in one hand.** A bare figure and a proportion-with-a-bar
+are the same family — same mono face, same tabular figures, same 11/600/0.09em
+label — differing only in whether the bar is drawn.
+
 ## One name per thing
 
 Every mark and control in the product has exactly one class and one rule:

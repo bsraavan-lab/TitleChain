@@ -1,4 +1,4 @@
-{% from "_macros.html" import outcome_badge, source_button, page_button, copy_button %}
+{% from "_macros.html" import outcome_glyph, outcome_word, source_button, page_button, copy_button %}
 {# One checklist row. Collapsed it is a verdict and a sentence; expanded it is the
    rule's working, its evidence, what would close it, and the advocate's own note.
 
@@ -6,15 +6,18 @@
    so the same template serves the list and the single-row swap. #}
 {% set rv = reviews.get(run.key) %}
 <li id="row-{{ run.key|replace(':','-')|replace('/','-')|replace('=','-') }}"
-    class="check {{ run.ui.cls }} {{ 'is-reviewed' if rv and rv.state in ('reviewed','accepted') }}">
+    class="check row row-two {{ run.ui.cls }} {{ 'is-reviewed' if rv and rv.state in ('reviewed','accepted') }}">
 
+  {{ outcome_glyph(run) }}
+
+  <div class="row-body">
   <div class="check-head">
-    {{ outcome_badge(run) }}
-    <button class="check-title" type="button"
+    <button class="check-title row-title" type="button"
             hx-get="/finding/{{ case.id }}/{{ 'collapse' if expanded else 'detail' }}?key={{ run.key|urlencode }}&tab={{ tab }}"
             hx-target="closest li" hx-swap="outerHTML"
             aria-expanded="{{ 'true' if expanded else 'false' }}">
       <span class="caret" aria-hidden="true">{{ '▾' if expanded else '▸' }}</span>
+      {{ outcome_word(run) }}
       <span class="check-what">{{ run.title }}</span>
       <span class="rule-tag">{{ run.rule_id }}</span>
     </button>
@@ -25,7 +28,7 @@
     {% endif %}
   </div>
 
-  <p class="check-msg">{{ run.message }}</p>
+  <p class="check-msg row-detail">{{ run.message }}</p>
 
   {% if expanded %}
     <div class="check-detail">
@@ -138,4 +141,5 @@
         rulebook {{ run.rulebook_version }} · <code>{{ run.key }}</code></p>
     </div>
   {% endif %}
+  </div>
 </li>
