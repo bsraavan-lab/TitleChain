@@ -337,24 +337,55 @@ main { padding: var(--s6) var(--s5) var(--s8); }
 /* A <form> wrapper must not break the flex row it sits in. */
 .inline { display: inline-flex; }
 
-/* The pitch: three things she gets back, three reasons to believe them. Set with
-   the same section grammar as the case screen — hairline, small caps title, plain
-   list — so the explaining does not look like a different application bolted on
-   top of the tool.
+/* The pitch: measured numbers, then three scannable lists. Set with the same
+   section grammar as the case screen — hairline, small caps title, plain list —
+   so the explaining does not look like a different application bolted on top of
+   the tool.
 
    It sits at the FOOT of the page and is always rendered. Hiding it once a case
    exists would be the compact-second-home mistake again, one section lower; and
    putting it above the list would push her own files off the screen every day to
-   re-sell a product she already bought. */
+   re-sell a product she already bought.
+
+   These were three-to-four-line prose paragraphs until 2026-07-31. Nobody reads a
+   paragraph to decide whether a tool is worth a click, so each one is now a bold
+   lead-in and a single clause on one line. */
 .pitch { margin-top: var(--s7); }
-.pitch-list { display: grid; gap: var(--s5) var(--s4); margin-top: 0;
-              grid-template-columns: repeat(3, minmax(0, 1fr)); }
-.pitch-list li { display: grid; gap: 6px; align-content: start;
-                 padding-top: var(--s3); border-top: 1px solid var(--rule-line); }
-.pitch-list h3 { font-size: 15px; font-weight: 600; letter-spacing: -0.01em; }
-.pitch-list p { color: var(--ink-2); font-size: 14px; line-height: 1.55; }
-.pitch-foot { margin-top: var(--s5); padding-top: var(--s3);
-              border-top: 1px solid var(--rule-soft);
+
+/* A stranger believes a figure before they believe prose, so the numbers lead.
+   Mono + tabular-nums: these are registry-grade quantities, set like the dates
+   and counts everywhere else in the product. */
+.facts { display: grid; gap: var(--s4); margin-top: 0;
+         grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.facts li { display: grid; gap: 2px; align-content: start;
+            padding-top: var(--s3); border-top: 1px solid var(--rule-line); }
+.fact-figure { font: 400 26px/1.2 var(--mono); font-variant-numeric: tabular-nums;
+               letter-spacing: -0.02em; }
+/* The one figure that carries a severity carries it in ink as well as in the
+   sentence beside it — never colour alone. */
+.fact-figure.fact-bad { color: var(--seal); }
+.fact-body { color: var(--ink-2); font-size: 13px; line-height: 1.5; }
+
+/* One line per point. The glyph column is fixed so the lead-ins align down the
+   list and the eye can run the left edge without reading. */
+.points { border-top: 1px solid var(--rule-line); }
+.points li { display: grid; grid-template-columns: 18px minmax(0, 1fr);
+             gap: var(--s2); align-items: baseline; padding: 10px 0;
+             border-bottom: 1px solid var(--rule-soft);
+             font-size: 14px; line-height: 1.55; color: var(--ink-2); }
+.points strong { font-weight: 600; color: var(--ink); }
+.pt-glyph { font-size: 10px; line-height: 1.9; text-align: center; }
+.pt-bad  { color: var(--seal); }
+.pt-good { color: var(--fee); }
+.pt-info { color: var(--endorse); }
+
+/* The definition, parked after the problem rather than before it: the reader
+   only needs the term once they already care what it fails to do. */
+.pitch-note { margin-top: var(--s3); color: var(--ink-3); font-size: 13px;
+              line-height: 1.6; max-width: 64ch; }
+/* No border-top: the list above already closes on a hairline, and two rules
+   24px apart read as an empty band rather than a separation. */
+.pitch-foot { margin-top: var(--s4);
               color: var(--ink-3); font-size: 13px; line-height: 1.6;
               max-width: 64ch; }
 
@@ -881,7 +912,7 @@ main { padding: var(--s6) var(--s5) var(--s8); }
   .case-row .spark { display: none; }
   .rule { height: 74px; }
   .welcome { padding: var(--s6) 0 var(--s5); }
-  .pitch-list { grid-template-columns: minmax(0, 1fr); gap: var(--s4); }
+  .facts { grid-template-columns: minmax(0, 1fr); gap: var(--s3); }
 }
 
 @media (prefers-reduced-motion: reduce) {
