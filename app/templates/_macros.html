@@ -17,12 +17,22 @@
 {% endmacro %}
 
 
-{% macro outcome_badge(run) %}
-  {# Colour is never the only carrier: glyph + word + colour, every time. #}
-  <span class="outcome {{ run.ui.cls }}">
-    <span class="glyph" aria-hidden="true">{{ run.ui.glyph }}</span>
-    <span class="outcome-word">{{ run.ui.word }}</span>
-  </span>
+{% macro outcome_glyph(run) %}
+  {# The status column: one glyph, 20px wide, the same on every screen. #}
+  <span class="row-glyph {{ run.ui.cls }}" aria-hidden="true">{{ run.ui.glyph }}</span>
+{% endmacro %}
+
+
+{% macro outcome_word(run) %}
+  {# The status WORD, inline at the head of the claim rather than in a gutter.
+     Printed only where it carries weight — a failure, a check that could not
+     run. The repeated tiers are carried by the glyph and its colour, and keep
+     the word for a screen reader, so colour is never the only carrier. #}
+  {% if run.ui.terse %}
+    <span class="sr-only">{{ run.ui.word }}: </span>
+  {% else %}
+    <span class="status-word {{ run.ui.cls }}">{{ run.ui.word }}</span>
+  {% endif %}
 {% endmacro %}
 
 

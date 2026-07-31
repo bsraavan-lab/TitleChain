@@ -38,12 +38,24 @@ RuleOutcome = Literal["FAIL", "REVIEW", "PASS", "NOT_APPLICABLE", "NOT_EVALUABLE
 
 # Each word has to read correctly twice: alone on a badge, and after a number in
 # the count line ("2 failed · 3 to review · 1 couldn't check").
+# Glyphs come from the six the stylesheet ratifies (▲ ● ⚑ ✓ ○ ⊘) and from
+# nowhere else. This table used to run on ✕ ⚠ — , so the same severity was a ▲
+# on the home screen and a ⚠ on the checklist, and REVIEW and NOT_EVALUABLE were
+# the SAME glyph in the same list — two different answers drawn identically.
+#
+# `terse` marks the outcomes whose word is carried by the glyph and its colour
+# alone. A row saying "To review" eight times down a column is noise; a row
+# saying "Failed" once is the answer. The word is still rendered for a screen
+# reader either way — colour is never the only carrier.
 OUTCOME_UI: dict[str, dict[str, str]] = {
-    "FAIL":           {"word": "Failed", "glyph": "✕", "cls": "out-fail"},
-    "REVIEW":         {"word": "To review", "glyph": "⚠", "cls": "out-review"},
-    "PASS":           {"word": "Passed", "glyph": "✓", "cls": "out-pass"},
-    "NOT_EVALUABLE":  {"word": "Couldn't check", "glyph": "⚠", "cls": "out-unknown"},
-    "NOT_APPLICABLE": {"word": "Not applicable", "glyph": "—", "cls": "out-na"},
+    "FAIL":           {"word": "Failed", "glyph": "▲", "cls": "out-fail"},
+    "REVIEW":         {"word": "To review", "glyph": "⚑", "cls": "out-review",
+                       "terse": "1"},
+    "PASS":           {"word": "Passed", "glyph": "✓", "cls": "out-pass",
+                       "terse": "1"},
+    "NOT_EVALUABLE":  {"word": "Couldn't check", "glyph": "○", "cls": "out-unknown"},
+    "NOT_APPLICABLE": {"word": "Not applicable", "glyph": "⊘", "cls": "out-na",
+                       "terse": "1"},
 }
 # Worst first. NOT_EVALUABLE ranks above PASS deliberately: "we could not check
 # this" is an open item for the advocate, not a clean result.

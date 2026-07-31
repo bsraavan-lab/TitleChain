@@ -108,6 +108,61 @@ li { list-style: none; }
         font-size: 0.94em; letter-spacing: -0.01em; }
 .meta { color: var(--ink-3); font-size: 12px; }
 .sep  { color: var(--ink-4); margin: 0 6px; }
+
+/* ── the row ────────────────────────────────────────────────────────────────
+   ONE way to state a status, a claim and its supporting detail. The product
+   said this same thing on the home screen and on the checklist in two
+   different layouts — an 18px glyph column against a 116px status-word gutter,
+   the claim inline against the claim on its own line — and side by side they
+   read as two applications.
+
+   One glyph column at 20px, everywhere. The claim and the detail share a left
+   edge. Three densities, and nothing else changes between them:
+
+     .row-one      one line   — a stated point (home)
+     .row-two      two lines  — a checklist row carrying a rule and evidence
+
+   Settled work reuses .row-two at a tighter padding, set by .checklist-settled
+   where it is used, rather than by a third density nothing else asks for.
+
+   The status WORD is not a column. It is an inline tag at the head of the
+   claim, on the one uppercase register this product has, and it appears only
+   where it carries weight — a failure, a check that could not run. Repeated
+   tiers are carried by the glyph and its colour, with the word still present
+   for a screen reader, because colour is never the only carrier.           */
+.row { display: grid; grid-template-columns: 20px minmax(0, 1fr);
+       gap: var(--s2); align-items: start; }
+.row-glyph { font-size: 10px; line-height: 1.9; text-align: center;
+             color: var(--ink-4); }
+.row-body { min-width: 0; }
+
+.row-one { padding: 10px 0; border-bottom: 1px solid var(--rule-soft);
+           font-size: 14px; line-height: 1.55; color: var(--ink-2); }
+.row-one strong { font-weight: 600; color: var(--ink); }
+
+.row-two { padding: var(--s2) 0; border-top: 1px solid var(--rule-line); }
+.row-two:first-child { border-top: 0; }
+
+.row-title { font-size: 14px; font-weight: 600; color: var(--ink);
+             line-height: 1.4; }
+.row-detail { margin-top: 2px; color: var(--ink-2); font-size: 14px;
+              line-height: 1.5; }
+
+/* The severity tag. Same register as every other uppercase label in the
+   product — 11/600/0.09em — because a second one at 12/600/0 reads as a
+   second system, which is exactly what it was. */
+.status-word { font-size: 11px; font-weight: 600; text-transform: uppercase;
+               letter-spacing: 0.09em; margin-right: 6px;
+               white-space: nowrap; }
+
+/* ── the figure ─────────────────────────────────────────────────────────────
+   ONE numeric register. A bare count and a proportion-with-a-bar are the same
+   family and differ only in whether the bar is drawn: same mono face, same
+   tabular figures, same 11/600/0.09em label.                               */
+.figure-value { font-family: var(--mono); font-variant-numeric: tabular-nums;
+                font-size: 26px; line-height: 1.2; letter-spacing: -0.02em;
+                color: var(--ink); }
+.figure-note { color: var(--ink-2); font-size: 13px; line-height: 1.5; }
 .glyph { font-style: normal; }
 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden;
            clip: rect(0 0 0 0); white-space: nowrap; }
@@ -353,28 +408,20 @@ main { padding: var(--s6) var(--s5) var(--s8); }
 .pitch { margin-top: var(--s7); }
 
 /* A stranger believes a figure before they believe prose, so the numbers lead.
-   Mono + tabular-nums: these are registry-grade quantities, set like the dates
-   and counts everywhere else in the product. */
+   These use the shared .figure-* register — the same face and the same label
+   style as the completion meters on the case screen, because a count is a
+   count wherever the product prints one. */
 .facts { display: grid; gap: var(--s4); margin-top: 0;
          grid-template-columns: repeat(3, minmax(0, 1fr)); }
 .facts li { display: grid; gap: 2px; align-content: start;
             padding-top: var(--s3); border-top: 1px solid var(--rule-line); }
-.fact-figure { font: 400 26px/1.2 var(--mono); font-variant-numeric: tabular-nums;
-               letter-spacing: -0.02em; }
 /* The one figure that carries a severity carries it in ink as well as in the
    sentence beside it — never colour alone. */
-.fact-figure.fact-bad { color: var(--seal); }
-.fact-body { color: var(--ink-2); font-size: 13px; line-height: 1.5; }
+.figure-value.fact-bad { color: var(--seal); }
 
-/* One line per point. The glyph column is fixed so the lead-ins align down the
-   list and the eye can run the left edge without reading. */
+/* The points list is .row/.row-one — see the row primitive at the top of this
+   sheet. Only the severity ink of the glyph is local to this section. */
 .points { border-top: 1px solid var(--rule-line); }
-.points li { display: grid; grid-template-columns: 18px minmax(0, 1fr);
-             gap: var(--s2); align-items: baseline; padding: 10px 0;
-             border-bottom: 1px solid var(--rule-soft);
-             font-size: 14px; line-height: 1.55; color: var(--ink-2); }
-.points strong { font-weight: 600; color: var(--ink); }
-.pt-glyph { font-size: 10px; line-height: 1.9; text-align: center; }
 .pt-bad  { color: var(--seal); }
 .pt-good { color: var(--fee); }
 .pt-info { color: var(--endorse); }
@@ -964,14 +1011,20 @@ main { padding: var(--s6) var(--s5) var(--s8); }
   display: grid; grid-template-columns: max-content 1fr max-content;
   gap: 0 var(--s2); align-items: center;
 }
-.meter-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.09em;
-               color: var(--ink-3); font-weight: 600; }
+/* A meter is a .figure that happens to draw its bar: same mono face, same
+   tabular figures, same 11/600/0.09em label as the counts on the home screen.
+   The percentage used to be sans at 14/600 while a home figure was mono at 26,
+   so the two screens counted in two different hands. */
+.meter-label { font-size: 11px; text-transform: uppercase;
+               letter-spacing: 0.09em; color: var(--ink-3); font-weight: 600; }
 .meter-bar { display: block; height: 8px; border-radius: var(--r1);
              background: var(--sunk); overflow: hidden; }
 .meter-bar i { display: block; height: 100%; background: var(--stamp); }
 .meter-full .meter-bar i { background: var(--fee); }
-.meter-pct { font-variant-numeric: tabular-nums; font-weight: 600; font-size: 14px; }
-.meter-note { grid-column: 1 / -1; font-size: 12px; color: var(--ink-3); }
+.meter-pct { font-family: var(--mono); font-variant-numeric: tabular-nums;
+             letter-spacing: -0.02em; font-size: 17px; color: var(--ink); }
+.meter-note { grid-column: 1 / -1; font-size: 13px; color: var(--ink-2);
+              line-height: 1.5; }
 
 .vr-gate { margin: var(--s2) 0 0; font-size: 15px; display: flex;
              gap: var(--s2); align-items: baseline; flex-wrap: wrap; }
@@ -1079,23 +1132,29 @@ main { padding: var(--s6) var(--s5) var(--s8); }
 /* ── the checklist ────────────────────────────────────────────────────────── */
 
 .checklist { list-style: none; margin: 0; padding: 0; }
-.check { border-top: 1px solid var(--rule-line); padding: var(--s2) 0; }
-.check:first-child { border-top: 0; }
+/* .check IS .row/.row-two — the grid, the padding and the hairline live on the
+   row primitive. Only what is specific to a checklist row lives here.
+
+   The 116px status gutter this used to open with is gone: it was mostly empty,
+   it printed "To review" eight times down a column, and it forced every message
+   to be indented past it, which is why the checklist and the home screen read
+   as two different products. */
+.check { color: var(--ink); }
 .check-head { display: flex; gap: var(--s2); align-items: baseline;
               flex-wrap: wrap; }
-.outcome { display: inline-flex; align-items: baseline; gap: 5px; font-size: 12px;
-           font-weight: 600; white-space: nowrap; min-width: 116px; }
-.outcome .glyph { font-size: 10px; }
-.outcome-word { font-weight: inherit; }
-/* Scoped to the badge and the summary counts ONLY. Put these on the row itself and
-   the severity colour bleeds into the rule's inputs and evidence, where red means
-   nothing and reads as alarm. */
-.outcome.out-fail,    .counts .out-fail    { color: var(--seal); }
-.outcome.out-review,  .counts .out-review  { color: var(--stamp); }
-.outcome.out-pass,    .counts .out-pass    { color: var(--fee); }
-.outcome.out-unknown, .counts .out-unknown { color: var(--stamp); }
-.outcome.out-na,      .counts .out-na      { color: var(--ink-3); }
-.check { color: var(--ink); }
+/* Scoped to the glyph, the inline word and the summary counts ONLY. Put these on
+   the row itself and the severity colour bleeds into the rule's inputs and
+   evidence, where red means nothing and reads as alarm. */
+.row-glyph.out-fail,    .status-word.out-fail,
+  .counts .out-fail,    .settled-summary .out-fail    { color: var(--seal); }
+.row-glyph.out-review,  .status-word.out-review,
+  .counts .out-review,  .settled-summary .out-review  { color: var(--stamp); }
+.row-glyph.out-pass,    .status-word.out-pass,
+  .counts .out-pass,    .settled-summary .out-pass    { color: var(--fee); }
+.row-glyph.out-unknown, .status-word.out-unknown,
+  .counts .out-unknown, .settled-summary .out-unknown { color: var(--stamp); }
+.row-glyph.out-na,      .status-word.out-na,
+  .counts .out-na,      .settled-summary .out-na      { color: var(--ink-3); }
 
 .check-title { flex: 1; text-align: left; font: inherit; font-weight: 600;
                background: none; border: 0; padding: 0; cursor: pointer;
@@ -1104,7 +1163,7 @@ main { padding: var(--s6) var(--s5) var(--s8); }
 .check-title:hover .check-what { text-decoration: underline; }
 .rule-tag { font-size: 11px; font-weight: 600; color: var(--ink-3);
             border: 1px solid var(--rule-line); border-radius: var(--r1); padding: 0 4px; }
-.check-msg { margin: 2px 0 0 116px; color: var(--ink-2); font-size: 14px; }
+.check-msg { color: var(--ink-2); }
 .out-na .check-msg, .check.out-na .check-msg { color: var(--ink-3); }
 .check.is-reviewed { opacity: .72; }
 .review-flag { font-size: 11px; font-weight: 600; color: var(--fee);
@@ -1139,6 +1198,7 @@ main { padding: var(--s6) var(--s5) var(--s8); }
 .settled-summary:hover { color: var(--ink); }
 .settled-summary:focus-visible { outline: 2px solid var(--endorse);
                                  outline-offset: 2px; border-radius: var(--r1); }
+.checklist-settled .row-two { padding: 6px 0; }
 .checklist-settled .check-msg { color: var(--ink-3); font-size: 13px; }
 
 /* ── a collapsed family ─────────────────────────────────────────────────────
@@ -1147,14 +1207,14 @@ main { padding: var(--s6) var(--s5) var(--s8); }
 .check-group .check-title-static { flex: 1; display: flex; gap: var(--s2);
                                    align-items: baseline; font-weight: 600; }
 .subject-chips { display: flex; flex-wrap: wrap; gap: 6px; list-style: none;
-                 margin: var(--s2) 0 0 116px; padding: 0; }
+                 margin: var(--s2) 0 0; padding: 0; }
 /* Not a button: a document nobody holds has no crop to open, and anything that
    looks pressable here would promise a page that does not exist. */
 .subject-chip { font: 400 11px var(--mono); font-variant-numeric: tabular-nums;
                 color: var(--ink-2); background: var(--sunk);
                 border: 1px solid var(--rule-line); border-radius: var(--r1);
                 padding: 1px 6px; }
-.group-members { margin: var(--s3) 0 0 116px; }
+.group-members { margin: var(--s3) 0 0; }
 .group-members > summary { cursor: pointer; list-style: none; }
 .group-members > summary::-webkit-details-marker { display: none; }
 .group-members > summary::before { content: '▸ '; color: var(--ink-4); }
@@ -1165,15 +1225,9 @@ main { padding: var(--s6) var(--s5) var(--s8); }
 .group-members .checklist { margin-top: var(--s2);
                             border-left: 1px solid var(--rule-line);
                             padding-left: var(--s3); }
-.group-members .check-msg,
-.group-members .subject-chips { margin-left: 0; }
-.group-members .check-detail { margin-left: 0; }
 
-@media (max-width: 1080px) {
-  .subject-chips, .group-members { margin-left: 0; }
-}
 
-.check-detail { margin: var(--s4) 0 var(--s2) 116px; padding: var(--s4);
+.check-detail { margin: var(--s4) 0 var(--s2); padding: var(--s4);
                 background: var(--folder); border-radius: var(--r2);
                 font-size: 14px; }
 .check-detail h4 { font: 600 11px/1 var(--sans); letter-spacing: 0.09em;

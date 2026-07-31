@@ -1,4 +1,4 @@
-{% from "_macros.html" import outcome_badge %}
+{% from "_macros.html" import outcome_glyph, outcome_word %}
 {# One row of the checklist, which may stand for several runs.
 
    R4 fires once per unresolved parent, so a certificate naming five of them
@@ -19,16 +19,23 @@
   {% set expanded = (focus_key == run.key) %}
   {% include "_rule_row.html" %}
 {% else %}
-<li class="check check-group {{ item.lead.ui.cls }}">
+<li class="check check-group row row-two {{ item.lead.ui.cls }}">
+  {{ outcome_glyph(item.lead) }}
+
+  <div class="row-body">
   <div class="check-head">
-    {{ outcome_badge(item.lead) }}
-    <span class="check-title check-title-static">
+    <span class="check-title check-title-static row-title">
+      {# A caret's worth of empty space. The group row does not expand — its
+         members do — but without the placeholder its title starts 1em left of
+         every other row in the list and the column stops being a column. #}
+      <span class="caret" aria-hidden="true"></span>
+      {{ outcome_word(item.lead) }}
       <span class="check-what">{{ item.title }}</span>
       <span class="rule-tag">{{ item.lead.rule_id }}</span>
     </span>
   </div>
 
-  <p class="check-msg">{{ item.message }}</p>
+  <p class="check-msg row-detail">{{ item.message }}</p>
 
   {# The subjects ARE the finding, so they are named on the collapsed row rather
      than hidden behind it. They are identifiers, not buttons: a document nobody
@@ -52,5 +59,6 @@
       {% endfor %}
     </ul>
   </details>
+  </div>
 </li>
 {% endif %}
