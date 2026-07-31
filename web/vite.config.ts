@@ -6,10 +6,28 @@
 // You can pass additional config via defineConfig({ vite: { ... }, etc... }) if needed.
 import { defineConfig } from "@lovable.dev/vite-tanstack-config";
 
+// Where the Python app answers in development. In production the two halves are
+// served from one origin, so the client asks for `/api/...` in both cases and
+// nothing is rewritten — this proxy only stands in for that shared origin while
+// they run as separate processes on a developer's machine.
+const BACKEND = process.env.TITLECHAIN_API ?? "http://127.0.0.1:8100";
+
 export default defineConfig({
   tanstackStart: {
     // Redirect TanStack Start's bundled server entry to src/server.ts (our SSR error wrapper).
     // nitro/vite builds from this
     server: { entry: "server" },
+  },
+  vite: {
+    server: {
+      proxy: {
+        "/api": BACKEND,
+        // The page scans and crops are images served straight from FastAPI.
+        // Provenance needs no JSON envelope, so it gets no /api prefix either.
+        "/page": BACKEND,
+        "/crop": BACKEND,
+        "/pageview": BACKEND,
+      },
+    },
   },
 });

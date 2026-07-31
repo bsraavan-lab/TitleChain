@@ -10,11 +10,6 @@ export class ApiRejection extends Error {
   }
 }
 
-/* The backend answers a refusal with HTTP 200 and a reason in the body, because
-   the reason is a sentence to render where the file was dropped rather than a
-   status code the client has to translate back into one. Unwrapping it here —
-   not at each call site — is what stops a refusal being mistaken for a success
-   and navigating to /case/undefined. */
 function unwrap<T>(url: string, body: unknown): T {
   const b = body as { error?: string; detail?: string } | null;
   if (b && typeof b === "object" && typeof b.error === "string") {
@@ -107,8 +102,6 @@ export const samplesQuery = () =>
     queryFn: () => get<{ samples: SampleOption[] }>("/api/samples").then((r) => r.samples),
   });
 
-/* One request per case. Every tab is a view of one derivation; fetching per tab
-   would let the checklist and the chain disagree about one certificate. */
 export const caseQuery = (caseId: string) =>
   queryOptions({
     queryKey: ["case", caseId],
@@ -135,7 +128,7 @@ export function startSample(key: string) {
 }
 
 export function saveReview(input: {
-  case_id: number;
+  case_id: string;
   key: string;
   state: string;
   note?: string | null;
@@ -144,10 +137,10 @@ export function saveReview(input: {
 }
 
 export function saveCorrection(input: { entry_id: number; field: string; value: string }) {
-  return post<{ ok: boolean; case_id: number }>("/api/correct", undefined, input);
+  return post<{ ok: boolean }>("/api/correct", undefined, input);
 }
 
-/* Images are plain URLs, not JSON. Provenance does not need an envelope. */
+/* Images are plain URLs, not JSON. */
 
 export const pageImageUrl = (ecId: number, pageNum: number) => `/page/${ecId}/${pageNum}.png`;
 export const cropImageUrl = (entryId: number) => `/crop/${entryId}.png`;
