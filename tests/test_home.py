@@ -53,7 +53,7 @@ def test_the_welcome_block_does_not_disappear_once_there_is_a_case(client):
     client.store.create_case("ec_test_01.pdf")
     html = client.get("/").text
     assert HERO in html
-    assert "How much of this property's past" in html
+    assert "can come back clean and still prove nothing" in html
 
 
 def test_the_drop_target_keeps_its_size_and_its_wording(client):

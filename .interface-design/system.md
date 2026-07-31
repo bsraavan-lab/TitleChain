@@ -94,7 +94,17 @@ Finding     grid 84px / 1fr · 16px 12px pad · 8 radius · blocking msg 15/500,
 Answer      kicker 11/600 caps 0.09em · headline 33px serif -0.02em max 20ch · detail 15px
 Section     title 11/600 caps 0.09em + 1px bottom hairline + 16px gap
 Severity edge  3px solid, left, on every card or section that carries one
+Points      grid 18px / 1fr · 10px 0 pad · bottom hairline · 14/1.55 --ink-2
+              lead-in <strong> 600 --ink · glyph 10px, centred in its column
+Facts       3-up · mono figure 26px tabular-nums · body 13px --ink-2
 ```
+
+**The home pitch is bullets, not paragraphs.** Each line is one bold lead-in plus
+one clause, and it stays that way. It was six prose paragraphs of three-to-four
+lines until 2026-07-31; nobody reads a paragraph to decide whether a tool is worth
+a click. If a point needs two lines, it is two points or it is cut. Figures lead
+the section because a stranger believes a number before prose — and the sample
+size is printed, never rounded into a rate (n=4 is a signal, not a base rate).
 
 ## One name per thing
 

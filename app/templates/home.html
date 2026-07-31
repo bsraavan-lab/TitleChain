@@ -15,24 +15,21 @@
    input she returned to use was not where she left it. A landing screen that
    moves under you is one you have to re-read every time.
 
-   The copy is ordered to answer four questions before she scrolls: what am I up
-   against, why does it matter, what do I get back, and why should I believe any
-   of it. The last two live at the foot of the page rather than above the list,
-   so they are there to be read without ever pushing her own cases down. #}
+   Above the fold is hers: question, drop target, her own files. Everything that
+   explains the product sits BELOW her cases, as three scannable lists — a
+   stranger scrolls once and has it; she never has to scroll past a re-sell to
+   reach her own work. #}
 <div class="page page-home">
 
   <section class="welcome">
     <img src="/static/logo.png" alt="TitleChain" width="132" height="94" class="welcome-mark">
-    <h1>How much of this property's past can this certificate actually prove?</h1>
+    <h1>A property search can come back clean and still prove nothing.</h1>
+    {# One lede, not three paragraphs. The old block spent six lines explaining
+       the mechanism before it said what you get; the mechanism now lives in the
+       problem list below, where someone who wants it will go looking. #}
     <p class="lede">
-      An encumbrance certificate only covers the years printed on it. A mortgage
-      from before that window, or a sale nobody mentioned, will not appear on the
-      page at all. Your name still goes on the opinion.
-    </p>
-    <p class="lede">
-      Drop one in. In about a minute you will know which years it can vouch for,
-      which it cannot, and what to order to close the gap. Every finding comes with
-      the exact spot on the page it came from.
+      Drop in an encumbrance certificate. In about a minute: the years it can
+      vouch for, the years it cannot, and what to order to close the gap.
     </p>
   </section>
 
@@ -134,53 +131,105 @@
   </section>
   {% endif %}
 
-  {# Benefits, not features. Each heading is something she gets back; each line
-     says how, in her words, without naming a single piece of our machinery. #}
+  {# ── The explaining ──────────────────────────────────────────────────────
+     Three lists, one line each. The previous build said the same things in six
+     prose paragraphs of three-to-four lines; nobody reads a paragraph to find
+     out whether a tool is worth a click. Each line is a bold lead-in and one
+     clause, so the whole product is scannable in about fifteen seconds by
+     someone who has never heard of an encumbrance certificate.
+
+     Every line here is a glyph AND a word AND a colour — never colour alone
+     (system rule 2). #}
+
+  {# The numbers first, because a stranger believes a figure before prose. All
+     three are measured, and the sample size is printed rather than rounded into
+     a rate: n=4 is a signal, not a base rate, and claiming otherwise is the one
+     thing this screen cannot afford. #}
   <section class="pitch">
-    <h2 class="section-title">What you get back</h2>
-    <ul class="pitch-list">
+    <h2 class="section-title">Measured on real certificates</h2>
+    <ul class="facts">
       <li>
-        <h3>Know what this certificate leaves out</h3>
-        <p>Which years it covers, which it does not, and every earlier document it
-          points at but nobody has read. All on one screen, in plain words.</p>
+        <span class="fact-figure fact-bad">3 of 4</span>
+        <span class="fact-body">certificates in our sample could not support the
+          search they were ordered for</span>
       </li>
       <li>
-        <h3>Turn a gap into one errand</h3>
-        <p>When something is missing, the request arrives already filled in:
-          sub-registrar office, village, survey numbers, dates. Copy it, paste it
-          into TNREGINET, and drop the certificate back here when it turns up.</p>
+        <span class="fact-figure">~60s</span>
+        <span class="fact-body">to read one, for under ₹5 — against 2.5–3 hours
+          with a highlighter</span>
       </li>
       <li>
-        <h3>Hand over a record, not a promise</h3>
-        <p>One report carries the checks that ran, the ones that could not, and
-          whatever you noted along the way. It goes in the file, and it goes to the
-          bank.</p>
+        <span class="fact-figure">5–10 yrs</span>
+        <span class="fact-body">how late these gaps normally surface today: at
+          resale or foreclosure</span>
       </li>
     </ul>
   </section>
 
-  {# Trust, stated as three things we refuse to do. Vaguer reassurance would
-     read as marketing, which is the one thing this screen cannot afford. #}
-  <section class="pitch pitch-trust">
+  <section class="pitch">
+    <h2 class="section-title">Why a clean certificate can prove nothing</h2>
+    <ul class="points">
+      <li>
+        <span class="pt-glyph pt-bad" aria-hidden="true">▲</span>
+        <span><strong>You pick the years blind.</strong> The search window is
+          chosen up front, before anyone knows what is in the record.</span>
+      </li>
+      <li>
+        <span class="pt-glyph pt-bad" aria-hidden="true">▲</span>
+        <span><strong>Entries point outside it.</strong> Each one names an
+          earlier deed, often from a year you did not pay for.</span>
+      </li>
+      <li>
+        <span class="pt-glyph pt-bad" aria-hidden="true">▲</span>
+        <span><strong>Nothing flags the edge.</strong> "Nothing found" and
+          "you searched the wrong years" look identical on the page.</span>
+      </li>
+    </ul>
+    <p class="pitch-note">
+      An encumbrance certificate is a bank statement for a plot of land: every
+      registered transaction on it, between two dates you chose in advance.
+    </p>
+  </section>
+
+  <section class="pitch">
+    <h2 class="section-title">What you get back</h2>
+    <ul class="points">
+      <li>
+        <span class="pt-glyph pt-info" aria-hidden="true">●</span>
+        <span><strong>What it leaves out.</strong> The years covered, the years
+          missed, and every earlier document nobody has read.</span>
+      </li>
+      <li>
+        <span class="pt-glyph pt-info" aria-hidden="true">●</span>
+        <span><strong>One errand, pre-filled.</strong> Office, village, survey
+          numbers and dates, ready to paste into TNREGINET.</span>
+      </li>
+      <li>
+        <span class="pt-glyph pt-info" aria-hidden="true">●</span>
+        <span><strong>A record, not a promise.</strong> One report of what ran,
+          what could not, and what you noted — for the file and the bank.</span>
+      </li>
+    </ul>
+  </section>
+
+  <section class="pitch">
     <h2 class="section-title">Why you can rely on it</h2>
-    <ul class="pitch-list">
+    <ul class="points">
       <li>
-        <h3>Nothing is guessed</h3>
-        <p>Findings come from fixed checks written in code, not from a language
-          model's opinion. The same certificate gives you the same answer every
-          time you open it.</p>
+        <span class="pt-glyph pt-good" aria-hidden="true">✓</span>
+        <span><strong>Nothing is guessed.</strong> Findings come from fixed
+          checks in code, so the same certificate always answers the same.</span>
       </li>
       <li>
-        <h3>Every finding shows its source</h3>
-        <p>Click any line and the exact region of the scanned page appears beside
-          it. If we cannot show you where something came from, we do not claim
-          it.</p>
+        <span class="pt-glyph pt-good" aria-hidden="true">✓</span>
+        <span><strong>Every finding shows its source.</strong> Click a line and
+          the exact region of the scanned page appears beside it.</span>
       </li>
       <li>
-        <h3>It admits what it could not read</h3>
-        <p>If we could not make out a date, it stays blank and waits for you to fill
-          it in. A check that could not run says so, and says why. Nothing here
-          quietly counts as a pass.</p>
+        <span class="pt-glyph pt-good" aria-hidden="true">✓</span>
+        <span><strong>It admits what it could not read.</strong> An unreadable
+          date stays blank and waits for you. Nothing quietly counts as a
+          pass.</span>
       </li>
     </ul>
     <p class="pitch-foot">
