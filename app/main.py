@@ -39,6 +39,14 @@ async def lifespan(_: FastAPI):
 
 
 app = FastAPI(title="TitleChain", lifespan=lifespan)
+
+# The JSON contract the React front end reads. Mounted beside the Jinja screens
+# rather than replacing them: both render from the same derive_case(), so the
+# migration can proceed one screen at a time without the demo ever depending on
+# a half-finished one.
+from .api import router as api_router          # noqa: E402  (after `app` exists)
+app.include_router(api_router)
+
 app.mount("/static", StaticFiles(directory=Path(__file__).parent / "static"), name="static")
 templates = Jinja2Templates(directory=Path(__file__).parent / "templates")
 templates.env.globals["SAMPLES"] = SAMPLES
