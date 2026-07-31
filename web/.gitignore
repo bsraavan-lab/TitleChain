@@ -1,0 +1,9 @@
+# The React front end's own build artefacts. node_modules is 183M and is
+# reinstalled from package-lock.json, so it never belongs in the repository.
+node_modules/
+dist/
+.output/
+.nitro/
+.tanstack/
+.vite/
+*.local
