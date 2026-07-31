@@ -90,3 +90,52 @@ def test_mounting_the_api_left_the_rendered_screens_alone(client):
     assert client.get("/").status_code == 200
     case_id = client.store.create_case("ec_test_01.pdf")
     assert client.get(f"/case/{case_id}").status_code == 200
+
+
+# ── writes ───────────────────────────────────────────────────────────────────
+
+def test_a_rejected_upload_answers_with_the_reason_not_a_status_code(client):
+    """The reason is rendered where the file was dropped, because the fix is to
+    pick a different file and that control is right there. A bare 4xx would make
+    the front end invent the sentence, and it would invent a worse one."""
+    r = client.post("/api/upload",
+                    files={"file": ("notes.txt", b"not a certificate", "text/plain")})
+    assert r.status_code == 200
+    body = r.json()
+    assert body["error"] == "rejected"
+    assert body["detail"]                       # a sentence, not a code
+
+
+def test_an_unknown_sample_is_refused_by_name(client):
+    body = client.post("/api/sample/not-a-sample").json()
+    assert body["error"] == "rejected"
+
+
+def test_a_note_against_a_finding_persists_and_reads_back(client):
+    case_id = client.store.create_case("ec_test_01.pdf")
+    key = "R3:gap=2005-2017"
+
+    assert client.post("/api/review", json={
+        "case_id": case_id, "key": key,
+        "state": "reviewed", "note": "checked against the parent"}).json() == {"ok": True}
+
+    assert key in client.get(f"/api/case/{case_id}").json()["reviews"]
+
+
+def test_writing_against_a_case_that_is_gone_answers_instead_of_500ing(client):
+    body = client.post("/api/review", json={
+        "case_id": 999, "key": "R1:x", "state": "reviewed"}).json()
+    assert body["error"] == "not_found"
+
+
+def test_correcting_an_entry_that_is_gone_answers_instead_of_500ing(client):
+    body = client.post("/api/correct", json={
+        "entry_id": 999, "field": "date_registration", "value": "05-Aug-2020"}).json()
+    assert body["error"] == "not_found"
+
+
+def test_the_samples_are_offered_by_key_and_label(client):
+    """The home screen renders these as buttons, so it needs both the key it
+    posts back and the words it prints."""
+    samples = client.get("/api/samples").json()["samples"]
+    assert samples and all({"key", "label"} == set(s) for s in samples)

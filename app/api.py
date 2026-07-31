@@ -13,12 +13,15 @@ JSON envelope.
 
 from __future__ import annotations
 
+import threading
 from typing import Any
 
-from fastapi import APIRouter
+from fastapi import APIRouter, UploadFile
+from pydantic import BaseModel
 
 from . import cost as cost_mod
-from . import db, derive as derive_mod, layout, store
+from . import db, derive as derive_mod, layout, pipeline, store
+from .fixtures import SAMPLES
 from .models import DerivedView
 
 router = APIRouter(prefix="/api", tags=["api"])
@@ -146,3 +149,77 @@ def case_status(case_id: int) -> dict[str, Any]:
         "processing": row["status"] in PROCESSING,
         "pages_total": row["pages_total"],
     }
+
+
+# ── writes ───────────────────────────────────────────────────────────────────
+# These mirror the form POSTs the Jinja screens use, and go through the SAME
+# store and pipeline calls. A second write path that skipped `accept_upload`'s
+# validation or `apply_correction`'s history would be a second product.
+
+
+@router.post("/upload")
+async def upload(file: UploadFile) -> dict[str, Any]:
+    """A rejected file is a 200 carrying the reason, not a 4xx. The reason is
+    rendered where the file was dropped — the fix is to pick a different file,
+    and that control is right there — so the front end needs the sentence, not a
+    status code to translate back into one."""
+    data = await file.read()
+    path, error = pipeline.accept_upload(file.filename or "upload", data)
+    if error:
+        return {"error": "rejected", "detail": error}
+    case_id = store.create_case(file.filename or "New case")
+    threading.Thread(target=pipeline.run, args=(case_id, path),
+                     daemon=True).start()
+    return {"case_id": case_id}
+
+
+@router.post("/sample/{key}")
+def open_sample(key: str) -> dict[str, Any]:
+    if key not in SAMPLES:
+        return {"error": "rejected",
+                "detail": "We could not find that example. Pick one of the others."}
+    path = pipeline.stage_sample(key)
+    case_id = store.create_case(SAMPLES[key]["label"])
+    threading.Thread(target=pipeline.run, args=(case_id, path),
+                     daemon=True).start()
+    return {"case_id": case_id}
+
+
+@router.get("/samples")
+def samples() -> dict[str, Any]:
+    return {"samples": [{"key": k, "label": v["label"]} for k, v in SAMPLES.items()]}
+
+
+class ReviewIn(BaseModel):
+    case_id: int
+    key: str
+    state: str
+    note: str = ""
+
+
+@router.post("/review")
+def review(body: ReviewIn) -> dict[str, Any]:
+    """Her own record against one finding. Every version is kept — nothing
+    recorded here is ever overwritten — so this appends rather than updates."""
+    if not db.one("SELECT id FROM cases WHERE id = ?", (body.case_id,)):
+        return {"error": "not_found", "case_id": body.case_id}
+    store.set_review(body.case_id, body.key, body.state, body.note)
+    return {"ok": True}
+
+
+class CorrectionIn(BaseModel):
+    entry_id: int
+    field: str
+    value: str = ""
+
+
+@router.post("/correct")
+def correct(body: CorrectionIn) -> dict[str, Any]:
+    """A correction changes the meters and the checklist as well as the cell, so
+    the caller re-reads /api/case/{id} afterwards. The case id is returned to
+    save it having to know which case an entry belongs to."""
+    case_id = store.case_of_entry(body.entry_id)
+    if case_id is None:
+        return {"error": "not_found", "entry_id": body.entry_id}
+    store.apply_correction(body.entry_id, body.field, body.value)
+    return {"ok": True, "case_id": case_id}
