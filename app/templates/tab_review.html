@@ -31,13 +31,41 @@
     </p>
   {% endif %}
 
+  {# Two lists, not one. Everything still open is here, at full weight and in
+     severity order; everything already settled is a line below, behind a
+     summary. The ten checks all still run and all still appear — a settled
+     check is one click away, not omitted — but a passed row no longer competes
+     for attention with the one that failed.
+
+     Before this split the section was sixteen rows of identical height and
+     weight, so FAILED and NOT APPLICABLE read the same and the eye had nowhere
+     to land. #}
+  {% set open_items = view.runs_grouped | selectattr('lead.is_open') | list %}
+  {% set settled = view.runs_grouped | rejectattr('lead.is_open') | list %}
+
   <ul class="checklist">
-    {% for r in view.runs_ranked %}
-      {% set run = r %}
-      {% set expanded = (focus_key == r.key) %}
-      {% include "_rule_row.html" %}
+    {% for item in open_items %}
+      {% include "_check_item.html" %}
     {% endfor %}
   </ul>
+
+  {% if settled %}
+    <details class="settled">
+      <summary class="settled-summary">
+        {% for o in OUTCOME_ORDER if o not in ('FAIL','REVIEW','NOT_EVALUABLE') and counts[o] %}
+          {% if not loop.first %} · {% endif %}
+          <span class="{{ OUTCOME_UI[o].cls }}">
+            {{ OUTCOME_UI[o].glyph }} {{ counts[o] }} {{ OUTCOME_UI[o].word|lower }}
+          </span>
+        {% endfor %}
+      </summary>
+      <ul class="checklist checklist-settled">
+        {% for item in settled %}
+          {% include "_check_item.html" %}
+        {% endfor %}
+      </ul>
+    </details>
+  {% endif %}
 
   <p class="meta checklist-foot">
     The same ten checks run on every case, in the same order. Each result comes from
