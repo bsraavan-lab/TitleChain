@@ -1729,3 +1729,18 @@ strong {
 @media (prefers-reduced-motion: reduce) {
   .link:active { transform: none; }
 }
+
+/* The drop target on a request card. Smaller than the one on the home screen —
+   this is a step inside a case, not the way in. */
+.dropzone--inline {
+  margin-top: 16px;
+  padding: 16px;
+  text-align: left;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.dropzone--inline .dropzone-meta { margin: 0; }
+.dropzone.is-over { border-color: var(--endorsement); background: var(--endorse-soft); }

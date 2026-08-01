@@ -16,7 +16,7 @@ from __future__ import annotations
 import threading
 from typing import Any
 
-from fastapi import APIRouter, UploadFile
+from fastapi import APIRouter, Form, UploadFile
 from pydantic import BaseModel
 
 from . import cost as cost_mod
@@ -188,6 +188,32 @@ def open_sample(key: str) -> dict[str, Any]:
 @router.get("/samples")
 def samples() -> dict[str, Any]:
     return {"samples": [{"key": k, "label": v["label"]} for k, v in SAMPLES.items()]}
+
+
+@router.post("/case/{case_id}/documents")
+async def add_document(case_id: int, file: UploadFile,
+                       request_key: str = Form("")) -> dict[str, Any]:
+    """Drop a certificate on a request and it joins THIS case.
+
+    The product's differentiating loop, and the reason the case is a case rather
+    than a document: a gap names the certificate that would close it, and the
+    certificate that arrives is read into the same chain instead of starting a
+    second analysis. Same pipeline, same code path, one extra `ec_documents` row.
+
+    `request_key` is what the new document is answering, so `fulfils_request_key`
+    can say afterwards which gap this closed — completing a title history rather
+    than restarting one.
+    """
+    if not db.one("SELECT id FROM cases WHERE id = ?", (case_id,)):
+        return {"error": "not_found", "case_id": case_id}
+    data = await file.read()
+    path, error = pipeline.accept_upload(file.filename or "upload", data)
+    if error:
+        return {"error": "rejected", "detail": error}
+    threading.Thread(target=pipeline.run,
+                     args=(case_id, path, request_key or None),
+                     daemon=True).start()
+    return {"case_id": case_id}
 
 
 class ReviewIn(BaseModel):
