@@ -74,7 +74,9 @@
     </figure>
   {% elif doc %}
     <figure class="shot">
-      <img src="/page/{{ case_id }}/{{ page }}.png" loading="lazy"
+      {# /page/ is keyed on the EC document, not the case. This passed case_id
+         and only worked because the route used to resolve it that way. #}
+      <img src="/page/{{ doc.id }}/{{ page }}.png" loading="lazy"
            alt="Page {{ page }} of the certificate.">
     </figure>
   {% else %}

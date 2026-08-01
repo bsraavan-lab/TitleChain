@@ -1,5 +1,5 @@
 import { queryOptions } from "@tanstack/react-query";
-import type { CaseSummary, DerivedView } from "./types";
+import type { CaseSummary, DerivedView, GraphLayout } from "./types";
 
 /* All URLs are relative: the app and the API are served on one origin. */
 
@@ -27,21 +27,46 @@ export interface CaseMeta {
   pages_total: number | null;
 }
 
-export interface ReviewState {
-  key: string;
+/* These three mirror database rows, so they carry the column names — not the
+ * shape of the request that wrote them. All three were declared here as
+ * something tidier than what the server actually sends (`key` for
+ * `finding_key`, `value` for `old_value`/`new_value`, `page_num` for
+ * `page_from`/`page_to`), and `reviews` was declared an array when it is an
+ * object keyed by finding. None of it broke, only because no screen reads
+ * them yet — which is precisely how the coverage bands were wrong for as long
+ * as they were. A type that has never been checked against the wire is a
+ * comment. */
+
+/** One row of the append-only `reviews` table. */
+export interface ReviewRow {
+  id: number;
+  case_id: number;
+  finding_key: string;
   state: string;
   note: string | null;
+  actor: string | null;
+  created_at: string | null;
 }
 
+/** One row of the append-only `corrections` table, joined to its entry. */
 export interface Correction {
+  id: number;
   entry_id: number;
   field: string;
-  value: string;
+  old_value: string | null;
+  new_value: string | null;
+  actor: string | null;
+  created_at: string | null;
+  sr_no: number | null;
+  ec_id: number | null;
 }
 
-export interface UnreadPage {
+/** A run of pages that came back unreadable. A range, not a single page. */
+export interface UnreadPages {
+  id: number;
   ec_id: number;
-  page_num: number;
+  page_from: number | null;
+  page_to: number | null;
   reason: string | null;
 }
 
@@ -117,11 +142,13 @@ export interface CostPayload {
 export interface CaseResponse {
   case: CaseMeta;
   view: DerivedView;
-  reviews: ReviewState[];
-  review_by_key: Record<string, ReviewState>;
+  /** finding_key → the latest review. An object, not an array. */
+  reviews: Record<string, ReviewRow>;
+  /** finding_key → every review ever recorded against it, newest first. */
+  review_by_key: Record<string, ReviewRow[]>;
   corrections: Correction[];
-  unread: UnreadPage[];
-  graph: unknown;
+  unread: UnreadPages[];
+  graph: GraphLayout;
   cost: CostPayload;
 }
 
@@ -133,10 +160,47 @@ export interface StatusResponse {
   pages_total: number | null;
 }
 
+/* What the app itself accepts, matching pipeline.accept_upload. Checked here
+   too so an oversized file gets the app's own sentence immediately instead of
+   being uploaded in full and then refused. */
+export const MAX_UPLOAD_BYTES = 50 * 1024 * 1024;
+
+/* A body this app never produced.
+ *
+ * In production /api is proxied to the Python app by the platform's routing
+ * layer, and that layer answers some requests itself — an oversized upload, a
+ * cold backend, a gateway timeout — with an HTML error page. Calling .json()
+ * on that threw a SyntaxError about an unexpected "<", which is not a sentence
+ * anybody can act on. */
+function notOurs(url: string, status: number, body: string): Error {
+  if (status === 413)
+    return new Error(
+      "That file was too large for the connection between this page and the " +
+        "reader. A lighter scan, or one certificate at a time, should go through.",
+    );
+  if (status === 502 || status === 503 || status === 504)
+    return new Error(
+      "The reader did not answer in time. It may still be starting up — " +
+        "try again in a moment.",
+    );
+  const detail = body.trim().startsWith("<") ? "" : ` ${body.slice(0, 200)}`;
+  return new Error(`${url} responded ${status}.${detail}`);
+}
+
+async function parse<T>(url: string, res: Response): Promise<T> {
+  const text = await res.text();
+  if (!res.ok) throw notOurs(url, res.status, text);
+  try {
+    return unwrap<T>(url, JSON.parse(text));
+  } catch (e) {
+    if (e instanceof ApiRejection || (e instanceof Error && e.name !== "SyntaxError")) throw e;
+    throw notOurs(url, res.status, text);
+  }
+}
+
 async function get<T>(url: string): Promise<T> {
   const res = await fetch(url, { headers: { Accept: "application/json" } });
-  if (!res.ok) throw new Error(`${url} responded ${res.status}`);
-  return unwrap<T>(url, await res.json());
+  return parse<T>(url, res);
 }
 
 async function post<T>(url: string, body?: BodyInit, json?: unknown): Promise<T> {
@@ -148,8 +212,61 @@ async function post<T>(url: string, body?: BodyInit, json?: unknown): Promise<T>
     init.headers = { "Content-Type": "application/json" };
   }
   const res = await fetch(url, init);
-  if (!res.ok) throw new Error(`${url} responded ${res.status}`);
-  return unwrap<T>(url, await res.json());
+  return parse<T>(url, res);
+}
+
+export type OnProgress = (pctOrNull: number | null) => void;
+
+/* Uploads go through XHR, everything else through fetch.
+ *
+ * Not a preference: fetch cannot report how much of a request body has been
+ * sent, so with fetch the only honest progress indicator is a spinner. On a
+ * scanned bundle over a phone connection the difference between "37%" and a
+ * spinner is the difference between waiting and reloading the page.
+ *
+ * `onProgress(null)` means the browser could not measure it — the request is
+ * in flight but the total is unknown, which is a different thing from 0%. */
+function postFile<T>(url: string, form: FormData, onProgress?: OnProgress): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open("POST", url);
+    xhr.responseType = "text";
+
+    if (onProgress) {
+      xhr.upload.onprogress = (e) =>
+        onProgress(e.lengthComputable ? Math.round((e.loaded / e.total) * 100) : null);
+    }
+
+    xhr.onload = () => {
+      const text = xhr.responseText ?? "";
+      if (xhr.status < 200 || xhr.status >= 300) {
+        reject(notOurs(url, xhr.status, text));
+        return;
+      }
+      try {
+        resolve(unwrap<T>(url, JSON.parse(text)));
+      } catch (e) {
+        if (e instanceof ApiRejection || (e instanceof Error && e.name !== "SyntaxError"))
+          reject(e);
+        else reject(notOurs(url, xhr.status, text));
+      }
+    };
+    xhr.onerror = () =>
+      reject(new Error("The certificate did not reach the reader. Check the connection."));
+    xhr.onabort = () => reject(new Error("The upload was stopped."));
+    xhr.ontimeout = () => reject(new Error("The upload timed out before it finished."));
+
+    xhr.send(form);
+  });
+}
+
+/** The app's own sentence, before a byte leaves the browser. */
+function tooLarge(file: File): ApiRejection | null {
+  if (file.size <= MAX_UPLOAD_BYTES) return null;
+  return new ApiRejection(
+    `That file is ${Math.round(file.size / 1_048_576)} MB, and we can take up to 50 MB. ` +
+      `A lighter scan, or one certificate at a time, should go through.`,
+  );
 }
 
 /* Reads */
@@ -186,10 +303,12 @@ export const caseStatusQuery = (caseId: string) =>
 
 /* Writes */
 
-export function uploadCertificate(file: File) {
+export function uploadCertificate(file: File, onProgress?: OnProgress) {
+  const rejected = tooLarge(file);
+  if (rejected) return Promise.reject(rejected);
   const form = new FormData();
   form.append("file", file);
-  return post<{ case_id: number }>("/api/upload", form);
+  return postFile<{ case_id: number }>("/api/upload", form, onProgress);
 }
 
 export function startSample(key: string) {
@@ -199,13 +318,21 @@ export function startSample(key: string) {
 /* The certificate that closes a gap joins THIS case rather than starting a new
    one. `requestKey` records which gap it was answering, so afterwards the case
    can say what this document settled. */
-export function addDocument(input: { caseId: string; file: File; requestKey?: string }) {
+export function addDocument(input: {
+  caseId: string;
+  file: File;
+  requestKey?: string;
+  onProgress?: OnProgress;
+}) {
+  const rejected = tooLarge(input.file);
+  if (rejected) return Promise.reject(rejected);
   const form = new FormData();
   form.append("file", input.file);
   form.append("request_key", input.requestKey ?? "");
-  return post<{ case_id: number }>(
+  return postFile<{ case_id: number }>(
     `/api/case/${encodeURIComponent(input.caseId)}/documents`,
     form,
+    input.onProgress,
   );
 }
 

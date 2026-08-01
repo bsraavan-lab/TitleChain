@@ -82,6 +82,24 @@ def _save_extraction(dig: Digitised, result: Extraction | Refusal,
 
 # ── the walk ─────────────────────────────────────────────────────────────────
 
+def _read_failure(exc: Exception) -> str:
+    """Why stage ① stopped, in words that point at the right thing.
+
+    A missing API key is not a fact about the certificate, and "we got stuck
+    reading the pages" — followed by a server filesystem path, which is what the
+    raw RuntimeError carried — told the reader their document was bad and told
+    the operator nothing useful either.
+    """
+    from config import MissingAPIKey     # lazy: the app boots without a key
+
+    if isinstance(exc, MissingAPIKey):
+        return ("This document is not one we have already read, and reading a "
+                "new one needs the document service to be configured on this "
+                "server. Nothing is wrong with your file. An administrator "
+                "needs to set SARVAM_API_KEY.")
+    return f"We got stuck reading the pages. {str(exc)[:200]}"
+
+
 def run(case_id: int, pdf_path: Path,
         fulfils_request_key: str | None = None) -> None:
     """Runs in a background thread. Every state it sets is user-visible and true.
@@ -121,8 +139,7 @@ def run(case_id: int, pdf_path: Path,
             on_progress=lambda done, detail: db.set_status(
                 case_id, "READING", detail, pages_done=min(done, pages)))
     except Exception as exc:
-        db.set_status(case_id, "FAILED",
-                      f"We got stuck reading the pages. {str(exc)[:200]}")
+        db.set_status(case_id, "FAILED", _read_failure(exc))
         return
 
     # digitise() reports a chunk that would not read as an UnreadChunk rather than
@@ -198,9 +215,11 @@ def run(case_id: int, pdf_path: Path,
                         case_id, "TYPING", f"{detail}{_l}"),
                     on_header=save_header)
             except Exception as exc:
-                db.set_status(case_id, "FAILED",
-                              f"We could not get the entries out{label}. "
-                              f"{str(exc)[:200]}")
+                from config import MissingAPIKey     # lazy, as above
+                detail = (_read_failure(exc) if isinstance(exc, MissingAPIKey)
+                          else f"We could not get the entries out{label}. "
+                               f"{str(exc)[:200]}")
+                db.set_status(case_id, "FAILED", detail)
                 return
             try:
                 _save_extraction(dig, result, suffix)

@@ -1,7 +1,8 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { caseQuery } from "../data/api";
 import { Loading, LoadError } from "../components/LoadState";
+import { Wordmark } from "../components/Masthead";
 import type { ChainNode, DerivedView } from "../data/types";
 import { OUTCOME_GLYPH, OUTCOME_TONE, OUTCOME_WORD } from "../data/types";
 
@@ -88,12 +89,21 @@ export function ReportSheet({
 
   return (
     <div className="report-wrap">
+      {/* This was an empty div with a border on it: a hairline across the top
+          of the sheet and no way back. The report is the thing she files and
+          forwards, so the two things to do with it belong here. */}
       <div className="report-nav">
+        <Link to="/case/$caseId" params={{ caseId }} className="quiet-link">
+          Back to the case
+        </Link>
+        <button type="button" className="quiet-link" onClick={() => window.print()}>
+          Print this record
+        </button>
       </div>
 
       <article className="sheet">
         <header className="sheet-head">
-          <span className="wordmark">TitleChain</span>
+          <Wordmark />
           <span className="sheet-meta mono">
             Case {caseId} · Rulebook {view.rulebook_version}
           </span>

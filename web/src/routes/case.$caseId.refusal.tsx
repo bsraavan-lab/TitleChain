@@ -3,6 +3,7 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import { useEffect } from "react";
 import { caseQuery, samplesQuery, startSample } from "../data/api";
 import { Loading, LoadError } from "../components/LoadState";
+import { Masthead } from "../components/Masthead";
 
 /* When there is nothing to report, and why.
  *
@@ -91,9 +92,7 @@ export function RefusalScreen({ status, detail }: { status: string; detail: stri
 
   return (
     <div className="page">
-      <header className="masthead">
-        <span className="wordmark">TitleChain</span>
-      </header>
+      <Masthead />
 
       <main>
         <section className="section answer answer--muted" aria-labelledby="refusal-title">
