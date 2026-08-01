@@ -1,4 +1,6 @@
 import type { DerivedView, Entry, Party } from "../../data/types";
+import { EditableCell } from "./EditableCell";
+import { SourceButton } from "./rail";
 
 function Names({ parties }: { parties: Party[] }) {
   if (parties.length === 0) return <span className="absent">—</span>;
@@ -18,8 +20,9 @@ function Cell({ value, mono }: { value: string | null; mono?: boolean }) {
   return <span className={mono ? "mono" : undefined}>{value}</span>;
 }
 
-export function TabWhatWeRead({ view }: { view: DerivedView }) {
-  const doc = view.docs[0]!;
+export function TabWhatWeRead({ view, caseId }: { view: DerivedView; caseId: string }) {
+  const doc = view.docs[0];
+  if (!doc) return <p className="meta">Nothing has been read from this case yet.</p>;
   return (
     <section className="section" aria-label="What we read">
       <h2 className="section-title">
@@ -57,7 +60,7 @@ export function TabWhatWeRead({ view }: { view: DerivedView }) {
       <ul className="row-list entries">
         {doc.entries.map((e) => (
           <li key={e.sr_no}>
-            <EntryCard entry={e} />
+            <EntryCard entry={e} caseId={caseId} />
           </li>
         ))}
       </ul>
@@ -65,37 +68,34 @@ export function TabWhatWeRead({ view }: { view: DerivedView }) {
   );
 }
 
-function EntryCard({ entry }: { entry: Entry }) {
+function EntryCard({ entry, caseId }: { entry: Entry; caseId: string }) {
   return (
     <article className="entry">
       <header className="entry-head">
         <span className="kicker">Entry {entry.sr_no}</span>
         <span className="mono entry-doc">{entry.doc_no}</span>
+        {entry.db_id !== null ? <SourceButton entryId={entry.db_id} /> : null}
       </header>
       <dl className="entry-grid">
         <Field label="Nature">
-          <Cell value={entry.nature} />
+          <EditableCell caseId={caseId} entryId={entry.db_id} field="nature"
+                        label="Nature" value={entry.nature} mono={false} />
         </Field>
         <Field label="Document year">
           <Cell value={entry.doc_year === null ? null : String(entry.doc_year)} mono />
         </Field>
         <Field label="Executed">
-          <Cell value={entry.date_execution} mono />
+          <EditableCell caseId={caseId} entryId={entry.db_id} field="date_execution"
+                        label="Executed" value={entry.date_execution} />
         </Field>
         <Field label="Presented">
           <Cell value={entry.date_presentation} mono />
         </Field>
         <Field label="Registered">
-          {entry.date_registration === null ? (
-            // Inert until the correction flow lands. This was a <button> whose
-            // aria-label read "type it in", announcing an editing capability to
-            // a screen reader that does not exist on this screen yet.
-            <span className="absent" title="Not read from the page">
-              —
-            </span>
-          ) : (
-            <span className="mono">{entry.date_registration}</span>
-          )}
+          {/* The field R9 fires on when the reader could not make it out. It is
+              a control, not a blank: absence is a task. */}
+          <EditableCell caseId={caseId} entryId={entry.db_id} field="date_registration"
+                        label="Registered" value={entry.date_registration} />
         </Field>
         <Field label="Volume / page">
           <Cell value={entry.volume_page} mono />

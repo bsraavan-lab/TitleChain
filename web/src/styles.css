@@ -1644,3 +1644,88 @@ strong {
   display: block;
   background: var(--sunk);
 }
+
+/* ================= Evidence, corrections and her own record =================
+   The three write surfaces. Every one of them exists so that a claim on screen
+   can be traced to the page it came from, or changed by the person whose name
+   goes on the opinion. */
+
+/* The one way back to the page. Every "see it on the page" in the product is
+   this — the checklist, the entries, the chain — so a second style would be a
+   second thing to keep in step. */
+.link {
+  appearance: none;
+  background: none;
+  border: 0;
+  padding: 0;
+  font: inherit;
+  font-size: 13px;
+  color: var(--endorsement);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+.link:hover { color: var(--ink); }
+.link:focus-visible { outline: 2px solid var(--endorsement); outline-offset: 2px; }
+.link:active { transform: scale(0.975); }
+
+.rail-empty { font-size: 13px; color: var(--ink-3); line-height: 1.6; margin: 12px 0 0; }
+
+.rule-evidence { margin: 12px 0 0; display: flex; flex-wrap: wrap; gap: 16px; align-items: baseline; }
+
+/* Close up / Whole page. The two modes of one pane, so the control never moves
+   under the cursor when the mode changes. */
+.seg { display: inline-flex; gap: 2px; padding: 2px; border: 1px solid var(--rule);
+       border-radius: 6px; background: var(--sunk); }
+.seg-btn { appearance: none; border: 0; background: none; font: inherit; font-size: 11px;
+           font-weight: 600; text-transform: uppercase; letter-spacing: 0.09em;
+           color: var(--ink-3); padding: 3px 8px; border-radius: 4px; cursor: pointer; }
+.seg-btn.seg-on { background: var(--paper); color: var(--ink);
+                  box-shadow: 0 0 0 1px var(--rule); }
+.seg-btn:focus-visible { outline: 2px solid var(--endorsement); outline-offset: 1px; }
+
+/* Inline cell edit. No cancel button: Enter commits, Escape restores. No cancel
+   means no unsaved state, which means nothing to warn her about on navigation. */
+.cell { display: inline-flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+.cell-btn, .absent-btn {
+  appearance: none; background: none; border: 0; padding: 1px 3px; margin: -1px -3px;
+  font: inherit; color: inherit; cursor: pointer; border-radius: 4px;
+  border-bottom: 1px dashed var(--rule);
+}
+.absent-btn { color: var(--ochre); border-bottom-color: var(--ochre); }
+.cell-btn:hover, .absent-btn:hover { background: var(--sunk); }
+.cell-btn:focus-visible, .absent-btn:focus-visible {
+  outline: 2px solid var(--endorsement); outline-offset: 2px;
+}
+
+.edit { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.edit input {
+  font: inherit; font-family: var(--mono); font-size: 13px;
+  padding: 4px 8px; border: 1px solid var(--rule); border-radius: 6px;
+  background: var(--sunk); color: var(--ink); min-width: 12ch;
+}
+.edit input:focus-visible { outline: 2px solid var(--endorsement); outline-offset: 1px; }
+.btn-sm { font-size: 12px; padding: 4px 10px; }
+
+/* Her call on one finding. Four states, because accepting a risk, having
+   checked something and waiting on a document are three different acts and one
+   "done" checkbox would flatten them into a lie. */
+.review-form { margin: 16px 0 0; padding: 12px 0 0; border-top: 1px solid var(--rule); }
+.review-states { display: flex; flex-wrap: wrap; gap: 12px; margin: 8px 0; }
+.radio { display: inline-flex; align-items: center; gap: 6px; font-size: 13px;
+         color: var(--ink-2); cursor: pointer; }
+.radio input { accent-color: var(--endorsement); }
+.review-form textarea {
+  width: 100%; font: inherit; font-size: 13px; line-height: 1.5;
+  padding: 8px; border: 1px solid var(--rule); border-radius: 6px;
+  background: var(--sunk); color: var(--ink); resize: vertical;
+}
+.review-form textarea:focus-visible { outline: 2px solid var(--endorsement); outline-offset: 1px; }
+.review-actions { display: flex; align-items: center; gap: 12px; margin: 8px 0 0; }
+.review-flag { font-size: 11px; font-weight: 600; text-transform: uppercase;
+               letter-spacing: 0.09em; color: var(--verified); }
+.review-error { font-size: 12px; color: var(--blocking); }
+
+@media (prefers-reduced-motion: reduce) {
+  .link:active { transform: none; }
+}
