@@ -127,6 +127,19 @@ export function startSample(key: string) {
   return post<{ case_id: number }>(`/api/sample/${encodeURIComponent(key)}`);
 }
 
+/* The certificate that closes a gap joins THIS case rather than starting a new
+   one. `requestKey` records which gap it was answering, so afterwards the case
+   can say what this document settled. */
+export function addDocument(input: { caseId: string; file: File; requestKey?: string }) {
+  const form = new FormData();
+  form.append("file", input.file);
+  form.append("request_key", input.requestKey ?? "");
+  return post<{ case_id: number }>(
+    `/api/case/${encodeURIComponent(input.caseId)}/documents`,
+    form,
+  );
+}
+
 export function saveReview(input: {
   case_id: number;
   key: string;

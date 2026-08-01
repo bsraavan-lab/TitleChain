@@ -1,5 +1,15 @@
-import { useState } from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useRef, useState } from "react";
+import { addDocument, ApiRejection, caseQuery } from "../../data/api";
 import type { DerivedView, DocRequest } from "../../data/types";
+
+/* A gap is only useful if it comes with an errand.
+ *
+ * Each request is the order already filled in — office, village, every survey
+ * number, the computed date range — so "your evidence is short" becomes a copy,
+ * a paste into TNREGINET, and a file dropped back here. Without the drop target
+ * this screen ends on bad news with no next step.
+ */
 
 function orderText(r: DocRequest) {
   return [
@@ -11,14 +21,25 @@ function orderText(r: DocRequest) {
   ].join("\n");
 }
 
-export function TabWhatsMissing({ view }: { view: DerivedView }) {
+export function TabWhatsMissing({ view, caseId }: { view: DerivedView; caseId: string }) {
+  if (view.requests.length === 0) {
+    return (
+      <section className="section" aria-label="What's missing">
+        <p className="meta">
+          {view.completeness.links_named === 0
+            ? "These certificates do not point back to any earlier document. That tells you about these certificates, not about what happened before them."
+            : "Every document these certificates point back to is here."}
+        </p>
+      </section>
+    );
+  }
   return (
     <section className="section" aria-label="What's missing">
       <h2 className="section-title">Open requests ({view.requests.length})</h2>
       <ul className="row-list">
         {view.requests.map((r) => (
           <li key={r.key}>
-            <RequestCard request={r} />
+            <RequestCard request={r} caseId={caseId} />
           </li>
         ))}
       </ul>
@@ -26,8 +47,21 @@ export function TabWhatsMissing({ view }: { view: DerivedView }) {
   );
 }
 
-function RequestCard({ request }: { request: DocRequest }) {
+function RequestCard({ request, caseId }: { request: DocRequest; caseId: string }) {
+  const qc = useQueryClient();
   const [copied, setCopied] = useState(false);
+  const [dragging, setDragging] = useState(false);
+  const fileInput = useRef<HTMLInputElement>(null);
+
+  const add = useMutation({
+    mutationFn: (file: File) => addDocument({ caseId, file, requestKey: request.key }),
+    // The findings already on screen are not cleared while the new certificate
+    // reads. The case does not go blank — which is the difference between
+    // completing a title history and restarting an analysis.
+    onSuccess: () => qc.invalidateQueries({ queryKey: caseQuery(caseId).queryKey }),
+  });
+  const rejection = add.error instanceof ApiRejection ? add.error : null;
+
   return (
     <article className="row row--grouped">
       <span className="row-glyph glyph--stamp" aria-hidden="true">
@@ -59,6 +93,7 @@ function RequestCard({ request }: { request: DocRequest }) {
             </dd>
           </div>
         </dl>
+
         <div className="findings-actions">
           <button
             type="button"
@@ -71,6 +106,62 @@ function RequestCard({ request }: { request: DocRequest }) {
             {copied ? "Copied" : "Copy the order"}
           </button>
         </div>
+
+        {/* Where the certificate comes back. Tagged with this request, so the
+            case can say afterwards which gap it closed. */}
+        <div
+          className={`dropzone dropzone--inline${dragging ? " is-over" : ""}`}
+          onDragEnter={(e) => {
+            e.preventDefault();
+            setDragging(true);
+          }}
+          onDragOver={(e) => e.preventDefault()}
+          onDragLeave={() => setDragging(false)}
+          onDrop={(e) => {
+            e.preventDefault();
+            setDragging(false);
+            const f = e.dataTransfer.files?.[0];
+            if (f) add.mutate(f);
+          }}
+        >
+          <p className="dropzone-meta">
+            {add.isPending
+              ? "Reading it now — the findings below stay while it reads."
+              : "Got it back? Drop it here and it joins this case."}
+          </p>
+          <input
+            ref={fileInput}
+            type="file"
+            accept=".pdf,.jpg,.jpeg,.png"
+            className="sr-only"
+            onChange={(e) => {
+              const f = e.target.files?.[0];
+              if (f) add.mutate(f);
+            }}
+          />
+          <button
+            type="button"
+            className="btn btn--ghost"
+            disabled={add.isPending}
+            onClick={() => fileInput.current?.click()}
+          >
+            Add this certificate
+          </button>
+        </div>
+
+        {rejection ? (
+          <p className="reject-notice" role="alert">
+            <span className="row-glyph glyph--seal" aria-hidden="true">
+              ▲
+            </span>
+            <span>{rejection.detail}</span>
+          </p>
+        ) : add.isError ? (
+          <p className="review-error" role="alert">
+            That did not upload. Nothing was added to the case — try again.
+          </p>
+        ) : null}
+
         <p className="row-reason">
           Closes {request.closes.length} checks:{" "}
           <span className="mono">{request.closes.join(" · ")}</span>

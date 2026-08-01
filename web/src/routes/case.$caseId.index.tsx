@@ -168,7 +168,7 @@ function CaseScreen({ caseId, view }: { caseId: string; view: DerivedView }) {
 
           {tab === 0 ? <TabWhatToCheck view={view} caseId={caseId} /> : null}
           {tab === 1 ? <TabHowItConnects view={view} /> : null}
-          {tab === 2 ? <TabWhatsMissing view={view} /> : null}
+          {tab === 2 ? <TabWhatsMissing view={view} caseId={caseId} /> : null}
           {tab === 3 ? <TabWhatWeRead view={view} caseId={caseId} /> : null}
           {tab === 4 ? <TabWhatItCost view={view} /> : null}
         </main>

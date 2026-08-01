@@ -21,8 +21,12 @@ from fastapi.testclient import TestClient
 def client(tmp_path, monkeypatch):
     monkeypatch.setenv("TITLECHAIN_DATA_DIR", str(tmp_path))
     import config as config_mod
-    from app import paths as paths_mod, db as db_mod, main as main_mod
-    for m in (config_mod, paths_mod, db_mod, main_mod):
+    from app import (paths as paths_mod, db as db_mod, pipeline as pipeline_mod,
+                     main as main_mod)
+    # pipeline does `from .paths import UPLOADS`, which binds the value at import
+    # time — so reloading paths alone leaves it writing to the previous test's
+    # data dir. It has to be reloaded between paths and main.
+    for m in (config_mod, paths_mod, db_mod, pipeline_mod, main_mod):
         importlib.reload(m)
     main_mod.paths.ensure()
     main_mod.db.init()
@@ -139,3 +143,40 @@ def test_the_samples_are_offered_by_key_and_label(client):
     posts back and the words it prints."""
     samples = client.get("/api/samples").json()["samples"]
     assert samples and all({"key", "label"} == set(s) for s in samples)
+
+
+# ── adding a document to an existing case ────────────────────────────────────
+# The product's differentiating loop, and the reason a case is a case rather than
+# a document: the certificate that closes a gap is read into the same chain
+# instead of starting a second analysis.
+
+def test_a_document_can_join_a_case_that_already_exists(client):
+    case_id = client.store.create_case("ec_test_01.pdf")
+    r = client.post(f"/api/case/{case_id}/documents",
+                    files={"file": ("second.pdf", b"%PDF-1.4 fake", "application/pdf")},
+                    data={"request_key": "R3:gap=2005-2017"})
+    assert r.status_code == 200
+    # Either it was accepted onto this case, or it was refused with a reason —
+    # never a 500, and never a silent nothing.
+    body = r.json()
+    assert body.get("case_id") == case_id or body.get("error") == "rejected"
+
+
+def test_a_rejected_second_document_says_why(client):
+    """The Jinja route redirects with `?rejected=` to a screen that renders no
+    such message, so an oversized or wrong-type file added to an existing case
+    fails silently there. The JSON path answers with the sentence."""
+    case_id = client.store.create_case("ec_test_01.pdf")
+    body = client.post(f"/api/case/{case_id}/documents",
+                       files={"file": ("notes.txt", b"not a certificate", "text/plain")},
+                       data={"request_key": ""}).json()
+
+    assert body["error"] == "rejected"
+    assert body["detail"]
+
+
+def test_adding_to_a_case_that_is_gone_answers_instead_of_500ing(client):
+    body = client.post("/api/case/999/documents",
+                       files={"file": ("x.pdf", b"%PDF-1.4", "application/pdf")},
+                       data={"request_key": ""}).json()
+    assert body["error"] == "not_found"
