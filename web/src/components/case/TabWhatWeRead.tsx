@@ -87,9 +87,12 @@ function EntryCard({ entry }: { entry: Entry }) {
         </Field>
         <Field label="Registered">
           {entry.date_registration === null ? (
-            <button type="button" className="absent-btn" aria-label="Date registration not read — type it in">
+            // Inert until the correction flow lands. This was a <button> whose
+            // aria-label read "type it in", announcing an editing capability to
+            // a screen reader that does not exist on this screen yet.
+            <span className="absent" title="Not read from the page">
               —
-            </button>
+            </span>
           ) : (
             <span className="mono">{entry.date_registration}</span>
           )}

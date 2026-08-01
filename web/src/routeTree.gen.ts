@@ -10,7 +10,6 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as SystemRouteImport } from './routes/system'
 import { Route as ReportCaseIdRouteImport } from './routes/report.$caseId'
 import { Route as CaseCaseIdIndexRouteImport } from './routes/case.$caseId.index'
 import { Route as CaseCaseIdRefusalRouteImport } from './routes/case.$caseId.refusal'
@@ -19,11 +18,6 @@ import { Route as CaseCaseIdWorkingRouteImport } from './routes/case.$caseId.wor
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const SystemRoute = SystemRouteImport.update({
-  id: '/system',
-  path: '/system',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ReportCaseIdRoute = ReportCaseIdRouteImport.update({
@@ -49,7 +43,6 @@ const CaseCaseIdWorkingRoute = CaseCaseIdWorkingRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/system': typeof SystemRoute
   '/report/$caseId': typeof ReportCaseIdRoute
   '/case/$caseId/refusal': typeof CaseCaseIdRefusalRoute
   '/case/$caseId/working': typeof CaseCaseIdWorkingRoute
@@ -57,7 +50,6 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/system': typeof SystemRoute
   '/report/$caseId': typeof ReportCaseIdRoute
   '/case/$caseId/refusal': typeof CaseCaseIdRefusalRoute
   '/case/$caseId/working': typeof CaseCaseIdWorkingRoute
@@ -66,7 +58,6 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/system': typeof SystemRoute
   '/report/$caseId': typeof ReportCaseIdRoute
   '/case/$caseId/refusal': typeof CaseCaseIdRefusalRoute
   '/case/$caseId/working': typeof CaseCaseIdWorkingRoute
@@ -76,7 +67,6 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
-    | '/system'
     | '/report/$caseId'
     | '/case/$caseId/refusal'
     | '/case/$caseId/working'
@@ -84,7 +74,6 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
-    | '/system'
     | '/report/$caseId'
     | '/case/$caseId/refusal'
     | '/case/$caseId/working'
@@ -92,7 +81,6 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
-    | '/system'
     | '/report/$caseId'
     | '/case/$caseId/refusal'
     | '/case/$caseId/working'
@@ -101,7 +89,6 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  SystemRoute: typeof SystemRoute
   ReportCaseIdRoute: typeof ReportCaseIdRoute
   CaseCaseIdRefusalRoute: typeof CaseCaseIdRefusalRoute
   CaseCaseIdWorkingRoute: typeof CaseCaseIdWorkingRoute
@@ -115,13 +102,6 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/system': {
-      id: '/system'
-      path: '/system'
-      fullPath: '/system'
-      preLoaderRoute: typeof SystemRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/report/$caseId': {
@@ -157,7 +137,6 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  SystemRoute: SystemRoute,
   ReportCaseIdRoute: ReportCaseIdRoute,
   CaseCaseIdRefusalRoute: CaseCaseIdRefusalRoute,
   CaseCaseIdWorkingRoute: CaseCaseIdWorkingRoute,

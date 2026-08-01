@@ -1,5 +1,4 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { SiteNav } from "../components/SiteNav";
 import { useQuery } from "@tanstack/react-query";
 import { caseQuery } from "../data/api";
 import { Loading, LoadError } from "../components/LoadState";
@@ -53,7 +52,6 @@ function RefusalScreen({ caseId, view }: { caseId: string; view: DerivedView }) 
     <div className="page">
       <header className="masthead">
         <span className="wordmark">TitleChain</span>
-        <SiteNav caseId={caseId} />
       </header>
 
       <main>

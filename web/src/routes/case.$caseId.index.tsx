@@ -1,6 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
-import { SiteNav } from "../components/SiteNav";
 import { TabWhatToCheck } from "../components/case/TabWhatToCheck";
 import { TabHowItConnects } from "../components/case/TabHowItConnects";
 import { TabWhatsMissing } from "../components/case/TabWhatsMissing";
@@ -12,22 +11,18 @@ import { Loading, LoadError } from "../components/LoadState";
 import type { DerivedView } from "../data/types";
 
 export const Route = createFileRoute("/case/$caseId/")({
+  // Generic on purpose. This named one property — "Puliyampatti", "a 13-year
+  // search" — for every case id, so case 7 carried case 1's title. The real
+  // headline is per-case and lives in the body, where it is true.
   head: () => ({
     meta: [
-      { title: "Certificate scrutiny — Puliyampatti | TitleChain" },
+      { title: "Certificate scrutiny | TitleChain" },
       {
         name: "description",
         content:
-          "The working screen: what this encumbrance certificate covers, the five earlier documents nobody has read, and the sixteen years it leaves out.",
-      },
-      { property: "og:title", content: "Certificate scrutiny — Puliyampatti | TitleChain" },
-      {
-        property: "og:description",
-        content:
-          "This certificate cannot support a 13-year search. See every check, the years on one line, and the page behind each finding.",
+          "What this encumbrance certificate covers, what it leaves out, and the page behind every finding.",
       },
       { property: "og:type", content: "website" },
-      { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
   component: CasePage,
@@ -64,22 +59,34 @@ function CaseScreen({ caseId, view }: { caseId: string; view: DerivedView }) {
   const [page, setPage] = useState(1);
   const c = view.coverage;
   const k = view.completeness;
-  const doc = view.docs[0]!;
+  // A case still being read has a header but no document rows yet. `docs[0]!`
+  // threw straight to the error boundary on exactly the screens that exist to
+  // show progress.
+  const doc = view.docs[0];
+
+  // The backend's Readiness.ready — all gates passed — recomputed here because
+  // it is a plain @property and so never reaches the JSON.
+  const ready = view.readiness.gates.every((g) => g.passed);
+
+  // Nothing is read yet on a fresh case, so every denominator here can be 0.
+  // Unguarded this rendered `NaN%` and `style={{ width: "NaN%" }}`.
+  const pct = (done: number, total: number) =>
+    total > 0 ? Math.round((done / total) * 100) : 0;
 
   const meters = [
     {
       label: "Documents",
-      pct: Math.round((k.links_examined / k.links_named) * 100),
+      pct: pct(k.links_examined, k.links_named),
       detail: `${k.links_examined} of the ${k.links_named} named documents are here`,
     },
     {
       label: "Years",
-      pct: Math.round((k.years_covered / k.years_required) * 100),
+      pct: pct(k.years_covered, k.years_required),
       detail: `${k.years_covered} of the ${k.years_required} years you need, ${k.span_from}–${k.span_to}`,
     },
     {
       label: "Checked by you",
-      pct: Math.round((k.review_done / k.review_total) * 100),
+      pct: pct(k.review_done, k.review_total),
       detail: `${k.review_done} of ${k.review_total} items`,
     },
   ];
@@ -89,10 +96,14 @@ function CaseScreen({ caseId, view }: { caseId: string; view: DerivedView }) {
       <header className="case-bar">
         <span className="wordmark">TitleChain</span>
         <span className="case-bar-meta">
-          Case <span className="mono">{caseId}</span> · Certificate{" "}
-          <span className="mono">{doc.label}</span>
+          Case <span className="mono">{caseId}</span>
+          {doc ? (
+            <>
+              {" · Certificate "}
+              <span className="mono">{doc.label}</span>
+            </>
+          ) : null}
         </span>
-        <SiteNav caseId={caseId} />
       </header>
 
       <div className="case-grid">
@@ -118,12 +129,17 @@ function CaseScreen({ caseId, view }: { caseId: string; view: DerivedView }) {
             ))}
           </section>
 
+          {/* Never a percentage: a file is signable or it is not, and the gate
+              chips beside this say which condition is in the way. Derived from
+              the gates — this line read a hardcoded "FAIL … Not ready to sign
+              off yet" until 2026-07-31, so a certificate that passed every check
+              still told her it had failed. */}
           <section className="section verdict" aria-label="Readiness">
             <p className="verdict-line">
-              <span className="glyph--seal" aria-hidden="true">
-                ▲
+              <span className={ready ? "glyph--fee" : "glyph--seal"} aria-hidden="true">
+                {ready ? "✓" : "▲"}
               </span>{" "}
-              <span className="status-word status-word--seal">FAIL</span> Not ready to sign off yet
+              {ready ? "Ready to sign off" : "Not ready to sign off yet"}
             </p>
             <ul className="chips">
               {view.readiness.gates.map((g) => (
@@ -157,6 +173,14 @@ function CaseScreen({ caseId, view }: { caseId: string; view: DerivedView }) {
         </main>
 
         <aside className="case-rail" aria-label="Source document">
+          {!doc ? (
+            <div className="rail-card">
+              <p className="kicker">Source</p>
+              <p className="rail-empty">
+                Your certificate appears here as soon as the first page is read.
+              </p>
+            </div>
+          ) : (
           <div className="rail-card">
             <div className="rail-head">
               <p className="kicker">Source</p>
@@ -188,6 +212,7 @@ function CaseScreen({ caseId, view }: { caseId: string; view: DerivedView }) {
               </button>
             </div>
           </div>
+          )}
         </aside>
       </div>
     </div>

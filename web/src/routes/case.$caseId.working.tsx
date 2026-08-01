@@ -1,7 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect } from "react";
-import { SiteNav } from "../components/SiteNav";
 import { Loading, LoadError } from "../components/LoadState";
 import { caseStatusQuery } from "../data/api";
 
@@ -45,7 +44,6 @@ function WorkingPage() {
     <div className="page">
       <header className="masthead">
         <span className="wordmark">TitleChain</span>
-        <SiteNav caseId={caseId} />
       </header>
 
       <main>

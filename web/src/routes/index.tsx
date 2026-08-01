@@ -1,7 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { useRef } from "react";
-import { SiteNav } from "../components/SiteNav";
+import { useRef, useState } from "react";
 import { Loading, LoadError } from "../components/LoadState";
 import { ApiRejection, casesQuery, samplesQuery, startSample, uploadCertificate } from "../data/api";
 import type { CaseSummary } from "../data/types";
@@ -62,6 +61,7 @@ function Index() {
   const cases = useQuery(casesQuery());
   const samples = useQuery(samplesQuery());
   const fileInput = useRef<HTMLInputElement>(null);
+  const [dragging, setDragging] = useState(false);
 
   const open = (caseId: string) => navigate({ to: "/case/$caseId", params: { caseId } });
   const upload = useMutation({
@@ -81,7 +81,6 @@ function Index() {
       <header className="masthead">
         <span className="wordmark">TitleChain</span>
         <span className="masthead-note">Property record checks</span>
-        <SiteNav caseId={String(cases.data?.[0]?.id ?? 1)} />
       </header>
 
       <main>
@@ -95,7 +94,25 @@ function Index() {
             years it cannot, and what to order to close the gap.
           </p>
 
-          <div className="dropzone">
+          {/* The words said "Drop your certificate here" and there were no drop
+              handlers, so dropping a file navigated the browser to the PDF and
+              lost the upload. Either the words go or the handlers do; the
+              handlers are three lines. */}
+          <div
+            className={`dropzone${dragging ? " is-over" : ""}`}
+            onDragEnter={(e) => {
+              e.preventDefault();
+              setDragging(true);
+            }}
+            onDragOver={(e) => e.preventDefault()}
+            onDragLeave={() => setDragging(false)}
+            onDrop={(e) => {
+              e.preventDefault();
+              setDragging(false);
+              const f = e.dataTransfer.files?.[0];
+              if (f) upload.mutate(f);
+            }}
+          >
             <p className="dropzone-title">Drop your certificate here</p>
             <p className="dropzone-meta">
               PDF, JPEG or PNG, up to 50 MB · reading starts the moment you pick it
@@ -142,7 +159,10 @@ function Index() {
 
 
 
-          <p className="samples">
+          {/* A div, not a p: this holds Loading (a <p>) and LoadError (a <div>),
+              and isPending is true during SSR — so the server always emitted a
+              <p> inside a <p> and hydration could never match. */}
+          <div className="samples">
             <span className="samples-lead">Haven't got one to hand?</span>
             {samples.isPending ? <Loading what="the samples" /> : null}
             {samples.isError ? (
@@ -163,7 +183,7 @@ function Index() {
                 {s.label}
               </button>
             ))}
-          </p>
+          </div>
         </section>
 
         {/* 2 — Your cases */}

@@ -10,7 +10,7 @@ import { defineConfig } from "@lovable.dev/vite-tanstack-config";
 // served from one origin, so the client asks for `/api/...` in both cases and
 // nothing is rewritten — this proxy only stands in for that shared origin while
 // they run as separate processes on a developer's machine.
-const BACKEND = process.env.TITLECHAIN_API ?? "http://127.0.0.1:8100";
+const BACKEND = process.env["TITLECHAIN_API"] ?? "http://127.0.0.1:8100";
 
 export default defineConfig({
   tanstackStart: {

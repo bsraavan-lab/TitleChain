@@ -96,14 +96,17 @@ export function TabWhatToCheck({ view }: { view: DerivedView }) {
         </ul>
       </details>
 
-      <div className="findings-actions">
-        <button type="button" className="btn btn--filled">
-          Mark {view.completeness.review_total} items as checked
-        </button>
-        <button type="button" className="btn btn--ghost">
-          Rulebook {view.rulebook_version}
-        </button>
-      </div>
+      {/* There was a filled "Mark N items as checked" button here, and a
+          "Rulebook" button, neither with a handler. Both are gone rather than
+          wired: a sign-off is a per-finding judgement she puts her name to, so a
+          single control that marks eleven of them at once is the wrong shape
+          whether or not it works. The real per-finding review UI replaces it. */}
+      <p className="meta checklist-foot">
+        The same {view.runs.length} checks run on every case, in the same order.
+        Each result comes from fixed code, not from a language model's judgement.
+        If a check could not run, it says so and says why — it never quietly
+        counts as a pass. Rulebook {view.rulebook_version}.
+      </p>
     </section>
   );
 }

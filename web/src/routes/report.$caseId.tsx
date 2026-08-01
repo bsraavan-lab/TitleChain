@@ -1,5 +1,4 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { SiteNav } from "../components/SiteNav";
 import { useQuery } from "@tanstack/react-query";
 import { caseQuery } from "../data/api";
 import { Loading, LoadError } from "../components/LoadState";
@@ -9,13 +8,13 @@ import { OUTCOME_GLYPH, OUTCOME_TONE, OUTCOME_WORD } from "../data/types";
 export const Route = createFileRoute("/report/$caseId")({
   head: () => ({
     meta: [
-      { title: "Scrutiny report — Puliyampatti S.No 95/2 | TitleChain" },
+      { title: "Title scrutiny report | TitleChain" },
       {
         name: "description",
         content:
           "The filed record: property, verdict, certificates read, every check with its outcome, how the documents connect, what is still missing and every entry as read.",
       },
-      { property: "og:title", content: "Scrutiny report — Puliyampatti S.No 95/2 | TitleChain" },
+      { property: "og:title", content: "The checks that ran, the ones that could not, and what is still missing." },
       {
         property: "og:description",
         content: "A dated, printable record of what this certificate does and does not evidence.",
@@ -54,7 +53,6 @@ function ReportSheet({ caseId, view }: { caseId: string; view: DerivedView }) {
   return (
     <div className="report-wrap">
       <div className="report-nav">
-        <SiteNav caseId={caseId} />
       </div>
 
       <article className="sheet">
