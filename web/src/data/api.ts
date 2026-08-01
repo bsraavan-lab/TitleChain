@@ -45,6 +45,75 @@ export interface UnreadPage {
   reason: string | null;
 }
 
+/* What a case cost. Mirrors the dataclasses in app/cost.py.
+ *
+ * Those carry computed @property values — `ran`, `tokens`, `quantity`,
+ * `configured`, `priced` — and a dataclass property does not survive
+ * serialisation, so none of them are here. They are recomputed in
+ * TabWhatItCost from the same fields the Python computes them from; the rule
+ * is that neither side may invent a number the other would not produce. */
+
+export interface RateCard {
+  source: string | null;
+  retrieved: string | null;
+  currency: string;
+  per_page: Record<string, number>;
+  per_million_tokens: Record<string, Record<string, number>>;
+  per_character: Record<string, number>;
+}
+
+export interface CostLine {
+  stage: string;
+  label: string;
+  unit: string;
+  models: string[];
+  calls: number;
+  cached_calls: number;
+  pages: number;
+  tokens_in: number;
+  tokens_out: number;
+  chars: number;
+  ms: number;
+  /** null means no rate is configured for this line — never a zero. */
+  amount: number | null;
+  cached_saving: number | null;
+}
+
+export interface CostReport {
+  lines: CostLine[];
+  total: number | null;
+  cached_saving: number | null;
+  calls: number;
+  cached_calls: number;
+  pages: number;
+  tokens: number;
+  wall_ms: number;
+  rates: RateCard;
+  /** What the estimate was computed from. Shown, because an estimate that does
+      not say what it is based on is a guess wearing a suit. */
+  basis: string;
+  estimated: boolean;
+}
+
+export interface LedgerRow {
+  id: number;
+  stage: string | null;
+  model: string | null;
+  ladder_rung: string | null;
+  pages: number | null;
+  tokens_in: number | null;
+  tokens_out: number | null;
+  chars: number | null;
+  cached: number | null;
+  ms: number | null;
+}
+
+export interface CostPayload {
+  estimate: CostReport;
+  actual: CostReport;
+  ledger: LedgerRow[];
+}
+
 export interface CaseResponse {
   case: CaseMeta;
   view: DerivedView;
@@ -53,7 +122,7 @@ export interface CaseResponse {
   corrections: Correction[];
   unread: UnreadPage[];
   graph: unknown;
-  cost: unknown;
+  cost: CostPayload;
 }
 
 export interface StatusResponse {

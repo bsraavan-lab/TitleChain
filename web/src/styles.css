@@ -308,6 +308,10 @@ strong {
   --fee-soft: #e6f0ea;
   --endorse-soft: #e7ecf5;
   --ease: cubic-bezier(0.23, 1, 0.32, 1);
+  /* The second and last border weight in the system. Used only to separate a
+     total from what it totals; doubling a hairline's width instead would be a
+     third weight in a sheet that has exactly two. */
+  --rule-firm: rgba(25, 23, 19, 0.18);
 }
 
 .sr-only {
@@ -1744,3 +1748,115 @@ strong {
 }
 .dropzone--inline .dropzone-meta { margin: 0; }
 .dropzone.is-over { border-color: var(--endorsement); background: var(--endorse-soft); }
+
+/* ================= What it cost =================
+   Ported from the rendered stylesheet so the two panels read as one product.
+   Colour names differ between the sheets (seal/stamp/fee there, blocking/ochre/
+   verified here) but the tokens are the same three meanings. */
+
+/* Used across the case tabs — a small, quiet second line under a claim. It was
+   referenced by several components and defined by none, so every `.meta` span
+   rendered at body size in body ink, which is precisely the emphasis it exists
+   to withhold. */
+.meta {
+  color: var(--ink-3);
+  font-size: 12px;
+}
+
+.table-scroll {
+  overflow-x: auto;
+}
+
+.cost {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+  margin-top: var(--s3);
+}
+
+.cost th,
+.cost td {
+  text-align: left;
+  vertical-align: top;
+  padding: var(--s2);
+  border-top: 1px solid var(--rule);
+}
+
+.cost thead th {
+  color: var(--ink-3);
+  font: 600 11px/1 var(--sans);
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  border-top: 0;
+}
+
+.cost tfoot th,
+.cost tfoot td {
+  border-top: 1px solid var(--rule-firm);
+  font-weight: 600;
+}
+
+.cost .meta {
+  display: block;
+}
+
+.cost .delta,
+.cost .money {
+  font-variant-numeric: tabular-nums;
+}
+
+/* A step that neither ran nor was expected to. Still listed, because a missing
+   row would read as a step we forgot rather than one this case did not need. */
+.cost .row-idle {
+  color: var(--ink-3);
+}
+
+.cached {
+  display: block;
+  font-size: 12px;
+  color: var(--verified);
+  font-weight: 600;
+}
+
+.cost-facts {
+  margin-top: var(--s4);
+}
+
+.rate-warning {
+  font-size: 14px;
+  color: var(--ochre);
+  border-left: 3px solid var(--ochre);
+  padding-left: var(--s2);
+}
+
+.ledger {
+  margin-top: var(--s4);
+}
+
+.ledger > summary {
+  cursor: pointer;
+}
+
+/* Every request, one by one. Denser than .cost because it is a raw log and is
+   read by scanning rather than by comparing. */
+.ledger-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+  margin-top: var(--s3);
+}
+
+.ledger-table th,
+.ledger-table td {
+  text-align: left;
+  padding: var(--s1) var(--s2);
+  border-bottom: 1px solid var(--rule);
+  white-space: nowrap;
+}
+
+.ledger-table thead th {
+  color: var(--ink-3);
+  font: 600 11px/1 var(--sans);
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
