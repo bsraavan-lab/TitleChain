@@ -1,10 +1,65 @@
-import type { DerivedView } from "../../data/types";
+import type { ChainNode, DerivedView } from "../../data/types";
+
+/* A node is drawn read or unread by whether it HAS an entry, not by how deep it
+   sits. derive.py sets `entry_id: None` for a document that is only named by
+   another one — that is the hollow circle — and `children` recurses as far as
+   the references go. This drew exactly two levels and called level two "not
+   read", so a document named by a named document was dropped from the chain
+   entirely, and a grandchild that was in fact read still showed as hollow. */
+function ChainBranch({ node }: { node: ChainNode }) {
+  const read = node.entry_id !== null;
+  return (
+    <li className="chain-node">
+      <span
+        className={`chain-mark${read ? " chain-mark--filled glyph--fee" : " glyph--stamp"}`}
+        aria-hidden="true"
+      >
+        {read ? "●" : "○"}
+      </span>
+      <span className="chain-doc mono">{node.doc_no}</span>
+      <span className="chain-note">
+        {read ? (node.nature ?? "read") : "not read"}
+        {node.cancelled_by ? (
+          <>
+            {" · cancelled by "}
+            <span className="mono">{node.cancelled_by}</span>
+          </>
+        ) : null}
+      </span>
+      {node.children.length > 0 ? (
+        <ul className="chain-children">
+          {node.children.map((child) => (
+            <ChainBranch node={child} key={child.doc_no} />
+          ))}
+        </ul>
+      ) : null}
+    </li>
+  );
+}
+
+/** Counts for the sentence above the chain, so it states what is there. */
+function tally(nodes: ChainNode[]): { read: number; named: number } {
+  return nodes.reduce(
+    (acc, n) => {
+      const sub = tally(n.children);
+      return {
+        read: acc.read + (n.entry_id !== null ? 1 : 0) + sub.read,
+        named: acc.named + (n.entry_id === null ? 1 : 0) + sub.named,
+      };
+    },
+    { read: 0, named: 0 },
+  );
+}
+
+const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? "" : "s"}`;
 
 export function TabHowItConnects({ view }: { view: DerivedView }) {
   const c = view.coverage;
+  // A single-year certificate makes axis_max === axis_min, and every `left` and
+  // `width` on the ruler below divides by this.
   const span = c.axis_max - c.axis_min;
-  const pos = (y: number) => ((y - c.axis_min) / span) * 100;
-  const root = view.chain[0]!;
+  const pos = (y: number) => (span > 0 ? ((y - c.axis_min) / span) * 100 : 0);
+  const counts = tally(view.chain);
 
   return (
     <section className="section" aria-label="How it connects">
@@ -64,39 +119,31 @@ export function TabHowItConnects({ view }: { view: DerivedView }) {
       </ul>
 
       <h2 className="section-title">How the documents connect</h2>
-      <p className="row-detail row-detail--lead">
-        {root.doc_no} is the only document that has been read. The five documents it points back to
-        are named in it and nothing more — that one fact is why each circle below is hollow.
-      </p>
+      {/* Counted, not asserted. This read "{doc} is the only document that has
+          been read. The five documents it points back to…" for every case, so a
+          case with two certificates and eleven references said one and five. */}
+      {view.chain.length === 0 ? (
+        <p className="row-detail row-detail--lead">
+          Nothing has been read yet, so there is no chain to draw.
+        </p>
+      ) : (
+        <>
+          <p className="row-detail row-detail--lead">
+            {counts.read > 0
+              ? `${plural(counts.read, "document")} here ${counts.read === 1 ? "has" : "have"} been read.`
+              : "No document here has been read."}{" "}
+            {counts.named > 0
+              ? `The ${plural(counts.named, "document")} below with a hollow circle ${counts.named === 1 ? "is" : "are"} named in what was read and nothing more — that one fact is why ${counts.named === 1 ? "it is" : "they are"} hollow.`
+              : "Every document named along this chain is here."}
+          </p>
 
-      <ul className="chain">
-        <li className="chain-node">
-          <span className="chain-mark chain-mark--filled glyph--fee" aria-hidden="true">
-            ●
-          </span>
-          <span className="chain-doc mono">{root.doc_no}</span>
-          <span className="chain-note">
-            {root.nature}
-            {root.cancelled_by ? (
-              <>
-                {" "}
-                · cancelled by <span className="mono">{root.cancelled_by}</span>
-              </>
-            ) : null}
-          </span>
-          <ul className="chain-children">
-            {root.children.map((n) => (
-              <li className="chain-node" key={n.doc_no}>
-                <span className="chain-mark glyph--stamp" aria-hidden="true">
-                  ○
-                </span>
-                <span className="chain-doc mono">{n.doc_no}</span>
-                <span className="chain-note">not read</span>
-              </li>
+          <ul className="chain">
+            {view.chain.map((root) => (
+              <ChainBranch node={root} key={root.doc_no} />
             ))}
           </ul>
-        </li>
-      </ul>
+        </>
+      )}
     </section>
   );
 }
