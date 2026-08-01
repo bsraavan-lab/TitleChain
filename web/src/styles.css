@@ -170,6 +170,8 @@ strong {
   border: 1px solid var(--rule);
   background: var(--paper);
   color: var(--ink-1);
+  text-decoration: none;
+  display: inline-block;
   cursor: pointer;
 }
 
@@ -489,6 +491,7 @@ strong {
   border: 0;
   border-bottom: 2px solid transparent;
   color: var(--ink-3);
+  text-decoration: none;
   cursor: pointer;
   transition: color 160ms var(--ease);
 }

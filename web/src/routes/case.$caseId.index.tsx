@@ -1,5 +1,5 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useEffect } from "react";
 import { TabWhatToCheck } from "../components/case/TabWhatToCheck";
 import { TabHowItConnects } from "../components/case/TabHowItConnects";
 import { TabWhatsMissing } from "../components/case/TabWhatsMissing";
@@ -12,7 +12,30 @@ import { Rail, RailProvider } from "../components/case/rail";
 import { Loading, LoadError } from "../components/LoadState";
 import type { DerivedView } from "../data/types";
 
+/* The tab is in the URL, because the thing she wants to send someone is never
+   "the case" — it is the gap, or the entry she corrected, or the row that will
+   not close. Held in useState it was neither linkable nor bookmarkable, and the
+   back button walked out of the case instead of back a tab. The rendered app has
+   had /case/{id}/tab/{name} throughout. */
+const TABS = [
+  { key: "review", label: "What to check" },
+  { key: "chain", label: "How it connects" },
+  { key: "missing", label: "What's missing" },
+  { key: "entries", label: "What we read" },
+  { key: "cost", label: "What it cost" },
+] as const;
+
+type TabKey = (typeof TABS)[number]["key"];
+
+const isTabKey = (v: unknown): v is TabKey => TABS.some((t) => t.key === v);
+
 export const Route = createFileRoute("/case/$caseId/")({
+  // Optional, and an unknown value is dropped rather than raised: a mistyped
+  // link should still open the case, on the first tab. Required here instead
+  // would mean every link to a case anywhere had to name a tab, which is a
+  // demand the URL has no business making.
+  validateSearch: (search: Record<string, unknown>): { tab?: TabKey } =>
+    isTabKey(search["tab"]) ? { tab: search["tab"] } : {},
   // Generic on purpose. This named one property — "Puliyampatti", "a 13-year
   // search" — for every case id, so case 7 carried case 1's title. The real
   // headline is per-case and lives in the body, where it is true.
@@ -29,14 +52,6 @@ export const Route = createFileRoute("/case/$caseId/")({
   }),
   component: CasePage,
 });
-
-const TABS = [
-  "What to check",
-  "How it connects",
-  "What's missing",
-  "What we read",
-  "What it cost",
-] as const;
 
 function CasePage() {
   const { caseId } = Route.useParams();
@@ -90,7 +105,7 @@ function CaseScreen({
   cost: CostPayload;
   meta: CaseMeta;
 }) {
-  const [tab, setTab] = useState(0);
+  const { tab = "review" } = Route.useSearch();
   const c = view.coverage;
   const k = view.completeness;
   // A case still being read has a header but no document rows yet. `docs[0]!`
@@ -186,25 +201,31 @@ function CaseScreen({
             </ul>
           </section>
 
+          {/* Links, not buttons: a tab is an address now, so it should middle-
+              click into a new window and copy from the context menu like any
+              other. `replace` keeps the back button meaning "out of this case"
+              rather than a walk through every tab visited on the way. */}
           <nav className="tabs" aria-label="Case sections">
-            {TABS.map((t, i) => (
-              <button
-                type="button"
-                key={t}
-                className={`tab${i === tab ? " tab--active" : ""}`}
-                aria-current={i === tab ? "page" : undefined}
-                onClick={() => setTab(i)}
+            {TABS.map((t) => (
+              <Link
+                key={t.key}
+                to="/case/$caseId"
+                params={{ caseId }}
+                search={{ tab: t.key }}
+                replace
+                className={`tab${t.key === tab ? " tab--active" : ""}`}
+                aria-current={t.key === tab ? "page" : undefined}
               >
-                {t}
-              </button>
+                {t.label}
+              </Link>
             ))}
           </nav>
 
-          {tab === 0 ? <TabWhatToCheck view={view} caseId={caseId} /> : null}
-          {tab === 1 ? <TabHowItConnects view={view} /> : null}
-          {tab === 2 ? <TabWhatsMissing view={view} caseId={caseId} /> : null}
-          {tab === 3 ? <TabWhatWeRead view={view} caseId={caseId} /> : null}
-          {tab === 4 ? <TabWhatItCost view={view} cost={cost} meta={meta} /> : null}
+          {tab === "review" ? <TabWhatToCheck view={view} caseId={caseId} /> : null}
+          {tab === "chain" ? <TabHowItConnects view={view} /> : null}
+          {tab === "missing" ? <TabWhatsMissing view={view} caseId={caseId} /> : null}
+          {tab === "entries" ? <TabWhatWeRead view={view} caseId={caseId} /> : null}
+          {tab === "cost" ? <TabWhatItCost view={view} cost={cost} meta={meta} /> : null}
         </main>
 
         <aside className="case-rail" aria-label="Source document">
