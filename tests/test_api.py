@@ -78,6 +78,31 @@ def test_the_case_payload_carries_every_section_a_screen_needs(client):
     assert set(body["cost"]) == {"estimate", "actual", "ledger"}
 
 
+def test_the_cost_payload_carries_the_fields_the_panel_binds_to(client):
+    """cost.py's Report and Line are dataclasses whose computed values — `ran`,
+    `tokens`, `quantity`, `configured` — are @property and so never serialise.
+    The React tab recomputes them from these raw fields, which makes a rename
+    here a blank column there rather than an error anywhere."""
+    case_id = client.store.create_case("ec_test_01.pdf")
+    cost = client.get(f"/api/case/{case_id}").json()["cost"]
+
+    for report in (cost["estimate"], cost["actual"]):
+        assert set(report) >= {"lines", "total", "cached_saving", "calls",
+                               "pages", "tokens", "wall_ms", "rates", "basis"}
+        # The three bands the panel checks to decide whether a rupee column
+        # exists at all. Absent them it would have to assume, and assuming is
+        # the one thing this panel is built not to do.
+        assert set(report["rates"]) >= {"currency", "per_page",
+                                        "per_million_tokens", "per_character"}
+        for line in report["lines"]:
+            assert set(line) >= {"stage", "label", "unit", "models", "calls",
+                                 "cached_calls", "pages", "tokens_in",
+                                 "tokens_out", "chars", "amount"}
+            # None, never 0.0 — an unpriced line and a free one are different
+            # claims, and only one of them is true here.
+            assert line["amount"] is None or isinstance(line["amount"], (int, float))
+
+
 def test_status_stays_small_because_it_is_polled(client):
     """The working screen hits this on a timer while a background thread runs.
     If it ever grows a derivation it becomes a per-second re-derive."""

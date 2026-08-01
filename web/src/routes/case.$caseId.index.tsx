@@ -7,6 +7,7 @@ import { TabWhatWeRead } from "../components/case/TabWhatWeRead";
 import { TabWhatItCost } from "../components/case/TabWhatItCost";
 import { useQuery } from "@tanstack/react-query";
 import { caseQuery } from "../data/api";
+import type { CaseMeta, CostPayload } from "../data/api";
 import { Rail, RailProvider } from "../components/case/rail";
 import { Loading, LoadError } from "../components/LoadState";
 import type { DerivedView } from "../data/types";
@@ -52,10 +53,22 @@ function CasePage() {
         <LoadError what="The case" error={q.error} onRetry={() => void q.refetch()} />
       </div>
     );
-  return <CaseScreen caseId={caseId} view={q.data.view} />;
+  return (
+    <CaseScreen caseId={caseId} view={q.data.view} cost={q.data.cost} meta={q.data.case} />
+  );
 }
 
-function CaseScreen({ caseId, view }: { caseId: string; view: DerivedView }) {
+function CaseScreen({
+  caseId,
+  view,
+  cost,
+  meta,
+}: {
+  caseId: string;
+  view: DerivedView;
+  cost: CostPayload;
+  meta: CaseMeta;
+}) {
   const [tab, setTab] = useState(0);
   const c = view.coverage;
   const k = view.completeness;
@@ -170,7 +183,7 @@ function CaseScreen({ caseId, view }: { caseId: string; view: DerivedView }) {
           {tab === 1 ? <TabHowItConnects view={view} /> : null}
           {tab === 2 ? <TabWhatsMissing view={view} caseId={caseId} /> : null}
           {tab === 3 ? <TabWhatWeRead view={view} caseId={caseId} /> : null}
-          {tab === 4 ? <TabWhatItCost view={view} /> : null}
+          {tab === 4 ? <TabWhatItCost view={view} cost={cost} meta={meta} /> : null}
         </main>
 
         <aside className="case-rail" aria-label="Source document">
