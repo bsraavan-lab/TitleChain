@@ -128,7 +128,7 @@ export function startSample(key: string) {
 }
 
 export function saveReview(input: {
-  case_id: string;
+  case_id: number;
   key: string;
   state: string;
   note?: string | null;
@@ -136,8 +136,11 @@ export function saveReview(input: {
   return post<{ ok: boolean }>("/api/review", undefined, input);
 }
 
+/* Returns the case id because an entry knows which case it belongs to and the
+   caller should not have to — and the caller has to re-read the case anyway: a
+   correction moves the meters and the checklist, not just the cell. */
 export function saveCorrection(input: { entry_id: number; field: string; value: string }) {
-  return post<{ ok: boolean }>("/api/correct", undefined, input);
+  return post<{ ok: boolean; case_id: number }>("/api/correct", undefined, input);
 }
 
 /* Images are plain URLs, not JSON. */

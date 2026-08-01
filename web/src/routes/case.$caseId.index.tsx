@@ -6,7 +6,8 @@ import { TabWhatsMissing } from "../components/case/TabWhatsMissing";
 import { TabWhatWeRead } from "../components/case/TabWhatWeRead";
 import { TabWhatItCost } from "../components/case/TabWhatItCost";
 import { useQuery } from "@tanstack/react-query";
-import { caseQuery, pageImageUrl } from "../data/api";
+import { caseQuery } from "../data/api";
+import { Rail, RailProvider } from "../components/case/rail";
 import { Loading, LoadError } from "../components/LoadState";
 import type { DerivedView } from "../data/types";
 
@@ -56,7 +57,6 @@ function CasePage() {
 
 function CaseScreen({ caseId, view }: { caseId: string; view: DerivedView }) {
   const [tab, setTab] = useState(0);
-  const [page, setPage] = useState(1);
   const c = view.coverage;
   const k = view.completeness;
   // A case still being read has a header but no document rows yet. `docs[0]!`
@@ -92,6 +92,7 @@ function CaseScreen({ caseId, view }: { caseId: string; view: DerivedView }) {
   ];
 
   return (
+    <RailProvider>
     <div className="case">
       <header className="case-bar">
         <span className="wordmark">TitleChain</span>
@@ -165,56 +166,18 @@ function CaseScreen({ caseId, view }: { caseId: string; view: DerivedView }) {
             ))}
           </nav>
 
-          {tab === 0 ? <TabWhatToCheck view={view} /> : null}
+          {tab === 0 ? <TabWhatToCheck view={view} caseId={caseId} /> : null}
           {tab === 1 ? <TabHowItConnects view={view} /> : null}
           {tab === 2 ? <TabWhatsMissing view={view} /> : null}
-          {tab === 3 ? <TabWhatWeRead view={view} /> : null}
+          {tab === 3 ? <TabWhatWeRead view={view} caseId={caseId} /> : null}
           {tab === 4 ? <TabWhatItCost view={view} /> : null}
         </main>
 
         <aside className="case-rail" aria-label="Source document">
-          {!doc ? (
-            <div className="rail-card">
-              <p className="kicker">Source</p>
-              <p className="rail-empty">
-                Your certificate appears here as soon as the first page is read.
-              </p>
-            </div>
-          ) : (
-          <div className="rail-card">
-            <div className="rail-head">
-              <p className="kicker">Source</p>
-              <p className="rail-meta mono">
-                {doc.filename} · p. {page} of {doc.page_count}
-              </p>
-            </div>
-            <img
-              className="scan"
-              src={pageImageUrl(doc.ec_id, page)}
-              alt={`Scanned page ${page} of ${doc.filename}`}
-            />
-            <div className="rail-foot">
-              <button
-                type="button"
-                className="btn btn--ghost"
-                disabled={page === 1}
-                onClick={() => setPage((p) => Math.max(1, p - 1))}
-              >
-                ← Previous page
-              </button>
-              <button
-                type="button"
-                className="btn btn--ghost"
-                disabled={page === doc.page_count}
-                onClick={() => setPage((p) => Math.min(doc.page_count, p + 1))}
-              >
-                Next page →
-              </button>
-            </div>
-          </div>
-          )}
+          <Rail doc={doc} />
         </aside>
       </div>
     </div>
+    </RailProvider>
   );
 }

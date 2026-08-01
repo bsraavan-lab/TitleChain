@@ -2,7 +2,7 @@ import type { DerivedView, RuleRun } from "../../data/types";
 import { OUTCOME_GLYPH, OUTCOME_TONE, OUTCOME_WORD } from "../../data/types";
 import { RunRow, RunInputs } from "./RunRow";
 
-export function TabWhatToCheck({ view }: { view: DerivedView }) {
+export function TabWhatToCheck({ view, caseId }: { view: DerivedView; caseId: string }) {
   const runs = view.runs;
   const fail = runs.filter((r) => r.outcome === "FAIL");
   const parents = runs.filter((r) => r.key.startsWith("R4:parent="));
@@ -26,7 +26,7 @@ export function TabWhatToCheck({ view }: { view: DerivedView }) {
               <span className="rule-id mono">{run.rule_id}</span>
             </h2>
             <p className="row-detail row-detail--lead">{run.message}</p>
-            <RunInputs run={run} />
+            <RunInputs run={run} caseId={caseId} />
           </div>
         </article>
       ))}
@@ -57,7 +57,7 @@ export function TabWhatToCheck({ view }: { view: DerivedView }) {
             <ul className="row-list">
               {parents.map((r) => (
                 <li key={r.key}>
-                  <MemberRow run={r} />
+                  <MemberRow run={r} caseId={caseId} />
                 </li>
               ))}
             </ul>
@@ -68,7 +68,7 @@ export function TabWhatToCheck({ view }: { view: DerivedView }) {
       <ul className="row-list">
         {[...review, ...notEval].map((r) => (
           <li key={r.key}>
-            <RunRow run={r} />
+            <RunRow run={r} caseId={caseId} />
           </li>
         ))}
       </ul>
@@ -111,7 +111,7 @@ export function TabWhatToCheck({ view }: { view: DerivedView }) {
   );
 }
 
-function MemberRow({ run }: { run: RuleRun }) {
+function MemberRow({ run, caseId }: { run: RuleRun; caseId: string }) {
   return (
     <div className="row row--compact">
       <span className="row-glyph glyph--stamp" aria-hidden="true">
@@ -123,6 +123,7 @@ function MemberRow({ run }: { run: RuleRun }) {
           {run.title}
         </h4>
         <p className="row-detail">{run.message}</p>
+        <RunInputs run={run} caseId={caseId} />
       </div>
     </div>
   );
