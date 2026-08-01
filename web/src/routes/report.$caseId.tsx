@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { caseQuery } from "../data/api";
 import { Loading, LoadError } from "../components/LoadState";
-import type { DerivedView } from "../data/types";
+import type { ChainNode, DerivedView } from "../data/types";
 import { OUTCOME_GLYPH, OUTCOME_TONE, OUTCOME_WORD } from "../data/types";
 
 export const Route = createFileRoute("/report/$caseId")({
@@ -26,6 +26,18 @@ export const Route = createFileRoute("/report/$caseId")({
   component: ReportPage,
 });
 
+/** Depth-first, carrying who named each document — a printed sheet reads better
+    as one list than as nested indentation, but nothing may be dropped from it. */
+function flattenChain(
+  nodes: ChainNode[],
+  namedBy: string | null = null,
+): { node: ChainNode; namedBy: string | null }[] {
+  return nodes.flatMap((node) => [
+    { node, namedBy },
+    ...flattenChain(node.children, node.doc_no),
+  ]);
+}
+
 function ReportPage() {
   const { caseId } = Route.useParams();
   const q = useQuery(caseQuery(caseId));
@@ -41,14 +53,38 @@ function ReportPage() {
         <LoadError what="The report" error={q.error} onRetry={() => void q.refetch()} />
       </div>
     );
-  return <ReportSheet caseId={caseId} view={q.data.view} />;
+  return (
+    <ReportSheet caseId={caseId} view={q.data.view} reviews={q.data.review_by_key} />
+  );
 }
 
-function ReportSheet({ caseId, view }: { caseId: string; view: DerivedView }) {
-  const doc = view.docs[0]!;
+/* Exported so the sheet can be rendered against a real derivation without a
+   router. It is the artefact that goes to a bank; it is worth checking. */
+export function ReportSheet({
+  caseId,
+  view,
+  reviews,
+}: {
+  caseId: string;
+  view: DerivedView;
+  reviews: Record<string, unknown>;
+}) {
   const c = view.coverage;
   const k = view.completeness;
-  const root = view.chain[0]!;
+
+  // Readiness.ready — every gate passed. A plain @property on the Python side,
+  // so it never reaches the JSON and has to be recomputed. This sheet printed a
+  // literal "▲ FAIL" for every case ever rendered; the case screen was fixed on
+  // 2026-07-31 and this one was not, which left the artefact that goes to a bank
+  // as the last place still saying it.
+  const ready = view.readiness.gates.every((g) => g.passed);
+
+  // Both counted, because both of the rows below assert a shortfall and neither
+  // should appear when there is none.
+  const yearsShort = Math.max(k.years_required - k.years_covered, 0);
+  const docsShort = Math.max(k.links_named - k.links_examined, 0);
+
+  const head = view.docs.find((d) => d.header)?.header ?? null;
 
   return (
     <div className="report-wrap">
@@ -66,9 +102,12 @@ function ReportSheet({ caseId, view }: { caseId: string; view: DerivedView }) {
         <section className="sheet-section">
           <h1 className="sheet-title">Certificate scrutiny report</h1>
           <dl className="order">
-            <Pair label="SRO" value={doc.header.sro} />
-            <Pair label="Village" value={doc.header.village} />
-            <Pair label="Survey numbers" value={doc.header.survey_details.join(" · ")} mono />
+            {/* The property this case is about, from the first certificate that
+                carries a header. `docs[0]!.header` threw to the error boundary
+                on a case whose first document had not been read yet. */}
+            <Pair label="SRO" value={head?.sro ?? null} />
+            <Pair label="Village" value={head?.village ?? null} />
+            <Pair label="Survey numbers" value={head?.survey_details.join(" · ") ?? null} mono />
             <Pair
               label="Search required"
               value={`${c.required_from} → ${c.required_to}`}
@@ -80,11 +119,24 @@ function ReportSheet({ caseId, view }: { caseId: string; view: DerivedView }) {
         <section className="sheet-section sheet-verdict">
           <h2 className="section-title">Can this be signed off</h2>
           <p className="sheet-answer">
-            <span className="glyph--seal" aria-hidden="true">
-              ▲
+            <span className={ready ? "glyph--fee" : "glyph--seal"} aria-hidden="true">
+              {ready ? "✓" : "▲"}
             </span>{" "}
-            <span className="status-word status-word--seal">FAIL</span> {c.headline}
+            <span className={`status-word status-word--${ready ? "fee" : "seal"}`}>
+              {ready ? "Ready to sign off" : "Not ready to sign off yet"}
+            </span>{" "}
+            {c.headline}
           </p>
+          <ul className="report-gates">
+            {view.readiness.gates.map((g) => (
+              <li key={g.id}>
+                <span className={g.passed ? "glyph--fee" : "glyph--stamp"} aria-hidden="true">
+                  {g.passed ? "✓" : "⚑"}
+                </span>{" "}
+                {g.label}
+              </li>
+            ))}
+          </ul>
           <p className="row-detail row-detail--lead">{c.detail}</p>
         </section>
 
@@ -100,47 +152,75 @@ function ReportSheet({ caseId, view }: { caseId: string; view: DerivedView }) {
                 <th scope="col">Pages</th>
               </tr>
             </thead>
+            {/* Every certificate on the case. A table with one hardcoded row,
+                on a case that grows certificates by design — the second one she
+                orders to close a gap was never listed in the record of what was
+                read. */}
             <tbody>
-              <tr>
-                <td className="mono">{doc.label}</td>
-                <td className="mono">{doc.filename}</td>
-                <td className="mono">
-                  {doc.header.search_period_start} → {doc.header.search_period_end}
-                </td>
-                <td className="mono">{doc.header.issue_date}</td>
-                <td className="mono">{doc.page_count}</td>
-              </tr>
+              {view.docs.map((d) => (
+                <tr key={d.label}>
+                  <td className="mono">{d.label}</td>
+                  <td className="mono">{d.filename}</td>
+                  <td className="mono">
+                    {d.header ? (
+                      <>
+                        {d.header.search_period_start} → {d.header.search_period_end}
+                      </>
+                    ) : (
+                      "—"
+                    )}
+                  </td>
+                  <td className="mono">{d.header?.issue_date ?? "—"}</td>
+                  <td className="mono">{d.page_count}</td>
+                </tr>
+              ))}
             </tbody>
           </table>
         </section>
 
         <section className="sheet-section">
           <h2 className="section-title">What this search cannot tell you</h2>
-          <ul className="row-list">
-            <li className="row row--one">
-              <span className="row-glyph glyph--seal" aria-hidden="true">
-                ▲
-              </span>
-              <p className="row-body">
-                <span className="row-lead">
-                  {k.years_required - k.years_covered} of {k.years_required} years are not covered.
-                </span>{" "}
-                The certificate covers {c.start_year}–{c.end_year}; the search needs{" "}
-                {c.required_from}–{c.required_to}.
-              </p>
-            </li>
-            <li className="row row--one">
-              <span className="row-glyph glyph--stamp" aria-hidden="true">
-                ⚑
-              </span>
-              <p className="row-body">
-                <span className="row-lead">
-                  {k.links_named - k.links_examined} named documents have not been read.
-                </span>{" "}
-                {k.links_examined} of {k.links_named} is here.
-              </p>
-            </li>
-          </ul>
+          {/* Both rows used to print unconditionally, under a blocking glyph. On
+              a complete case the sheet stated "0 of 13 years are not covered"
+              beside a ▲ — an alarm raised about its own absence. A shortfall is
+              listed when there is one; when there is not, that is the finding. */}
+          {yearsShort === 0 && docsShort === 0 ? (
+            <p className="row-detail">
+              Nothing. The certificates cover every year the search needs, and every document
+              they name is here.
+            </p>
+          ) : (
+            <ul className="row-list">
+              {yearsShort > 0 ? (
+                <li className="row row--one">
+                  <span className="row-glyph glyph--seal" aria-hidden="true">
+                    ▲
+                  </span>
+                  <p className="row-body">
+                    <span className="row-lead">
+                      {yearsShort} of {k.years_required} years are not covered.
+                    </span>{" "}
+                    The certificate covers {c.start_year}–{c.end_year}; the search needs{" "}
+                    {c.required_from}–{c.required_to}.
+                  </p>
+                </li>
+              ) : null}
+              {docsShort > 0 ? (
+                <li className="row row--one">
+                  <span className="row-glyph glyph--stamp" aria-hidden="true">
+                    ⚑
+                  </span>
+                  <p className="row-body">
+                    <span className="row-lead">
+                      {docsShort} named {docsShort === 1 ? "document has" : "documents have"} not
+                      been read.
+                    </span>{" "}
+                    {k.links_examined} of {k.links_named} {k.links_named === 1 ? "is" : "are"} here.
+                  </p>
+                </li>
+              ) : null}
+            </ul>
+          )}
         </section>
 
         <section className="sheet-section">
@@ -173,7 +253,11 @@ function ReportSheet({ caseId, view }: { caseId: string; view: DerivedView }) {
                     {r.reason ? <span className="sheet-msg">{r.reason}</span> : null}
                   </td>
                   <td className="mono sheet-key">{r.key}</td>
-                  <td className="signoff mono">☐</td>
+                  {/* Her record, not a blank box. This printed a literal ☐ on
+                      every row of every report, so a check she had gone through
+                      and signed off filed as unreviewed — which is the opposite
+                      of what the sheet is for. */}
+                  <td className="signoff mono">{r.key in reviews ? "☑" : "☐"}</td>
                 </tr>
               ))}
             </tbody>
@@ -182,29 +266,35 @@ function ReportSheet({ caseId, view }: { caseId: string; view: DerivedView }) {
 
         <section className="sheet-section">
           <h2 className="section-title">How the documents connect</h2>
+          {/* Flattened depth-first rather than nested, because this is a filed
+              sheet that has to print. It used to render `chain[0]` and one level
+              of its children, so on a case with more than one root certificate
+              the record showed one of them, and any document named by a named
+              document was left out of the record entirely. */}
           <ul className="row-list">
-            <li className="row row--one">
-              <span className="row-glyph glyph--fee" aria-hidden="true">
-                ●
-              </span>
-              <p className="row-body">
-                <span className="mono">{root.doc_no}</span> · {root.nature} · read
-                {root.cancelled_by ? (
-                  <>
-                    {" "}
-                    · cancelled by <span className="mono">{root.cancelled_by}</span>
-                  </>
-                ) : null}
-              </p>
-            </li>
-            {root.children.map((n) => (
-              <li className="row row--one" key={n.doc_no}>
-                <span className="row-glyph glyph--stamp" aria-hidden="true">
-                  ○
+            {flattenChain(view.chain).map((row, i) => (
+              <li className="row row--one" key={`${row.node.doc_no}-${i}`}>
+                <span
+                  className={`row-glyph glyph--${row.node.entry_id !== null ? "fee" : "stamp"}`}
+                  aria-hidden="true"
+                >
+                  {row.node.entry_id !== null ? "●" : "○"}
                 </span>
                 <p className="row-body">
-                  <span className="mono">{n.doc_no}</span> · named by{" "}
-                  <span className="mono">{root.doc_no}</span> · not read
+                  <span className="mono">{row.node.doc_no}</span>
+                  {row.namedBy ? (
+                    <>
+                      {" · named by "}
+                      <span className="mono">{row.namedBy}</span>
+                    </>
+                  ) : null}
+                  {row.node.entry_id !== null ? ` · ${row.node.nature ?? "read"} · read` : " · not read"}
+                  {row.node.cancelled_by ? (
+                    <>
+                      {" · cancelled by "}
+                      <span className="mono">{row.node.cancelled_by}</span>
+                    </>
+                  ) : null}
                 </p>
               </li>
             ))}
@@ -240,9 +330,14 @@ function ReportSheet({ caseId, view }: { caseId: string; view: DerivedView }) {
                 <th scope="col">Earlier documents</th>
               </tr>
             </thead>
+            {/* Across every certificate, headed by which one each entry came
+                from — "every entry as read" listed only the first document's,
+                so on a case with two certificates the sheet under-reported what
+                had been read while calling itself complete. */}
             <tbody>
-              {doc.entries.map((e) => (
-                <tr key={e.sr_no}>
+              {view.docs.flatMap((d) =>
+                d.entries.map((e) => (
+                <tr key={`${d.label}-${e.sr_no}`}>
                   <td className="mono">{e.sr_no}</td>
                   <td className="mono">{e.doc_no ?? <span className="absent">—</span>}</td>
                   <td>{e.nature ?? <span className="absent">—</span>}</td>
@@ -262,7 +357,8 @@ function ReportSheet({ caseId, view }: { caseId: string; view: DerivedView }) {
                     )}
                   </td>
                 </tr>
-              ))}
+                )),
+              )}
             </tbody>
           </table>
         </section>
