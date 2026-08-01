@@ -2,11 +2,16 @@
    restores the cell untouched. No save button therefore no unsaved state, and
    nothing to warn her about on navigation.
 
-   The POST re-runs derive() server-side and swaps the whole derived panel — that
-   re-derivation IS the memory proof, not a stand-in for it. A correction she
-   makes visibly changes the findings, which is the only way she will believe
-   the findings were computed rather than written. #}
-<form class="edit" hx-post="/correct" hx-target="#derived" hx-swap="outerHTML">
+   The POST re-runs derive() server-side and returns four regions: the cell here,
+   and the verdict strip, the tabs and the ruler out of band. That re-derivation
+   IS the memory proof, not a stand-in for it. A correction she makes visibly
+   changes the findings, which is the only way she will believe the findings were
+   computed rather than written.
+
+   The target is the cell, matching what _correction_swap.html leads with and what
+   the Escape route below restores. It was `#derived` until 2026-07-31 — an id
+   removed in 01afd7c — so the response had nowhere to land. #}
+<form class="edit" hx-post="/correct" hx-target="closest td" hx-swap="innerHTML">
   <input type="hidden" name="entry_id" value="{{ entry_id }}">
   <input type="hidden" name="field" value="{{ field }}">
   <input type="hidden" name="case_id" value="{{ case_id }}">
