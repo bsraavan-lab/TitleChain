@@ -1,23 +1,39 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
-import { caseQuery } from "../data/api";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { useEffect } from "react";
+import { caseQuery, samplesQuery, startSample } from "../data/api";
 import { Loading, LoadError } from "../components/LoadState";
-import { OUTCOME_GLYPH, OUTCOME_TONE, OUTCOME_WORD } from "../data/types";
-import type { DerivedView } from "../data/types";
+
+/* When there is nothing to report, and why.
+ *
+ * This screen used to read `view.coverage.headline`, list blocked runs, and end
+ * on `view.requests[0]!` — a derivation, in other words. But the state it is
+ * named after is precisely the one where no derivation exists: REFUSED means
+ * nothing could be read out of the file, FAILED means the pipeline broke, and in
+ * both cases `derive_case()` is never run, so the headline was blank, the list
+ * was empty and the order block threw to the error boundary.
+ *
+ * What does exist is `case.status_detail` — the sentence the pipeline wrote when
+ * it stopped. That is the whole content of this screen, and it is what the
+ * rendered `_refusal.html` has always shown.
+ *
+ * Refusing with its reasons is on-message: the product's thesis is that it says
+ * what it cannot establish rather than hiding it. Never soften the sentence.
+ */
 
 export const Route = createFileRoute("/case/$caseId/refusal")({
   head: () => ({
     meta: [
-      { title: "This certificate cannot be used — TitleChain" },
+      { title: "We could not read this — TitleChain" },
       {
         name: "description",
         content:
-          "Why TitleChain will not draw findings from this certificate, which checks could not run, and what to order instead.",
+          "Why TitleChain stopped, in the words of the step that stopped, and what is worth trying next.",
       },
-      { property: "og:title", content: "This certificate cannot be used — TitleChain" },
+      { property: "og:title", content: "We could not read this — TitleChain" },
       {
         property: "og:description",
-        content: "The checks that could not run, the reason for each, and the one errand that fixes it.",
+        content: "The reason this certificate produced no findings, and the next useful thing to do.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
@@ -28,7 +44,18 @@ export const Route = createFileRoute("/case/$caseId/refusal")({
 
 function RefusalPage() {
   const { caseId } = Route.useParams();
+  const navigate = useNavigate();
   const q = useQuery(caseQuery(caseId));
+
+  // A case that read fine has findings to show, so this screen has no business
+  // holding it — someone followed a stale link.
+  const refused =
+    q.data?.case.status === "REFUSED" || q.data?.case.status === "FAILED";
+  const settled = q.data !== undefined && !q.data.case.processing;
+  useEffect(() => {
+    if (settled && !refused) void navigate({ to: "/case/$caseId", params: { caseId } });
+  }, [settled, refused, caseId, navigate]);
+
   if (q.isPending)
     return (
       <div className="page">
@@ -41,12 +68,26 @@ function RefusalPage() {
         <LoadError what="The case" error={q.error} onRetry={() => void q.refetch()} />
       </div>
     );
-  return <RefusalScreen caseId={caseId} view={q.data.view} />;
+
+  return <RefusalScreen status={q.data.case.status} detail={q.data.case.status_detail} />;
 }
 
-function RefusalScreen({ caseId, view }: { caseId: string; view: DerivedView }) {
-  const blocked = view.runs.filter((r) => r.outcome === "FAIL" || r.outcome === "NOT_EVALUABLE");
-  const request = view.requests[0]!;
+/* Exported so both faults can be rendered without a router: the two apologies
+   are the point of this screen and they are worth checking. */
+export function RefusalScreen({ status, detail }: { status: string; detail: string | null }) {
+  const navigate = useNavigate();
+  const samples = useQuery(samplesQuery());
+  const sample = useMutation({
+    mutationFn: startSample,
+    onSuccess: (r) =>
+      void navigate({ to: "/case/$caseId/working", params: { caseId: String(r.case_id) } }),
+  });
+
+  // Two different apologies, because these are two different faults. REFUSED
+  // means we read the file and found no certificate in it — worth suggesting a
+  // better scan. FAILED means something broke at our end, and telling her to
+  // rescan a perfectly good document would be blaming her for our bug.
+  const nothingRead = status === "REFUSED";
 
   return (
     <div className="page">
@@ -55,74 +96,51 @@ function RefusalScreen({ caseId, view }: { caseId: string; view: DerivedView }) 
       </header>
 
       <main>
-        <section className="section answer" aria-labelledby="refusal-title">
-          <p className="kicker">Case {caseId}</p>
+        <section className="section answer answer--muted" aria-labelledby="refusal-title">
+          <p className="kicker">
+            <span aria-hidden="true">⊘ </span>
+            {nothingRead ? "Nothing read" : "Did not finish"}
+          </p>
           <h1 className="answer-title" id="refusal-title">
-            {view.coverage.headline}
+            {nothingRead
+              ? "We could not read anything from this file."
+              : "Something went wrong while we were reading this."}
           </h1>
-          <p className="answer-detail">{view.coverage.detail}</p>
+          {detail ? <p className="answer-detail">{detail}</p> : null}
         </section>
 
-        <section className="section" aria-label="Checks that could not run">
-          <h2 className="section-title">What could not be concluded</h2>
-          <ul className="row-list">
-            {blocked.map((r) => (
-              <li className="row row--two" key={r.key}>
-                <span
-                  className={`row-glyph glyph--${OUTCOME_TONE[r.outcome]}`}
-                  aria-hidden="true"
-                >
-                  {OUTCOME_GLYPH[r.outcome]}
-                </span>
-                <div className="row-body">
-                  <h3 className="row-title">
-                    <span
-                      className={`status-word status-word--${OUTCOME_TONE[r.outcome]}`}
-                    >
-                      {OUTCOME_WORD[r.outcome]}
-                    </span>
-                    {r.title}
-                    <span className="rule-id mono">{r.rule_id}</span>
-                  </h3>
-                  <p className="row-detail">{r.message}</p>
-                  {r.reason ? <p className="row-reason">{r.reason}</p> : null}
-                </div>
-              </li>
-            ))}
-          </ul>
-        </section>
+        <section className="section" aria-label="What this means">
+          <p className="row-detail">
+            {nothingRead
+              ? "This is as often about the scan as about the certificate. A faint copy or a page photographed at an angle will do it, and a sharper scan of the same document usually reads straight through."
+              : "This one is on us, not on your file. Nothing you did caused it and nothing has been lost, so the same file is worth another go in a moment."}
+          </p>
 
-        <section className="section" aria-label="What to do instead">
-          <h2 className="section-title">What to do instead</h2>
-          <dl className="order">
-            <div className="inputs-pair">
-              <dt className="inputs-label">Order</dt>
-              <dd className="inputs-value mono">{request.kind}</dd>
-            </div>
-            <div className="inputs-pair">
-              <dt className="inputs-label">SRO</dt>
-              <dd className="inputs-value">{request.sro}</dd>
-            </div>
-            <div className="inputs-pair">
-              <dt className="inputs-label">Village</dt>
-              <dd className="inputs-value">{request.village}</dd>
-            </div>
-            <div className="inputs-pair">
-              <dt className="inputs-label">Survey numbers</dt>
-              <dd className="inputs-value mono">{request.survey_nos.join(" · ")}</dd>
-            </div>
-            <div className="inputs-pair">
-              <dt className="inputs-label">Period</dt>
-              <dd className="inputs-value mono">
-                {request.date_from} → {request.date_to}
-              </dd>
-            </div>
-          </dl>
+          {/* An error state is still a screen with a job: get her to the next
+              useful action in one click. These carry the same weight here that
+              the order block carries on a case that worked. */}
           <div className="findings-actions">
-            <Link to="/case/$caseId" params={{ caseId }} className="btn btn--filled">
-              Back to the case
+            <Link to="/" className="btn btn--filled">
+              Try another file
             </Link>
+            {(samples.data ?? []).map((s) => (
+              <button
+                type="button"
+                key={s.key}
+                className="btn btn--ghost"
+                disabled={sample.isPending}
+                onClick={() => sample.mutate(s.key)}
+              >
+                See {s.label} working
+              </button>
+            ))}
           </div>
+          {sample.isError ? (
+            <p className="review-error" role="alert">
+              That sample would not start either. The app may be restarting — try again in a
+              moment.
+            </p>
+          ) : null}
         </section>
       </main>
 
