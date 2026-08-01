@@ -48,3 +48,22 @@ jobs:
 
       - name: Build
         run: npm run build
+
+      # Vercel serves whatever config.json says and never reads the rewrites in
+      # vercel.json, so this is the file that decides whether /api reaches
+      # FastAPI. If the nitro preset ever drifts back to cloudflare-module the
+      # build still succeeds and there is no config.json at all — which would be
+      # a green CI and a front end that cannot load a case.
+      - name: Deployment routes point at the backend
+        run: |
+          node scripts/vercel-routes.mjs .vercel/output/config.json
+          node -e '
+            const c = require("./.vercel/output/config.json");
+            const first = c.routes[0];
+            if (!first?.dest?.startsWith("http")) {
+              throw new Error("first route is not the backend proxy: " + JSON.stringify(first));
+            }
+            if (c.routes.at(-1)?.dest !== "/__server") {
+              throw new Error("SSR catch-all is no longer last");
+            }
+          '

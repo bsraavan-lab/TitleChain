@@ -13,7 +13,11 @@ services:
     region: singapore
     buildCommand: pip install -r requirements.txt
     startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
-    healthCheckPath: /
+    # Not `/`: that was a full Jinja render of the home screen on every probe,
+    # and after the cutover `/` is served by Vercel rather than from here.
+    # /api/health opens the database and returns, which is what "alive" means
+    # for this process.
+    healthCheckPath: /api/health
     envVars:
       - key: SARVAM_API_KEY
         sync: false          # set in the Render dashboard; never committed
