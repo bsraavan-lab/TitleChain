@@ -185,6 +185,21 @@ def open_sample(key: str) -> dict[str, Any]:
     return {"case_id": case_id}
 
 
+@router.get("/health")
+def health() -> dict[str, Any]:
+    """What the host polls to decide whether this instance is alive.
+
+    Render pointed at `/` until the cutover, which meant the health check was a
+    full Jinja render of the home screen — and once React owns `/`, `/` is not
+    served from here at all. This asks the two questions that matter and no
+    others: is the process answering, and can it open its database. It must stay
+    cheap; `/api/cases` re-derives every case, which is not a thing to do on a
+    timer.
+    """
+    db.q("SELECT 1")
+    return {"ok": True}
+
+
 @router.get("/samples")
 def samples() -> dict[str, Any]:
     return {"samples": [{"key": k, "label": v["label"]} for k, v in SAMPLES.items()]}

@@ -138,6 +138,15 @@ def test_correcting_an_entry_that_is_gone_answers_instead_of_500ing(client):
     assert body["error"] == "not_found"
 
 
+def test_the_health_check_answers_without_deriving_anything(client):
+    """render.yaml points its health check here. If this ever grows a derivation
+    it becomes a full re-analysis of every case on the host's timer — and if it
+    ever stops answering, Render takes a working instance out of service."""
+    r = client.get("/api/health")
+    assert r.status_code == 200
+    assert r.json() == {"ok": True}
+
+
 def test_the_samples_are_offered_by_key_and_label(client):
     """The home screen renders these as buttons, so it needs both the key it
     posts back and the words it prints."""

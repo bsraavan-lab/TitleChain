@@ -18,6 +18,12 @@ export default defineConfig({
     // nitro/vite builds from this
     server: { entry: "server" },
   },
+  // Pinned rather than left to auto-detection. Nitro defaults to
+  // cloudflare-module and only auto-targets Vercel when it recognises the
+  // environment; naming it means the artefact is the same one CI built.
+  // Lovable's own builds force Cloudflare regardless, so its preview is
+  // unaffected.
+  nitro: { preset: "vercel" },
   vite: {
     server: {
       proxy: {

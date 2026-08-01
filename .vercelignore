@@ -1,5 +1,45 @@
-# Vercel hosts nothing but the proxy config — the app itself runs on Render.
-# Everything else is excluded so Vercel never tries to build the Python app.
-*
-!vercel.json
-!public/
+# Vercel builds the React front end in web/ and proxies the data paths to
+# Render, where the Python app runs as one long-lived process. See vercel.json
+# for the build and web/scripts/vercel-routes.mjs for the proxy routes.
+#
+# A deny list rather than `*` plus re-inclusions: `*` matches at every level, so
+# `!web/` would re-include the directory and then exclude everything inside it.
+# Naming what must not ship is both shorter and harder to get wrong.
+
+# The Python app and everything that belongs to its one process. Excluded so
+# Vercel never detects a second runtime, and so uploads and the database — which
+# only mean anything on the instance that wrote them — are never sent here.
+app/
+tests/
+config/
+config.py
+requirements.txt
+render.yaml
+run_di.py
+check_ec_integrity.py
+check_key.py
+uploads/
+*.db
+
+# Sources and reference material. Not served, and ec_samples alone is 3.8M of
+# scanned PDFs that would be uploaded on every deploy.
+ec_samples/
+seed/
+assets/
+docs/
+.interface-design/
+.claude/
+.mcp.json
+.github/
+
+# Build products. Vercel runs the build itself; shipping a local one would mean
+# deploying whatever happened to be on a laptop.
+node_modules/
+__pycache__/
+.pytest_cache/
+.venv/
+web/node_modules/
+web/.output/
+web/.vercel/
+web/.nitro/
+web/dist/
