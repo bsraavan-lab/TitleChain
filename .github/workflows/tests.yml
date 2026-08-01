@@ -12,12 +12,39 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # Matches render.yaml. It read 3.13 here against 3.12.7 in production,
+      # which is a difference CI exists to not have.
       - uses: actions/setup-python@v5
         with:
-          python-version: "3.13"
+          python-version: "3.12.7"
 
       - name: Install dependencies
         run: pip install -r requirements.txt
 
       - name: Run tests
         run: python -m pytest -q
+
+  # The front end compiles. Without this a broken web/ merges green, because
+  # pytest cannot see TypeScript.
+  web:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Typecheck
+        run: npx tsc --noEmit
+
+      - name: Build
+        run: npm run build
