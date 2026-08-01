@@ -33,12 +33,19 @@ function WorkingPage() {
     refetchInterval: (query) => (query.state.data?.processing === false ? false : 2000),
   });
   const processing = q.data?.processing;
+  // Straight to the reason it stopped, rather than through a workspace that
+  // would only bounce her here — a case that ended FAILED has no derivation to
+  // show, which is the whole point of the refusal screen.
+  const refused = q.data?.status === "FAILED" || q.data?.status === "REFUSED";
 
   useEffect(() => {
     if (processing === false) {
-      void navigate({ to: "/case/$caseId", params: { caseId } });
+      void navigate({
+        to: refused ? "/case/$caseId/refusal" : "/case/$caseId",
+        params: { caseId },
+      });
     }
-  }, [processing, caseId, navigate]);
+  }, [processing, refused, caseId, navigate]);
 
   return (
     <div className="page">

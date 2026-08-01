@@ -1,5 +1,5 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
 import { TabWhatToCheck } from "../components/case/TabWhatToCheck";
 import { TabHowItConnects } from "../components/case/TabHowItConnects";
 import { TabWhatsMissing } from "../components/case/TabWhatsMissing";
@@ -40,7 +40,22 @@ const TABS = [
 
 function CasePage() {
   const { caseId } = Route.useParams();
+  const navigate = useNavigate();
   const q = useQuery(caseQuery(caseId));
+
+  /* Arriving here on a case with no derivation behind it — a bookmark, a
+     refresh, a link someone sent — would render every meter at zero and every
+     tab empty, which reads as a certificate that proves nothing rather than one
+     that has not been read, or could not be. Both of those have a screen.
+     The working screen forwards back here when the pipeline finishes, so this
+     is a handoff and not a redirect loop. */
+  const processing = q.data?.case.processing === true;
+  const refused = q.data?.case.status === "FAILED" || q.data?.case.status === "REFUSED";
+  useEffect(() => {
+    if (processing) void navigate({ to: "/case/$caseId/working", params: { caseId } });
+    else if (refused) void navigate({ to: "/case/$caseId/refusal", params: { caseId } });
+  }, [processing, refused, caseId, navigate]);
+
   if (q.isPending)
     return (
       <div className="page">
@@ -51,6 +66,12 @@ function CasePage() {
     return (
       <div className="page">
         <LoadError what="The case" error={q.error} onRetry={() => void q.refetch()} />
+      </div>
+    );
+  if (processing || refused)
+    return (
+      <div className="page">
+        <Loading what="the case" />
       </div>
     );
   return (

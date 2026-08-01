@@ -39,6 +39,16 @@ function caseState(c: CaseSummary): { glyph: string; tone: string; word: string 
   return { glyph: "●", tone: "muted", word: "Open" };
 }
 
+/* Where a case belongs, from the state it is actually in. The three screens
+   already existed; only the workspace was ever linked to, so a case still being
+   read and a case that broke both opened an empty one. */
+function caseRoute(c: CaseSummary) {
+  if (c.processing) return "/case/$caseId/working" as const;
+  if (c.status === "FAILED" || c.status === "REFUSED")
+    return "/case/$caseId/refusal" as const;
+  return "/case/$caseId" as const;
+}
+
 function caseChip(c: CaseSummary): string {
   if (c.processing) return c.status_detail ?? "Reading it now";
   if (c.status === "FAILED" || c.status === "REFUSED") return "Needs a hand";
@@ -64,13 +74,22 @@ function Index() {
   const [dragging, setDragging] = useState(false);
 
   const open = (caseId: string) => navigate({ to: "/case/$caseId", params: { caseId } });
+
+  /* A case that was just started has a header but no entries yet, so the case
+     screen would render every meter at zero and every tab empty — a certificate
+     that proves nothing, rather than one still being read. The working screen
+     exists for exactly this minute and forwards here on its own when the
+     pipeline finishes; it was simply never routed to. */
+  const openWorking = (caseId: string) =>
+    navigate({ to: "/case/$caseId/working", params: { caseId } });
+
   const upload = useMutation({
     mutationFn: uploadCertificate,
-    onSuccess: (r) => void open(String(r.case_id)),
+    onSuccess: (r) => void openWorking(String(r.case_id)),
   });
   const sample = useMutation({
     mutationFn: startSample,
-    onSuccess: (r) => void open(String(r.case_id)),
+    onSuccess: (r) => void openWorking(String(r.case_id)),
   });
 
   const dropError = upload.error ?? sample.error;
@@ -201,7 +220,15 @@ function Index() {
               const sub = caseSub(c);
               return (
                 <li key={c.id}>
-                  <Link to="/case/$caseId" params={{ caseId: String(c.id) }} className="caselist-item">
+                  {/* A row that says "Being read" has to open the screen that
+                      shows it being read, and one that says "Not usable" has to
+                      open the one that says why — neither is an empty
+                      workspace, which is what both used to get. */}
+                  <Link
+                    to={caseRoute(c)}
+                    params={{ caseId: String(c.id) }}
+                    className="caselist-item"
+                  >
                     <span className={`row-glyph glyph--${state.tone}`} aria-hidden="true">
                       {state.glyph}
                     </span>

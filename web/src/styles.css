@@ -1860,3 +1860,11 @@ strong {
   letter-spacing: 0.09em;
   text-transform: uppercase;
 }
+
+/* A refusal is not a finding about the property — it is us saying we could not
+   read the file. `.answer` carries a blocking-red rule, which on this screen
+   would state that the land has a problem when what we actually know is that
+   we do. Same shape, withheld colour. */
+.answer--muted {
+  border-left-color: var(--ink-4);
+}
