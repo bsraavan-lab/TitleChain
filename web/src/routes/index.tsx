@@ -2,7 +2,14 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useRef, useState } from "react";
 import { Loading, LoadError } from "../components/LoadState";
-import { ApiRejection, casesQuery, samplesQuery, startSample, uploadCertificate } from "../data/api";
+import { Masthead } from "../components/Masthead";
+import {
+  ApiRejection,
+  casesQuery,
+  samplesQuery,
+  startSample,
+  uploadCertificate,
+} from "../data/api";
 import type { CaseSummary } from "../data/types";
 
 export const Route = createFileRoute("/")({
@@ -44,8 +51,7 @@ function caseState(c: CaseSummary): { glyph: string; tone: string; word: string 
    read and a case that broke both opened an empty one. */
 function caseRoute(c: CaseSummary) {
   if (c.processing) return "/case/$caseId/working" as const;
-  if (c.status === "FAILED" || c.status === "REFUSED")
-    return "/case/$caseId/refusal" as const;
+  if (c.status === "FAILED" || c.status === "REFUSED") return "/case/$caseId/refusal" as const;
   return "/case/$caseId" as const;
 }
 
@@ -83,8 +89,15 @@ function Index() {
   const openWorking = (caseId: string) =>
     navigate({ to: "/case/$caseId/working", params: { caseId } });
 
+  /* What the drop target says while a file is on its way. `null` is a real
+     state, not a missing one: the browser could not measure this body, so the
+     honest thing to show is motion rather than a number. */
+  const [sent, setSent] = useState<number | null>(null);
+
   const upload = useMutation({
-    mutationFn: uploadCertificate,
+    mutationFn: (file: File) => uploadCertificate(file, setSent),
+    onMutate: () => setSent(0),
+    onSettled: () => setSent(null),
     onSuccess: (r) => void openWorking(String(r.case_id)),
   });
   const sample = useMutation({
@@ -97,10 +110,9 @@ function Index() {
 
   return (
     <div className="page">
-      <header className="masthead">
-        <span className="wordmark">TitleChain</span>
+      <Masthead>
         <span className="masthead-note">Property record checks</span>
-      </header>
+      </Masthead>
 
       <main>
         {/* 1 — Hero */}
@@ -112,136 +124,171 @@ function Index() {
             Drop in an encumbrance certificate. In about a minute: the years it can vouch for, the
             years it cannot, and what to order to close the gap.
           </p>
+        </section>
 
-          {/* The words said "Drop your certificate here" and there were no drop
+        {/* 2 — The drop target and her own cases, side by side.
+            Both were full-width blocks stacked in a 66ch column, so the case
+            list — the reason she comes back — started below the fold and the
+            drop target had 600px of empty paper either side of it. The
+            proportion is the case screen's own 58/42, so moving between the
+            two screens does not resize the page under her. */}
+        <div className="home-start">
+          <section className="section section--start" aria-label="Add a certificate">
+            {/* The words said "Drop your certificate here" and there were no drop
               handlers, so dropping a file navigated the browser to the PDF and
               lost the upload. Either the words go or the handlers do; the
               handlers are three lines. */}
-          <div
-            className={`dropzone${dragging ? " is-over" : ""}`}
-            onDragEnter={(e) => {
-              e.preventDefault();
-              setDragging(true);
-            }}
-            onDragOver={(e) => e.preventDefault()}
-            onDragLeave={() => setDragging(false)}
-            onDrop={(e) => {
-              e.preventDefault();
-              setDragging(false);
-              const f = e.dataTransfer.files?.[0];
-              if (f) upload.mutate(f);
-            }}
-          >
-            <p className="dropzone-title">Drop your certificate here</p>
-            <p className="dropzone-meta">
-              PDF, JPEG or PNG, up to 50 MB · reading starts the moment you pick it
-            </p>
-            <input
-              ref={fileInput}
-              type="file"
-              accept=".pdf,.jpg,.jpeg,.png"
-              className="sr-only"
-              onChange={(e) => {
-                const f = e.target.files?.[0];
+            <div
+              className={`dropzone${dragging ? " is-over" : ""}`}
+              onDragEnter={(e) => {
+                e.preventDefault();
+                setDragging(true);
+              }}
+              onDragOver={(e) => e.preventDefault()}
+              onDragLeave={() => setDragging(false)}
+              onDrop={(e) => {
+                e.preventDefault();
+                setDragging(false);
+                const f = e.dataTransfer.files?.[0];
                 if (f) upload.mutate(f);
               }}
-            />
-            <button
-              type="button"
-              className="btn btn--filled"
-              disabled={upload.isPending}
-              onClick={() => fileInput.current?.click()}
             >
-              Choose a file
-            </button>
-          </div>
-
-          {rejection ? (
-            <p className="reject-notice" role="alert">
-              <span className="row-glyph glyph--seal" aria-hidden="true">
-                ▲
-              </span>
-              <span>{rejection.detail}</span>
-            </p>
-          ) : dropError ? (
-            <div className="reject-notice reject-notice--plain" role="alert">
-              <LoadError
-                what="The certificate"
-                error={dropError}
-                onRetry={() => {
-                  upload.reset();
-                  sample.reset();
+              <p className="dropzone-title">
+                {upload.isPending ? "Sending your certificate" : "Drop your certificate here"}
+              </p>
+              <p className="dropzone-meta">
+                {upload.isPending
+                  ? sent === null
+                    ? "On its way. Reading starts as soon as it lands."
+                    : `${sent}% sent. Reading starts as soon as it lands.`
+                  : "PDF, JPEG or PNG, up to 50 MB · reading starts the moment you pick it"}
+              </p>
+              <input
+                ref={fileInput}
+                type="file"
+                accept=".pdf,.jpg,.jpeg,.png"
+                className="sr-only"
+                onChange={(e) => {
+                  const f = e.target.files?.[0];
+                  if (f) upload.mutate(f);
+                  // Picking the SAME file twice in a row fires no change event
+                  // otherwise — which is exactly what she does after a failure.
+                  e.target.value = "";
                 }}
               />
+              {upload.isPending ? (
+                <div
+                  className="upload-bar"
+                  role="progressbar"
+                  aria-label="Sending the certificate"
+                  aria-valuemin={0}
+                  aria-valuemax={100}
+                  aria-valuenow={sent ?? undefined}
+                >
+                  <span
+                    className={`upload-fill${sent === null ? " upload-fill--unknown" : ""}`}
+                    style={sent === null ? undefined : { width: `${sent}%` }}
+                  />
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  className="btn btn--filled"
+                  onClick={() => fileInput.current?.click()}
+                >
+                  Choose a file
+                </button>
+              )}
             </div>
-          ) : null}
 
+            {rejection ? (
+              <p className="reject-notice" role="alert">
+                <span className="row-glyph glyph--seal" aria-hidden="true">
+                  ▲
+                </span>
+                <span>{rejection.detail}</span>
+              </p>
+            ) : dropError ? (
+              <div className="reject-notice reject-notice--plain" role="alert">
+                <LoadError
+                  what="The certificate"
+                  error={dropError}
+                  onRetry={() => {
+                    upload.reset();
+                    sample.reset();
+                  }}
+                />
+              </div>
+            ) : null}
 
-
-          {/* A div, not a p: this holds Loading (a <p>) and LoadError (a <div>),
+            {/* A div, not a p: this holds Loading (a <p>) and LoadError (a <div>),
               and isPending is true during SSR — so the server always emitted a
               <p> inside a <p> and hydration could never match. */}
-          <div className="samples">
-            <span className="samples-lead">Haven't got one to hand?</span>
-            {samples.isPending ? <Loading what="the samples" /> : null}
-            {samples.isError ? (
+            <div className="samples">
+              <span className="samples-lead">Haven't got one to hand?</span>
+              {samples.isPending ? <Loading what="the samples" /> : null}
+              {samples.isError ? (
+                <LoadError
+                  what="The samples"
+                  error={samples.error}
+                  onRetry={() => void samples.refetch()}
+                />
+              ) : null}
+              {(samples.data ?? []).map((s) => (
+                <button
+                  key={s.key}
+                  type="button"
+                  className="btn btn--ghost"
+                  disabled={sample.isPending}
+                  onClick={() => sample.mutate(s.key)}
+                >
+                  {s.label}
+                </button>
+              ))}
+            </div>
+          </section>
+
+          <section className="section home-cases" aria-labelledby="cases-title">
+            <h2 className="section-title" id="cases-title">
+              Your cases
+            </h2>
+            {cases.isPending ? <Loading what="your cases" /> : null}
+            {cases.isError ? (
               <LoadError
-                what="The samples"
-                error={samples.error}
-                onRetry={() => void samples.refetch()}
+                what="Your cases"
+                error={cases.error}
+                onRetry={() => void cases.refetch()}
               />
             ) : null}
-            {(samples.data ?? []).map((s) => (
-              <button
-                key={s.key}
-                type="button"
-                className="btn btn--ghost"
-                disabled={sample.isPending}
-                onClick={() => sample.mutate(s.key)}
-              >
-                {s.label}
-              </button>
-            ))}
-          </div>
-        </section>
-
-        {/* 2 — Your cases */}
-        <section className="section" aria-labelledby="cases-title">
-          <h2 className="section-title" id="cases-title">
-            Your cases
-          </h2>
-          {cases.isPending ? <Loading what="your cases" /> : null}
-          {cases.isError ? (
-            <LoadError what="Your cases" error={cases.error} onRetry={() => void cases.refetch()} />
-          ) : null}
-          <ul className="caselist">
-            {(cases.data ?? []).map((c) => {
-              const state = caseState(c);
-              const sub = caseSub(c);
-              return (
-                <li key={c.id}>
-                  {/* A row that says "Being read" has to open the screen that
+            <ul className="caselist">
+              {(cases.data ?? []).map((c) => {
+                const state = caseState(c);
+                const sub = caseSub(c);
+                return (
+                  <li key={c.id}>
+                    {/* A row that says "Being read" has to open the screen that
                       shows it being read, and one that says "Not usable" has to
                       open the one that says why — neither is an empty
                       workspace, which is what both used to get. */}
-                  <Link
-                    to={caseRoute(c)}
-                    params={{ caseId: String(c.id) }}
-                    className="caselist-item"
-                  >
-                    <span className={`row-glyph glyph--${state.tone}`} aria-hidden="true">
-                      {state.glyph}
-                    </span>
-                    <span className="sr-only">{state.word} — </span>
-                    <span className="caselist-prop">{c.property_key ?? "New case"}</span>
-                    {sub ? <span className="caselist-meta mono">{sub}</span> : null}
-                    <span className="chip chip--stamp caselist-chip">{caseChip(c)}</span>
-                  </Link>
-                </li>
-              );
-            })}
-          </ul>
-        </section>
+                    <Link
+                      to={caseRoute(c)}
+                      params={{ caseId: String(c.id) }}
+                      className="caselist-item"
+                    >
+                      <span className={`row-glyph glyph--${state.tone}`} aria-hidden="true">
+                        {state.glyph}
+                      </span>
+                      <span className="sr-only">{state.word} — </span>
+                      <span className="caselist-prop">{c.property_key ?? "New case"}</span>
+                      {sub ? <span className="caselist-meta mono">{sub}</span> : null}
+                      <span className="chip chip--stamp caselist-chip">{caseChip(c)}</span>
+                    </Link>
+                  </li>
+                );
+              })}
+            </ul>
+          </section>
+        </div>
 
         {/* 3 — Measured */}
         <section className="section" aria-labelledby="measured-title">
@@ -270,118 +317,122 @@ function Index() {
           </ul>
         </section>
 
-        {/* 4 — The problem */}
-        <section className="section" aria-labelledby="problem-title">
-          <h2 className="section-title" id="problem-title">
-            Why a clean certificate can prove nothing
-          </h2>
-          <ul className="row-list">
-            <li className="row row--one">
-              <span className="row-glyph glyph--seal" aria-hidden="true">
-                ▲
-              </span>
-              <p className="row-body">
-                <span className="row-lead">Chosen blind.</span> You pick the years to search before
-                you know anything.
-              </p>
-            </li>
-            <li className="row row--one">
-              <span className="row-glyph glyph--seal" aria-hidden="true">
-                ▲
-              </span>
-              <p className="row-body">
-                <span className="row-lead">Trails run off the edge.</span> Entries point to deeds
-                outside the years you paid for.
-              </p>
-            </li>
-            <li className="row row--one">
-              <span className="row-glyph glyph--seal" aria-hidden="true">
-                ▲
-              </span>
-              <p className="row-body">
-                <span className="row-lead">Clean and useless look alike.</span> "Nothing found"
-                reads the same as "wrong years".
-              </p>
-            </li>
-          </ul>
-          <p className="aside">
-            An encumbrance certificate is a bank statement for a plot: every registered transaction
-            in a date range you chose in advance.
-          </p>
-        </section>
+        {/* 4, 5, 6 — the three explainers, read across rather than down.
+            Stacked they were nine one-line rows in a narrow column, which is
+            three screens of scrolling to learn what the product does. Side by
+            side they are one scan, and the page stops looking empty. */}
+        <div className="section home-explainers">
+          <section className="section" aria-labelledby="problem-title">
+            <h2 className="section-title" id="problem-title">
+              Why a clean certificate can prove nothing
+            </h2>
+            <ul className="row-list">
+              <li className="row row--one">
+                <span className="row-glyph glyph--seal" aria-hidden="true">
+                  ▲
+                </span>
+                <p className="row-body">
+                  <span className="row-lead">Chosen blind.</span> You pick the years to search
+                  before you know anything.
+                </p>
+              </li>
+              <li className="row row--one">
+                <span className="row-glyph glyph--seal" aria-hidden="true">
+                  ▲
+                </span>
+                <p className="row-body">
+                  <span className="row-lead">Trails run off the edge.</span> Entries point to deeds
+                  outside the years you paid for.
+                </p>
+              </li>
+              <li className="row row--one">
+                <span className="row-glyph glyph--seal" aria-hidden="true">
+                  ▲
+                </span>
+                <p className="row-body">
+                  <span className="row-lead">Clean and useless look alike.</span> "Nothing found"
+                  reads the same as "wrong years".
+                </p>
+              </li>
+            </ul>
+            <p className="aside">
+              An encumbrance certificate is a bank statement for a plot: every registered
+              transaction in a date range you chose in advance.
+            </p>
+          </section>
 
-        {/* 5 — What you get back */}
-        <section className="section" aria-labelledby="output-title">
-          <h2 className="section-title" id="output-title">
-            What you get back
-          </h2>
-          <ul className="row-list">
-            <li className="row row--one">
-              <span className="row-glyph glyph--endorse" aria-hidden="true">
-                ●
-              </span>
-              <p className="row-body">
-                <span className="row-lead">The gap, named.</span> What this certificate leaves out,
-                dated and ranked.
-              </p>
-            </li>
-            <li className="row row--one">
-              <span className="row-glyph glyph--endorse" aria-hidden="true">
-                ●
-              </span>
-              <p className="row-body">
-                <span className="row-lead">One errand, pre-filled.</span> The exact plot and years
-                to order next.
-              </p>
-            </li>
-            <li className="row row--one">
-              <span className="row-glyph glyph--endorse" aria-hidden="true">
-                ●
-              </span>
-              <p className="row-body">
-                <span className="row-lead">A record, not a promise.</span> A dated handover you can
-                file and forward.
-              </p>
-            </li>
-          </ul>
-        </section>
+          {/* 5 — What you get back */}
+          <section className="section" aria-labelledby="output-title">
+            <h2 className="section-title" id="output-title">
+              What you get back
+            </h2>
+            <ul className="row-list">
+              <li className="row row--one">
+                <span className="row-glyph glyph--endorse" aria-hidden="true">
+                  ●
+                </span>
+                <p className="row-body">
+                  <span className="row-lead">The gap, named.</span> What this certificate leaves
+                  out, dated and ranked.
+                </p>
+              </li>
+              <li className="row row--one">
+                <span className="row-glyph glyph--endorse" aria-hidden="true">
+                  ●
+                </span>
+                <p className="row-body">
+                  <span className="row-lead">One errand, pre-filled.</span> The exact plot and years
+                  to order next.
+                </p>
+              </li>
+              <li className="row row--one">
+                <span className="row-glyph glyph--endorse" aria-hidden="true">
+                  ●
+                </span>
+                <p className="row-body">
+                  <span className="row-lead">A record, not a promise.</span> A dated handover you
+                  can file and forward.
+                </p>
+              </li>
+            </ul>
+          </section>
 
-        {/* 6 — Why you can rely on it */}
-        <section className="section" aria-labelledby="trust-title">
-          <h2 className="section-title" id="trust-title">
-            Why you can rely on it
-          </h2>
-          <ul className="row-list">
-            <li className="row row--one">
-              <span className="row-glyph glyph--fee" aria-hidden="true">
-                ✓
-              </span>
-              <p className="row-body">
-                <span className="row-lead">Nothing is guessed.</span> Fixed rules, so the same file
-                gives the same answer.
-              </p>
-            </li>
-            <li className="row row--one">
-              <span className="row-glyph glyph--fee" aria-hidden="true">
-                ✓
-              </span>
-              <p className="row-body">
-                <span className="row-lead">Show me where.</span> Every finding points at its spot on
-                the scanned page.
-              </p>
-            </li>
-            <li className="row row--one">
-              <span className="row-glyph glyph--fee" aria-hidden="true">
-                ✓
-              </span>
-              <p className="row-body">
-                <span className="row-lead">It admits doubt.</span> Anything unreadable is flagged,
-                never quietly passed.
-              </p>
-            </li>
-          </ul>
-        </section>
-
+          {/* 6 — Why you can rely on it */}
+          <section className="section" aria-labelledby="trust-title">
+            <h2 className="section-title" id="trust-title">
+              Why you can rely on it
+            </h2>
+            <ul className="row-list">
+              <li className="row row--one">
+                <span className="row-glyph glyph--fee" aria-hidden="true">
+                  ✓
+                </span>
+                <p className="row-body">
+                  <span className="row-lead">Nothing is guessed.</span> Fixed rules, so the same
+                  file gives the same answer.
+                </p>
+              </li>
+              <li className="row row--one">
+                <span className="row-glyph glyph--fee" aria-hidden="true">
+                  ✓
+                </span>
+                <p className="row-body">
+                  <span className="row-lead">Show me where.</span> Every finding points at its spot
+                  on the scanned page.
+                </p>
+              </li>
+              <li className="row row--one">
+                <span className="row-glyph glyph--fee" aria-hidden="true">
+                  ✓
+                </span>
+                <p className="row-body">
+                  <span className="row-lead">It admits doubt.</span> Anything unreadable is flagged,
+                  never quietly passed.
+                </p>
+              </li>
+            </ul>
+          </section>
+        </div>
       </main>
 
       <footer className="footnote">

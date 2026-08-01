@@ -18,11 +18,21 @@ def load_env(path: Path = ENV_PATH) -> None:
         os.environ.setdefault(key.strip(), value.strip().strip("\"'"))
 
 
+class MissingAPIKey(RuntimeError):
+    """No usable SARVAM_API_KEY.
+
+    Its own type because it is the one pipeline failure that is not about the
+    document. A certificate that cannot be read because this machine has no key
+    is an operator problem, and telling the reader "we got stuck reading the
+    pages" — which is what a bare RuntimeError got them — blames the file.
+    """
+
+
 def get_api_key() -> str:
     load_env()
     key = os.environ.get("SARVAM_API_KEY", "").strip()
     if not key or key == PLACEHOLDER:
-        raise RuntimeError(
+        raise MissingAPIKey(
             f"SARVAM_API_KEY is not set. Add it to {ENV_PATH} or export it."
         )
     return key

@@ -480,13 +480,31 @@ def evidence(request: Request, entry_id: int, view: str = "crop"):
                  page=row["page_num"], row=row, view=view)
 
 
-@app.get("/page/{case_id}/{page_num}.png")
-def document_page(case_id: int, page_num: int):
-    """The certificate itself, unmarked. Rendered lazily, one page at a time."""
-    doc = _document(case_id)
-    if not doc or not doc["file_path"]:
+@app.get("/page/{ec_id}/{page_num}.png")
+def document_page(ec_id: int, page_num: int):
+    """One page of one certificate, unmarked. Rendered lazily.
+
+    The path id is the EC DOCUMENT, not the case. This route was declared twice
+    — once reading the id as a case_id and once as an ec_id — and FastAPI keeps
+    whichever it saw first, so the case_id reading won and every caller that
+    passed an ec_id got `ec_documents ORDER BY id LIMIT 1`: the first
+    certificate on that case. On a single-certificate case the two ids collide
+    often enough to look correct. On a case with two, which is the whole point
+    of the product, the rail showed the wrong document's page.
+
+    Resolving by ec_id is what the React rail, `_evidence_page.html` and
+    `tab_documents.html` all already asked for; `_rail.html` was the only
+    caller passing a case_id and now passes `ec_id` too.
+    """
+    row = db.one("SELECT file_path FROM ec_documents WHERE id = ?", (ec_id,))
+    if not row or not row["file_path"]:
         return Response(status_code=404)
-    png = crops.page_rect(doc["file_path"], page_num, None)
+    try:
+        png = crops.page_rect(row["file_path"], page_num, None)
+    except Exception:
+        # A page number outside this certificate is a 404, not a 500 — the rail
+        # pages through a count that a bundle split can disagree with.
+        return Response(status_code=404)
     return Response(png, media_type="image/png",
                     headers={"Cache-Control": "max-age=3600"})
 
@@ -510,21 +528,6 @@ def page_png(entry_id: int):
         return Response(status_code=404)
     bbox = tuple(json.loads(row["bbox"])) if row["bbox"] else None
     png = crops.page_rect(row["file_path"], row["page_num"], bbox)
-    return Response(png, media_type="image/png",
-                    headers={"Cache-Control": "max-age=3600"})
-
-
-@app.get("/page/{ec_id}/{page_num}.png")
-def whole_page_png(ec_id: int, page_num: int):
-    """A page with no entry to anchor on. An R3 window is read off the header,
-    which is not an entry — "jump to page 1" has to work anyway."""
-    row = db.one("SELECT file_path, page_count FROM ec_documents WHERE id = ?", (ec_id,))
-    if not row or not row["file_path"]:
-        return Response(status_code=404)
-    try:
-        png = crops.page_rect(row["file_path"], page_num, None)
-    except Exception:
-        return Response(status_code=404)
     return Response(png, media_type="image/png",
                     headers={"Cache-Control": "max-age=3600"})
 

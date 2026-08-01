@@ -1,5 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect } from "react";
+import { Masthead } from "../components/Masthead";
 import { TabWhatToCheck } from "../components/case/TabWhatToCheck";
 import { TabHowItConnects } from "../components/case/TabHowItConnects";
 import { TabWhatsMissing } from "../components/case/TabWhatsMissing";
@@ -10,7 +11,7 @@ import { caseQuery } from "../data/api";
 import type { CaseMeta, CostPayload } from "../data/api";
 import { Rail, RailProvider } from "../components/case/rail";
 import { Loading, LoadError } from "../components/LoadState";
-import type { DerivedView } from "../data/types";
+import type { DerivedView, GraphLayout } from "../data/types";
 
 /* The tab is in the URL, because the thing she wants to send someone is never
    "the case" — it is the gap, or the entry she corrected, or the row that will
@@ -90,7 +91,13 @@ function CasePage() {
       </div>
     );
   return (
-    <CaseScreen caseId={caseId} view={q.data.view} cost={q.data.cost} meta={q.data.case} />
+    <CaseScreen
+      caseId={caseId}
+      view={q.data.view}
+      cost={q.data.cost}
+      meta={q.data.case}
+      graph={q.data.graph}
+    />
   );
 }
 
@@ -99,11 +106,13 @@ function CaseScreen({
   view,
   cost,
   meta,
+  graph,
 }: {
   caseId: string;
   view: DerivedView;
   cost: CostPayload;
   meta: CaseMeta;
+  graph: GraphLayout;
 }) {
   const { tab = "review" } = Route.useSearch();
   const c = view.coverage;
@@ -143,8 +152,7 @@ function CaseScreen({
   return (
     <RailProvider>
     <div className="case">
-      <header className="case-bar">
-        <span className="wordmark">TitleChain</span>
+      <Masthead bar>
         <span className="case-bar-meta">
           Case <span className="mono">{caseId}</span>
           {doc ? (
@@ -154,7 +162,7 @@ function CaseScreen({
             </>
           ) : null}
         </span>
-      </header>
+      </Masthead>
 
       <div className="case-grid">
         <main className="case-main">
@@ -222,7 +230,7 @@ function CaseScreen({
           </nav>
 
           {tab === "review" ? <TabWhatToCheck view={view} caseId={caseId} /> : null}
-          {tab === "chain" ? <TabHowItConnects view={view} /> : null}
+          {tab === "chain" ? <TabHowItConnects view={view} graph={graph} /> : null}
           {tab === "missing" ? <TabWhatsMissing view={view} caseId={caseId} /> : null}
           {tab === "entries" ? <TabWhatWeRead view={view} caseId={caseId} /> : null}
           {tab === "cost" ? <TabWhatItCost view={view} cost={cost} meta={meta} /> : null}

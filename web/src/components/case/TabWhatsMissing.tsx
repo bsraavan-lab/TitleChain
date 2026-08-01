@@ -53,8 +53,13 @@ function RequestCard({ request, caseId }: { request: DocRequest; caseId: string 
   const [dragging, setDragging] = useState(false);
   const fileInput = useRef<HTMLInputElement>(null);
 
+  const [sent, setSent] = useState<number | null>(null);
+
   const add = useMutation({
-    mutationFn: (file: File) => addDocument({ caseId, file, requestKey: request.key }),
+    mutationFn: (file: File) =>
+      addDocument({ caseId, file, requestKey: request.key, onProgress: setSent }),
+    onMutate: () => setSent(0),
+    onSettled: () => setSent(null),
     // The findings already on screen are not cleared while the new certificate
     // reads. The case does not go blank — which is the difference between
     // completing a title history and restarting an analysis.
@@ -126,7 +131,9 @@ function RequestCard({ request, caseId }: { request: DocRequest; caseId: string 
         >
           <p className="dropzone-meta">
             {add.isPending
-              ? "Reading it now — the findings below stay while it reads."
+              ? sent === null
+                ? "On its way — the findings below stay while it reads."
+                : `${sent}% sent — the findings below stay while it reads.`
               : "Got it back? Drop it here and it joins this case."}
           </p>
           <input
@@ -137,16 +144,32 @@ function RequestCard({ request, caseId }: { request: DocRequest; caseId: string 
             onChange={(e) => {
               const f = e.target.files?.[0];
               if (f) add.mutate(f);
+              e.target.value = "";
             }}
           />
-          <button
-            type="button"
-            className="btn btn--ghost"
-            disabled={add.isPending}
-            onClick={() => fileInput.current?.click()}
-          >
-            Add this certificate
-          </button>
+          {add.isPending ? (
+            <div
+              className="upload-bar"
+              role="progressbar"
+              aria-label="Sending the certificate"
+              aria-valuemin={0}
+              aria-valuemax={100}
+              aria-valuenow={sent ?? undefined}
+            >
+              <span
+                className={`upload-fill${sent === null ? " upload-fill--unknown" : ""}`}
+                style={sent === null ? undefined : { width: `${sent}%` }}
+              />
+            </div>
+          ) : (
+            <button
+              type="button"
+              className="btn btn--ghost"
+              onClick={() => fileInput.current?.click()}
+            >
+              Add this certificate
+            </button>
+          )}
         </div>
 
         {rejection ? (

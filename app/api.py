@@ -16,7 +16,7 @@ from __future__ import annotations
 import threading
 from typing import Any
 
-from fastapi import APIRouter, Form, UploadFile
+from fastapi import APIRouter, Form, Request, UploadFile
 from pydantic import BaseModel
 
 from . import cost as cost_mod
@@ -30,6 +30,25 @@ router = APIRouter(prefix="/api", tags=["api"])
 # because importing main would be circular; if these ever disagree the working
 # screen and the JSON status would report different things about one case.
 PROCESSING = {"QUEUED", "READING", "TYPING", "DERIVING"}
+
+MAX_UPLOAD_BYTES = 50 * 1024 * 1024
+
+
+def _too_large(request: Request) -> str | None:
+    """Refuse on the declared length, before the body is buffered.
+
+    `await file.read()` pulls the whole upload into memory and only then does
+    accept_upload measure it, so the one request guaranteed to be refused was
+    also the one held in RAM in full. Content-Length is advisory — a client can
+    lie or omit it — so accept_upload still checks the real thing; this only
+    means an honest oversized upload is turned away at the door.
+    """
+    declared = request.headers.get("content-length")
+    if declared and declared.isdigit() and int(declared) > MAX_UPLOAD_BYTES:
+        return (f"That file is {int(declared) / 1_048_576:.0f} MB, and we can take "
+                f"up to 50 MB. A lighter scan, or one certificate at a time, "
+                f"should go through.")
+    return None
 
 
 def _header(doc) -> dict[str, Any] | None:
@@ -158,11 +177,14 @@ def case_status(case_id: int) -> dict[str, Any]:
 
 
 @router.post("/upload")
-async def upload(file: UploadFile) -> dict[str, Any]:
+async def upload(request: Request, file: UploadFile) -> dict[str, Any]:
     """A rejected file is a 200 carrying the reason, not a 4xx. The reason is
     rendered where the file was dropped — the fix is to pick a different file,
     and that control is right there — so the front end needs the sentence, not a
     status code to translate back into one."""
+    oversized = _too_large(request)
+    if oversized:
+        return {"error": "rejected", "detail": oversized}
     data = await file.read()
     path, error = pipeline.accept_upload(file.filename or "upload", data)
     if error:
@@ -206,7 +228,7 @@ def samples() -> dict[str, Any]:
 
 
 @router.post("/case/{case_id}/documents")
-async def add_document(case_id: int, file: UploadFile,
+async def add_document(request: Request, case_id: int, file: UploadFile,
                        request_key: str = Form("")) -> dict[str, Any]:
     """Drop a certificate on a request and it joins THIS case.
 
@@ -221,6 +243,9 @@ async def add_document(case_id: int, file: UploadFile,
     """
     if not db.one("SELECT id FROM cases WHERE id = ?", (case_id,)):
         return {"error": "not_found", "case_id": case_id}
+    oversized = _too_large(request)
+    if oversized:
+        return {"error": "rejected", "detail": oversized}
     data = await file.read()
     path, error = pipeline.accept_upload(file.filename or "upload", data)
     if error:
@@ -244,7 +269,13 @@ def review(body: ReviewIn) -> dict[str, Any]:
     recorded here is ever overwritten — so this appends rather than updates."""
     if not db.one("SELECT id FROM cases WHERE id = ?", (body.case_id,)):
         return {"error": "not_found", "case_id": body.case_id}
-    store.set_review(body.case_id, body.key, body.state, body.note)
+    try:
+        store.set_review(body.case_id, body.key, body.state, body.note)
+    except ValueError as exc:
+        # An unknown state raises inside store.set_review. Every other bad input
+        # on this router answers 200 with the reason; this one alone answered
+        # 500, so the front end got "responded 500" instead of the sentence.
+        return {"error": "rejected", "detail": str(exc)}
     return {"ok": True}
 
 
@@ -262,5 +293,9 @@ def correct(body: CorrectionIn) -> dict[str, Any]:
     case_id = store.case_of_entry(body.entry_id)
     if case_id is None:
         return {"error": "not_found", "entry_id": body.entry_id}
-    store.apply_correction(body.entry_id, body.field, body.value)
+    try:
+        store.apply_correction(body.entry_id, body.field, body.value)
+    except ValueError as exc:
+        # A field outside store.EDITABLE. Same reasoning as /review above.
+        return {"error": "rejected", "detail": str(exc)}
     return {"ok": True, "case_id": case_id}

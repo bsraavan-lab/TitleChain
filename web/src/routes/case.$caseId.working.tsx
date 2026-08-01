@@ -2,6 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect } from "react";
 import { Loading, LoadError } from "../components/LoadState";
+import { Masthead } from "../components/Masthead";
 import { caseStatusQuery } from "../data/api";
 
 export const Route = createFileRoute("/case/$caseId/working")({
@@ -49,9 +50,7 @@ function WorkingPage() {
 
   return (
     <div className="page">
-      <header className="masthead">
-        <span className="wordmark">TitleChain</span>
-      </header>
+      <Masthead />
 
       <main>
         <section className="section" aria-labelledby="working-title">

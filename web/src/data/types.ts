@@ -32,24 +32,84 @@ export interface Tick {
   inside: boolean;
 }
 
+/* One certificate's own window on the shared ruler.
+ *
+ * These were `from_year` / `to_year` here and `start_year` / `end_year` in
+ * `CoverageBand` (app/models.py), so every band read `undefined`, every
+ * position computed to NaN, and the browser dropped `left: NaN%` — the bands
+ * have never drawn. The names now match the wire, and the years are optional
+ * because a certificate with an unreadable search period has neither. */
 export interface Band {
   label: string;
-  from_year: number;
-  to_year: number;
+  start_year: number | null;
+  end_year: number | null;
+  ec_id: number | null;
 }
 
 export interface Coverage {
-  start_year: number;
-  end_year: number;
+  /* Optional on the Python side, and genuinely absent on a certificate whose
+     search period is blank — the `- - -` case R7 exists to catch. */
+  start_year: number | null;
+  end_year: number | null;
   axis_min: number;
   axis_max: number;
   ticks: Tick[];
   bands: Band[];
-  sufficient: boolean;
+  /** null = not evaluable, which is not the same as false. */
+  sufficient: boolean | null;
   headline: string;
   detail: string;
-  required_from: number;
-  required_to: number;
+  required_from: number | null;
+  required_to: number | null;
+}
+
+/* The chain drawing. Geometry is computed by app/layout.py — x is the year,
+ * y is a greedy lane — and arrives here as numbers; this side only draws.
+ *
+ * What is NOT on the wire, because Pydantic does not serialise @property:
+ * `GraphNode.label`, `GraphNode.title` and `GraphEdge.path`. The first two are
+ * plain reads off `doc_no`; the path is recomputed in ChainGraph from the four
+ * endpoints. Same trap the cost types carry a note about in data/api.ts. */
+export type NodeShape = "square" | "diamond" | "bar" | "slash" | "ring" | "circle";
+
+export interface GraphNode {
+  doc_no: string;
+  year: number | null;
+  nature: string | null;
+  kind: string | null;
+  shape: NodeShape;
+  entry_id: number | null;
+  ec_id: number | null;
+  ec_label: string | null;
+  x: number;
+  y: number;
+  examined: boolean;
+  cancelled: boolean;
+  corrected: boolean;
+  open_encumbrance: boolean;
+}
+
+export interface GraphEdge {
+  kind: string;
+  resolved: boolean;
+  x1: number;
+  y1: number;
+  x2: number;
+  y2: number;
+}
+
+export interface YearTick {
+  year: number;
+  x: number;
+}
+
+export interface GraphLayout {
+  width: number;
+  height: number;
+  nodes: GraphNode[];
+  edges: GraphEdge[];
+  ticks: YearTick[];
+  undated: string[];
 }
 
 export interface Completeness {
