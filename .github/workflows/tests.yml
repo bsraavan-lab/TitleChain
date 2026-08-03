@@ -23,6 +23,14 @@ jobs:
 
       - name: Run tests
         run: python -m pytest -q
+        env:
+          # Nothing in the suite calls Sarvam yet — the pipeline is monkeypatched
+          # at digitise() and extract() — so this is wiring for the first test
+          # that does, not a current dependency. config.py reads os.environ before
+          # falling back to .env, so no code change is needed to pick it up.
+          # Fork PRs get an empty string, not the secret: guard any key-dependent
+          # test with skipif rather than assuming it is set, or outside PRs go red.
+          SARVAM_API_KEY: ${{ secrets.SARVAM_API_KEY }}
 
   # The front end compiles. Without this a broken web/ merges green, because
   # pytest cannot see TypeScript.

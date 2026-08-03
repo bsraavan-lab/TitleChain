@@ -1,5 +1,5 @@
 import { createContext, useContext, useMemo, useState, type ReactNode } from "react";
-import { cropImageUrl, pageImageUrl } from "../../data/api";
+import { cropImageUrl, pageImageUrl, pageviewImageUrl } from "../../data/api";
 import type { ECDoc } from "../../data/types";
 
 /* The rail is a pane, never a modal.
@@ -115,7 +115,7 @@ export function Rail({ doc }: { doc: ECDoc | undefined }) {
         </div>
         <img
           className="scan"
-          src={target.close ? cropImageUrl(target.entryId) : `/pageview/${target.entryId}.png`}
+          src={target.close ? cropImageUrl(target.entryId) : pageviewImageUrl(target.entryId)}
           alt={
             entry
               ? `Entry ${entry.sr_no}${entry.doc_no ? `, document ${entry.doc_no}` : ""}, as it appears on the scanned page`

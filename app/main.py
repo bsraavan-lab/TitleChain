@@ -1,8 +1,8 @@
 """TitleChain — FastAPI serving Jinja + HTMX from one process.
 
 Two full pages the user can see (/ and /case/{id}) plus the printable report.
-Everything else is a fragment swap or an image. No build step, no npm, no CORS,
-no CDN.
+Everything else is a fragment swap or an image. No build step, no npm, no CDN,
+and no CORS unless TITLECHAIN_CORS_ORIGINS names a host that needs it.
 
 The case page is one shell: a sticky rail that always carries the verdict and the
 completion state, a tab strip, and a persistent evidence pane that survives tab
@@ -13,6 +13,7 @@ back button works without a page reload.
 from __future__ import annotations
 
 import json
+import os
 import threading
 from contextlib import asynccontextmanager
 from pathlib import Path
@@ -46,6 +47,18 @@ app = FastAPI(title="TitleChain", lifespan=lifespan)
 # a half-finished one.
 from .api import router as api_router          # noqa: E402  (after `app` exists)
 app.include_router(api_router)
+
+# Off unless asked for, and the deployed app never asks: Vercel and Render are
+# one origin to the browser, so no preflight is ever sent there. It exists for a
+# host that serves the bundle without the rewrite — Lovable's preview — where the
+# front end is told the backend's address outright and the request becomes
+# cross-origin. Comma-separated exact origins; no wildcard, because credentials
+# would then be refused by the browser anyway.
+_cors = [o.strip() for o in os.environ.get("TITLECHAIN_CORS_ORIGINS", "").split(",") if o.strip()]
+if _cors:
+    from fastapi.middleware.cors import CORSMiddleware
+    app.add_middleware(CORSMiddleware, allow_origins=_cors,
+                       allow_methods=["GET", "POST"], allow_headers=["*"])
 
 app.mount("/static", StaticFiles(directory=Path(__file__).parent / "static"), name="static")
 templates = Jinja2Templates(directory=Path(__file__).parent / "templates")
