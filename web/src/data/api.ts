@@ -198,12 +198,27 @@ async function parse<T>(url: string, res: Response): Promise<T> {
   }
 }
 
-async function get<T>(url: string): Promise<T> {
+/* Relative by default, which is what every deployed path wants: in development
+ * Vite proxies /api to the Python app, and in production Vercel rewrites it to
+ * Render, so the browser asks for the same relative path either way.
+ *
+ * A host that serves this bundle but has no such rewrite — Lovable's preview —
+ * has nowhere to send /api, and every query hangs on a route that does not
+ * exist. Naming the backend outright is the only thing that works there, so it
+ * is a build-time variable rather than a code change. Unset means unchanged. */
+const API_BASE = (import.meta.env["VITE_TITLECHAIN_API"] ?? "").replace(/\/+$/, "");
+
+/** Absolute when VITE_TITLECHAIN_API is set, relative — and unchanged — when not. */
+const at = (path: string) => `${API_BASE}${path}`;
+
+async function get<T>(path: string): Promise<T> {
+  const url = at(path);
   const res = await fetch(url, { headers: { Accept: "application/json" } });
   return parse<T>(url, res);
 }
 
-async function post<T>(url: string, body?: BodyInit, json?: unknown): Promise<T> {
+async function post<T>(path: string, body?: BodyInit, json?: unknown): Promise<T> {
+  const url = at(path);
   const init: RequestInit = { method: "POST" };
   if (json === undefined) {
     if (body !== undefined) init.body = body;
@@ -226,7 +241,8 @@ export type OnProgress = (pctOrNull: number | null) => void;
  *
  * `onProgress(null)` means the browser could not measure it — the request is
  * in flight but the total is unknown, which is a different thing from 0%. */
-function postFile<T>(url: string, form: FormData, onProgress?: OnProgress): Promise<T> {
+function postFile<T>(path: string, form: FormData, onProgress?: OnProgress): Promise<T> {
+  const url = at(path);
   return new Promise<T>((resolve, reject) => {
     const xhr = new XMLHttpRequest();
     xhr.open("POST", url);
@@ -354,5 +370,6 @@ export function saveCorrection(input: { entry_id: number; field: string; value: 
 
 /* Images are plain URLs, not JSON. */
 
-export const pageImageUrl = (ecId: number, pageNum: number) => `/page/${ecId}/${pageNum}.png`;
-export const cropImageUrl = (entryId: number) => `/crop/${entryId}.png`;
+export const pageImageUrl = (ecId: number, pageNum: number) => at(`/page/${ecId}/${pageNum}.png`);
+export const cropImageUrl = (entryId: number) => at(`/crop/${entryId}.png`);
+export const pageviewImageUrl = (entryId: number) => at(`/pageview/${entryId}.png`);
