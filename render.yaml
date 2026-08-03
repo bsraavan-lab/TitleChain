@@ -23,6 +23,14 @@ services:
         sync: false          # set in the Render dashboard; never committed
       - key: PYTHON_VERSION
         value: "3.12.7"
+      # Empty here on purpose: Vercel and this service are one origin to the
+      # browser, so the deployed front end never sends a preflight and the
+      # middleware is not installed at all. It is declared so the one host that
+      # does need it — a preview serving the bundle without the /api rewrite —
+      # is a dashboard value rather than an undocumented surprise. Comma-
+      # separated exact origins; a wildcard is not accepted.
+      - key: TITLECHAIN_CORS_ORIGINS
+        sync: false
 
     # ── persistence ──────────────────────────────────────────────────────────
     # The free plan has no disk: the filesystem is ephemeral and the instance
