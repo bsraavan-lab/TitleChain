@@ -1,7 +1,5 @@
 # TitleChain
 
-**Sarvam Epoch Buildathon · Document Intelligence track**
-
 TitleChain turns an Encumbrance Certificate (EC) into a title-scrutiny-ready
 chain report: the property's ownership/encumbrance graph, with every live encumbrance,
 chain break, and search-window gap identified deterministically and traced back to its
