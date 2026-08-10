@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import { caseQuery, samplesQuery, startSample } from "../data/api";
 import { Loading, LoadError } from "../components/LoadState";
 import { Masthead } from "../components/Masthead";
+import { ChainMark } from "../components/ChainMark";
 
 /* When there is nothing to report, and why.
  *
@@ -96,6 +97,9 @@ export function RefusalScreen({ status, detail }: { status: string; detail: stri
 
       <main>
         <section className="section answer answer--muted" aria-labelledby="refusal-title">
+          <span className="refusal-mark" aria-hidden="true">
+            <ChainMark size={72} muted />
+          </span>
           <p className="kicker">
             <span aria-hidden="true">⊘ </span>
             {nothingRead ? "Nothing read" : "Did not finish"}

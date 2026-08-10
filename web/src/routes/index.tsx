@@ -3,6 +3,7 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import { useRef, useState } from "react";
 import { Loading, LoadError } from "../components/LoadState";
 import { Masthead } from "../components/Masthead";
+import { ChainMark } from "../components/ChainMark";
 import {
   ApiRejection,
   casesQuery,
@@ -117,6 +118,9 @@ function Index() {
       <main>
         {/* 1 — Hero */}
         <section className="section section--hero" aria-labelledby="hero-title">
+          <span className="hero-mark" aria-hidden="true">
+            <ChainMark size={220} />
+          </span>
           <h1 className="hero-title" id="hero-title">
             A property search can come back clean and still prove nothing.
           </h1>
@@ -153,6 +157,9 @@ function Index() {
                 if (f) upload.mutate(f);
               }}
             >
+              <span className="dropzone-mark" aria-hidden="true">
+                <ChainMark size={56} />
+              </span>
               <p className="dropzone-title">
                 {upload.isPending ? "Sending your certificate" : "Drop your certificate here"}
               </p>
