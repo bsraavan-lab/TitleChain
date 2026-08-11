@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useEffect } from "react";
 import { Loading, LoadError } from "../components/LoadState";
 import { Masthead } from "../components/Masthead";
+import { ChainMark } from "../components/ChainMark";
 import { caseStatusQuery } from "../data/api";
 
 export const Route = createFileRoute("/case/$caseId/working")({
@@ -53,7 +54,10 @@ function WorkingPage() {
       <Masthead />
 
       <main>
-        <section className="section" aria-labelledby="working-title">
+        <section className="section section--wait" aria-labelledby="working-title">
+          <span className="wait-mark" aria-hidden="true">
+            <ChainMark size={96} animated={processing !== false} />
+          </span>
           <p className="kicker">Case {caseId}</p>
           <h1 className="hero-title" id="working-title">
             Reading the certificate.

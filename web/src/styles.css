@@ -2226,3 +2226,411 @@ a.wordmark:focus-visible {
 .answer--muted {
   border-left-color: var(--ink-4);
 }
+
+/* =================================================================
+   Identity + polish pass — the official mark as the core element.
+   One card idiom (hairline + very soft shadow + 8px radius), a
+   crisper type hierarchy, and refined micro-interactions. Colour,
+   copy and data logic are untouched.
+   ================================================================= */
+
+:root {
+  --card-shadow: 0 1px 2px rgba(25, 23, 19, 0.04), 0 8px 24px -16px rgba(25, 23, 19, 0.18);
+  --card-shadow-lift: 0 1px 2px rgba(25, 23, 19, 0.05), 0 14px 32px -18px rgba(25, 23, 19, 0.26);
+}
+
+/* ---------- The lockup ---------- */
+
+.wordmark {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.wordmark-text {
+  font-family: var(--sans);
+  font-size: 13px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.22em;
+}
+
+.chainmark {
+  flex: none;
+  color: var(--ink-1);
+  transition: color 160ms var(--ease);
+}
+
+.chainmark--muted {
+  color: var(--ink-3);
+}
+
+a.wordmark:hover .chainmark {
+  color: var(--endorsement);
+}
+
+/* ---------- Home: hero with the mark held quietly to one side ---------- */
+
+.section--hero {
+  position: relative;
+  padding-top: var(--s7);
+  overflow: hidden;
+}
+
+.hero-mark {
+  position: absolute;
+  top: 8px;
+  right: 24px;
+  color: var(--ink-1);
+  opacity: 0.055;
+  pointer-events: none;
+  display: none;
+}
+
+@media (min-width: 900px) {
+  .hero-mark {
+    display: block;
+  }
+}
+
+.section--hero .hero-title {
+  font-size: 44px;
+  line-height: 1.12;
+  letter-spacing: -0.018em;
+  max-width: 18ch;
+}
+
+@media (max-width: 640px) {
+  .section--hero .hero-title {
+    font-size: 30px;
+  }
+}
+
+/* ---------- Home: the drop target as the focal card ---------- */
+
+.section--start {
+  align-items: center;
+  padding-right: 0;
+}
+
+.section--start .drop-title,
+.section--start .dropzone,
+.section--start .samples,
+.section--start .samples-lead,
+.section--start .reject-notice {
+  max-width: 620px;
+}
+
+.section--start .drop-title,
+.section--start .dropzone {
+  text-align: center;
+}
+
+.section--start .samples {
+  justify-content: center;
+}
+
+.dropzone {
+  border: 1px solid var(--rule);
+  box-shadow: var(--card-shadow);
+  padding: var(--s7) var(--s5) var(--s6);
+  transition:
+    border-color 160ms var(--ease),
+    box-shadow 160ms var(--ease),
+    transform 160ms var(--ease);
+}
+
+.dropzone:hover {
+  box-shadow: var(--card-shadow-lift);
+}
+
+.dropzone.is-over {
+  border-color: var(--endorsement);
+  box-shadow: var(--card-shadow-lift);
+}
+
+.dropzone-mark {
+  display: block;
+  color: var(--ink-1);
+  margin-bottom: var(--s4);
+}
+
+.dropzone.is-over .dropzone-mark {
+  color: var(--endorsement);
+}
+
+.dropzone-title {
+  font-size: 21px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.dropzone-meta {
+  margin-bottom: var(--s5);
+}
+
+/* refined pills */
+.btn--ghost {
+  border-radius: 999px;
+  padding: 7px 14px;
+  border-color: var(--rule);
+  background: var(--paper);
+}
+
+.btn--ghost:hover {
+  border-color: var(--ink-4);
+  background: var(--paper);
+}
+
+.btn {
+  transition:
+    background 140ms var(--ease),
+    border-color 140ms var(--ease),
+    box-shadow 140ms var(--ease),
+    transform 120ms var(--ease);
+}
+
+.btn--filled {
+  box-shadow: var(--card-shadow);
+}
+
+/* ---------- Home: cases as cards ---------- */
+
+.caselist {
+  display: grid;
+  gap: var(--s2);
+}
+
+.caselist-item {
+  border: 1px solid var(--rule);
+  border-bottom: 1px solid var(--rule);
+  border-radius: var(--r-card);
+  background: var(--paper);
+  padding: var(--s4);
+  transition:
+    border-color 140ms var(--ease),
+    box-shadow 140ms var(--ease),
+    background 140ms var(--ease);
+}
+
+.caselist-item:hover {
+  background: var(--paper);
+  border-color: var(--ink-4);
+  box-shadow: var(--card-shadow);
+}
+
+/* ---------- Home: figures and explainers on one rhythm ---------- */
+
+.register {
+  gap: var(--s5);
+}
+
+.figure {
+  border: 1px solid var(--rule);
+  border-radius: var(--r-card);
+  background: var(--paper);
+  padding: var(--s5);
+}
+
+.home-explainers .section {
+  border: 1px solid var(--rule);
+  border-radius: var(--r-card);
+  background: var(--paper);
+  padding: var(--s5);
+}
+
+.home-explainers {
+  gap: var(--s4);
+  border-bottom: 0;
+}
+
+/* ---------- Working: the chain settling while we read ---------- */
+
+.section--wait {
+  text-align: center;
+  border-bottom: 0;
+}
+
+.section--wait .hero-sub {
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.wait-mark {
+  display: inline-block;
+  color: var(--ink-1);
+  margin-bottom: var(--s4);
+}
+
+.chainmark--animated .chainmark-link--top {
+  animation: link-settle-top 2.6s var(--ease) infinite;
+  transform-origin: 24px 24px;
+}
+
+.chainmark--animated .chainmark-link--bottom {
+  animation: link-settle-bottom 2.6s var(--ease) infinite;
+  transform-origin: 24px 24px;
+}
+
+.chainmark--animated .chainmark-join {
+  animation: join-breathe 2.6s var(--ease) infinite;
+  transform-origin: 24px 25.5px;
+}
+
+@keyframes link-settle-top {
+  0%,
+  100% {
+    transform: translateY(-1.6px);
+    opacity: 0.85;
+  }
+  50% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes link-settle-bottom {
+  0%,
+  100% {
+    transform: translateY(1.6px);
+    opacity: 0.85;
+  }
+  50% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes join-breathe {
+  0%,
+  100% {
+    opacity: 0.4;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .chainmark--animated .chainmark-link--top,
+  .chainmark--animated .chainmark-link--bottom,
+  .chainmark--animated .chainmark-join {
+    animation: none;
+  }
+}
+
+/* ---------- Refusal: the mark, withheld ---------- */
+
+.refusal-mark {
+  display: block;
+  margin-bottom: var(--s4);
+}
+
+/* ---------- Case workspace: one card idiom, better rhythm ---------- */
+
+.case-bar {
+  backdrop-filter: none;
+}
+
+.answer,
+.case-main .section.answer {
+  border-radius: var(--r-card);
+  background: var(--paper);
+  box-shadow: var(--card-shadow);
+}
+
+.rail-card {
+  border-radius: var(--r-card);
+  box-shadow: var(--card-shadow);
+}
+
+.tabs {
+  gap: var(--s1);
+  background: var(--sunk);
+  border: 1px solid var(--rule);
+  border-radius: 999px;
+  padding: var(--s1);
+}
+
+.tabs a,
+.tabs button {
+  border-radius: 999px;
+}
+
+/* ---------- Report: a proper letterhead ---------- */
+
+.sheet-head {
+  align-items: center;
+  padding-bottom: var(--s4);
+  border-bottom: 2px solid var(--ink-1);
+}
+
+.sheet-head .wordmark {
+  color: var(--ink-1);
+}
+
+.sheet-head .chainmark {
+  color: var(--ink-1);
+}
+
+.sheet {
+  box-shadow: var(--card-shadow);
+}
+
+@media print {
+  .sheet,
+  .dropzone,
+  .figure,
+  .caselist-item,
+  .answer,
+  .rail-card {
+    box-shadow: none;
+  }
+}
+
+.dropzone-mark,
+.wait-mark,
+.refusal-mark {
+  width: fit-content;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.refusal-mark {
+  margin-left: 0;
+}
+
+/* The segmented control's items. The pill container above restyled `.tabs`,
+   but the items were still the old underline idiom — an underline inside a
+   pill pokes out of it. Each tab is its own pill; the active one sits on
+   paper with the card shadow, which is how a segmented control says "you
+   are here" without an underline. */
+.tabs .tab {
+  padding: 6px 14px;
+  border-bottom: 0;
+  border-radius: 999px;
+  transition:
+    color 160ms var(--ease),
+    background 160ms var(--ease),
+    box-shadow 160ms var(--ease);
+}
+
+.tabs .tab--active {
+  background: var(--paper);
+  color: var(--ink-1);
+  box-shadow: var(--card-shadow);
+  border-bottom: 0;
+}
+
+.tabs .tab:focus-visible {
+  outline: 2px solid var(--endorsement);
+  outline-offset: -2px;
+}
+
+/* Bare `fr` tracks refuse to shrink below their content, so the wide chain
+   graph on How-it-connects forced the main column out and crushed the
+   evidence rail. minmax(0, …) keeps the 58/42 split; the graph scrolls in
+   its own .graph-scroll instead of stealing the rail's width. */
+.case-grid {
+  grid-template-columns: minmax(0, 58fr) minmax(0, 42fr);
+}
