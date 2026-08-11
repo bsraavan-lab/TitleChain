@@ -90,6 +90,23 @@ export function TabHowItConnects({ view, graph }: { view: DerivedView; graph?: G
   const width = (from: number | null, to: number | null) =>
     from === null || to === null ? 0 : Math.max(pos(to) - pos(from), 1.5);
 
+  /* Ticks land wherever the documents do, so 2019, 2022 and 2023 used to
+     print three year labels into the same forty pixels and read as one
+     smudge. Every tick keeps its mark; a year is only printed once it clears
+     the previously printed one, and the skipped years stay spoken for a
+     screen reader. 5% of the axis is roughly one label's width plus air at
+     the narrowest width this ruler is drawn at. */
+  const labelGap = 5;
+  let lastLabelAt = Number.NEGATIVE_INFINITY;
+  const ticks = [...c.ticks]
+    .sort((a, b) => a.year - b.year)
+    .map((t) => {
+      const at = pos(t.year);
+      const labelled = at - lastLabelAt >= labelGap;
+      if (labelled) lastLabelAt = at;
+      return { ...t, labelled };
+    });
+
   const counts = tally(view.chain);
 
   return (
@@ -137,13 +154,17 @@ export function TabHowItConnects({ view, graph }: { view: DerivedView; graph?: G
               width: `${width(c.required_from, c.required_to)}%`,
             }}
           />
-          {c.ticks.map((t) => (
+          {ticks.map((t) => (
             <span
               key={t.year}
               className={`ruler-tick${t.inside ? " ruler-tick--inside" : ""}`}
               style={{ left: `${pos(t.year)}%` }}
             >
-              <span className="ruler-tick-year mono">{t.year}</span>
+              {t.labelled ? (
+                <span className="ruler-tick-year mono">{t.year}</span>
+              ) : (
+                <span className="sr-only">{t.year}</span>
+              )}
             </span>
           ))}
         </div>
