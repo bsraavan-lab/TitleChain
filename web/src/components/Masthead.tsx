@@ -13,9 +13,17 @@ export function Wordmark({ size = 26 }: { size?: number }) {
   );
 }
 
-export function Masthead({ bar = false, children }: { bar?: boolean; children?: ReactNode }) {
+export function Masthead({
+  bar = false,
+  center = false,
+  children,
+}: {
+  bar?: boolean;
+  center?: boolean;
+  children?: ReactNode;
+}) {
   return (
-    <header className={bar ? "case-bar" : "masthead"}>
+    <header className={bar ? "case-bar" : `masthead${center ? " masthead--center" : ""}`}>
       <Wordmark size={bar ? 22 : 26} />
       {children}
     </header>

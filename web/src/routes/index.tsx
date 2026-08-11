@@ -114,7 +114,7 @@ function Index() {
 
   return (
     <div className="page">
-      <Masthead>
+      <Masthead center>
         <span className="masthead-note">Property record checks</span>
       </Masthead>
 
@@ -124,9 +124,6 @@ function Index() {
             else — the numbers, the explainers, her cases — lives below the
             fold, and the case list not at all until she has a case. */}
         <section className="section section--hero home-landing" aria-labelledby="hero-title">
-          <span className="hero-mark" aria-hidden="true">
-            <ChainMark size={220} />
-          </span>
           <h1 className="hero-title" id="hero-title">
             A property search can come back clean and still prove nothing.
           </h1>
