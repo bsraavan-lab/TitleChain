@@ -148,6 +148,17 @@ a.wordmark:focus-visible {
   color: var(--ink-3);
 }
 
+/* The home page wears the identity centered: the mark and wordmark on one
+   line, the tagline on its own line beneath — a title page, not a toolbar.
+   Case screens keep the left-aligned bar; there the mark is a way back, not
+   the subject. */
+.masthead--center {
+  flex-direction: column;
+  align-items: center;
+  gap: var(--s1);
+  text-align: center;
+}
+
 .section {
   padding: 40px 0;
   border-bottom: 1px solid var(--rule);
@@ -379,46 +390,41 @@ a.wordmark:focus-visible {
   color: var(--ink-3);
 }
 
-/* ---------- Home: the two bands that use the width ---------- */
+/* ---------- Home: the landing is one centered search ---------- */
 
-/* Her work beside the input, not a screen below it. The proportion is the
-   case screen's own 58/42, so the two screens read as one product. */
-.home-start {
-  display: grid;
-  grid-template-columns: 58fr 42fr;
-  gap: var(--s7);
-  align-items: start;
-  padding: var(--s6) 0;
+/* The first screenful is the product's one question. The sentence and the
+   drop target fill the viewport under the masthead, centered on both axes;
+   nothing else exists until she scrolls, and the case list not at all until
+   she has a case. 120px is the two-line centered masthead and its rule. */
+.home-landing {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  min-height: calc(100vh - 120px);
+  min-height: calc(100svh - 120px);
+  padding: var(--s7) 0;
   border-bottom: 1px solid var(--rule);
 }
 
-/* The two columns are one band, so the band owns the rhythm — otherwise the
-   hero's 40px and each column's 40px stack into 80px of nothing. */
-.home-start > .section {
-  padding: 0;
-  border-bottom: 0;
+.home-landing .hero-title,
+.home-landing .hero-sub {
+  margin-left: auto;
+  margin-right: auto;
 }
 
-.home-cases {
-  min-width: 0;
+/* A dashed target the width of the page reads as a region, not a control.
+   620px is the width the drop card has always been; here it is the one
+   solid object on the screen, so it also sets the column everything under
+   it aligns to. */
+.home-landing .dropzone,
+.home-landing .reject-notice {
+  width: min(620px, 100%);
 }
 
-/* The two columns are independent, so a long case list used to stretch the
-   band while the drop target sat above a column of empty paper — the more she
-   used the product, the emptier the screen looked. Capped and scrolled, the
-   band keeps its proportions at any number of cases and what is below it stays
-   reachable. */
-.home-cases .caselist {
-  max-height: min(520px, 58vh);
-  overflow-y: auto;
-  overscroll-behavior: contain;
-}
-
-@media (max-width: 1080px) {
-  .home-cases .caselist {
-    max-height: none;
-    overflow-y: visible;
-  }
+.home-landing .samples {
+  justify-content: center;
 }
 
 /* The three explainer lists were three stacked sections — nine rows down the
@@ -441,7 +447,6 @@ a.wordmark:focus-visible {
 }
 
 @media (max-width: 1080px) {
-  .home-start,
   .home-explainers {
     grid-template-columns: minmax(0, 1fr);
     gap: var(--s6);
@@ -2269,28 +2274,10 @@ a.wordmark:hover .chainmark {
   color: var(--endorsement);
 }
 
-/* ---------- Home: hero with the mark held quietly to one side ---------- */
+/* ---------- Home: the hero ---------- */
 
 .section--hero {
-  position: relative;
   padding-top: var(--s7);
-  overflow: hidden;
-}
-
-.hero-mark {
-  position: absolute;
-  top: 8px;
-  right: 24px;
-  color: var(--ink-1);
-  opacity: 0.055;
-  pointer-events: none;
-  display: none;
-}
-
-@media (min-width: 900px) {
-  .hero-mark {
-    display: block;
-  }
 }
 
 .section--hero .hero-title {
@@ -2307,28 +2294,6 @@ a.wordmark:hover .chainmark {
 }
 
 /* ---------- Home: the drop target as the focal card ---------- */
-
-.section--start {
-  align-items: center;
-  padding-right: 0;
-}
-
-.section--start .drop-title,
-.section--start .dropzone,
-.section--start .samples,
-.section--start .samples-lead,
-.section--start .reject-notice {
-  max-width: 620px;
-}
-
-.section--start .drop-title,
-.section--start .dropzone {
-  text-align: center;
-}
-
-.section--start .samples {
-  justify-content: center;
-}
 
 .dropzone {
   border: 1px solid var(--rule);

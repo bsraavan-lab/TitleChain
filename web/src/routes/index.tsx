@@ -80,8 +80,6 @@ function Index() {
   const fileInput = useRef<HTMLInputElement>(null);
   const [dragging, setDragging] = useState(false);
 
-  const open = (caseId: string) => navigate({ to: "/case/$caseId", params: { caseId } });
-
   /* A case that was just started has a header but no entries yet, so the case
      screen would render every meter at zero and every tab empty — a certificate
      that proves nothing, rather than one still being read. The working screen
@@ -109,18 +107,23 @@ function Index() {
   const dropError = upload.error ?? sample.error;
   const rejection = dropError instanceof ApiRejection ? dropError : null;
 
+  /* The case list earns its place by having something in it. Until the first
+     upload the landing is only the search; a load failure still shows, because
+     silently hiding her cases is worse than admitting they didn't load. */
+  const hasCases = (cases.data?.length ?? 0) > 0 || cases.isError;
+
   return (
     <div className="page">
-      <Masthead>
+      <Masthead center>
         <span className="masthead-note">Property record checks</span>
       </Masthead>
 
       <main>
-        {/* 1 — Hero */}
-        <section className="section section--hero" aria-labelledby="hero-title">
-          <span className="hero-mark" aria-hidden="true">
-            <ChainMark size={220} />
-          </span>
+        {/* 1 — The landing is the search. One centered screenful: the
+            sentence, then the drop target it is an argument for. Everything
+            else — the numbers, the explainers, her cases — lives below the
+            fold, and the case list not at all until she has a case. */}
+        <section className="section section--hero home-landing" aria-labelledby="hero-title">
           <h1 className="hero-title" id="hero-title">
             A property search can come back clean and still prove nothing.
           </h1>
@@ -128,138 +131,130 @@ function Index() {
             Drop in an encumbrance certificate. In about a minute: the years it can vouch for, the
             years it cannot, and what to order to close the gap.
           </p>
-        </section>
-
-        {/* 2 — The drop target and her own cases, side by side.
-            Both were full-width blocks stacked in a 66ch column, so the case
-            list — the reason she comes back — started below the fold and the
-            drop target had 600px of empty paper either side of it. The
-            proportion is the case screen's own 58/42, so moving between the
-            two screens does not resize the page under her. */}
-        <div className="home-start">
-          <section className="section section--start" aria-label="Add a certificate">
-            {/* The words said "Drop your certificate here" and there were no drop
+          {/* The words said "Drop your certificate here" and there were no drop
               handlers, so dropping a file navigated the browser to the PDF and
               lost the upload. Either the words go or the handlers do; the
               handlers are three lines. */}
-            <div
-              className={`dropzone${dragging ? " is-over" : ""}`}
-              onDragEnter={(e) => {
-                e.preventDefault();
-                setDragging(true);
-              }}
-              onDragOver={(e) => e.preventDefault()}
-              onDragLeave={() => setDragging(false)}
-              onDrop={(e) => {
-                e.preventDefault();
-                setDragging(false);
-                const f = e.dataTransfer.files?.[0];
+          <div
+            className={`dropzone${dragging ? " is-over" : ""}`}
+            onDragEnter={(e) => {
+              e.preventDefault();
+              setDragging(true);
+            }}
+            onDragOver={(e) => e.preventDefault()}
+            onDragLeave={() => setDragging(false)}
+            onDrop={(e) => {
+              e.preventDefault();
+              setDragging(false);
+              const f = e.dataTransfer.files?.[0];
+              if (f) upload.mutate(f);
+            }}
+          >
+            <span className="dropzone-mark" aria-hidden="true">
+              <ChainMark size={56} />
+            </span>
+            <p className="dropzone-title">
+              {upload.isPending ? "Sending your certificate" : "Drop your certificate here"}
+            </p>
+            <p className="dropzone-meta">
+              {upload.isPending
+                ? sent === null
+                  ? "On its way. Reading starts as soon as it lands."
+                  : `${sent}% sent. Reading starts as soon as it lands.`
+                : "PDF, JPEG or PNG, up to 50 MB · reading starts the moment you pick it"}
+            </p>
+            <input
+              ref={fileInput}
+              type="file"
+              accept=".pdf,.jpg,.jpeg,.png"
+              className="sr-only"
+              onChange={(e) => {
+                const f = e.target.files?.[0];
                 if (f) upload.mutate(f);
+                // Picking the SAME file twice in a row fires no change event
+                // otherwise — which is exactly what she does after a failure.
+                e.target.value = "";
               }}
-            >
-              <span className="dropzone-mark" aria-hidden="true">
-                <ChainMark size={56} />
-              </span>
-              <p className="dropzone-title">
-                {upload.isPending ? "Sending your certificate" : "Drop your certificate here"}
-              </p>
-              <p className="dropzone-meta">
-                {upload.isPending
-                  ? sent === null
-                    ? "On its way. Reading starts as soon as it lands."
-                    : `${sent}% sent. Reading starts as soon as it lands.`
-                  : "PDF, JPEG or PNG, up to 50 MB · reading starts the moment you pick it"}
-              </p>
-              <input
-                ref={fileInput}
-                type="file"
-                accept=".pdf,.jpg,.jpeg,.png"
-                className="sr-only"
-                onChange={(e) => {
-                  const f = e.target.files?.[0];
-                  if (f) upload.mutate(f);
-                  // Picking the SAME file twice in a row fires no change event
-                  // otherwise — which is exactly what she does after a failure.
-                  e.target.value = "";
-                }}
-              />
-              {upload.isPending ? (
-                <div
-                  className="upload-bar"
-                  role="progressbar"
-                  aria-label="Sending the certificate"
-                  aria-valuemin={0}
-                  aria-valuemax={100}
-                  aria-valuenow={sent ?? undefined}
-                >
-                  <span
-                    className={`upload-fill${sent === null ? " upload-fill--unknown" : ""}`}
-                    style={sent === null ? undefined : { width: `${sent}%` }}
-                  />
-                </div>
-              ) : (
-                <button
-                  type="button"
-                  className="btn btn--filled"
-                  onClick={() => fileInput.current?.click()}
-                >
-                  Choose a file
-                </button>
-              )}
-            </div>
-
-            {rejection ? (
-              <p className="reject-notice" role="alert">
-                <span className="row-glyph glyph--seal" aria-hidden="true">
-                  ▲
-                </span>
-                <span>{rejection.detail}</span>
-              </p>
-            ) : dropError ? (
-              <div className="reject-notice reject-notice--plain" role="alert">
-                <LoadError
-                  what="The certificate"
-                  error={dropError}
-                  onRetry={() => {
-                    upload.reset();
-                    sample.reset();
-                  }}
+            />
+            {upload.isPending ? (
+              <div
+                className="upload-bar"
+                role="progressbar"
+                aria-label="Sending the certificate"
+                aria-valuemin={0}
+                aria-valuemax={100}
+                aria-valuenow={sent ?? undefined}
+              >
+                <span
+                  className={`upload-fill${sent === null ? " upload-fill--unknown" : ""}`}
+                  style={sent === null ? undefined : { width: `${sent}%` }}
                 />
               </div>
-            ) : null}
+            ) : (
+              <button
+                type="button"
+                className="btn btn--filled"
+                onClick={() => fileInput.current?.click()}
+              >
+                Choose a file
+              </button>
+            )}
+          </div>
 
-            {/* A div, not a p: this holds Loading (a <p>) and LoadError (a <div>),
+          {rejection ? (
+            <p className="reject-notice" role="alert">
+              <span className="row-glyph glyph--seal" aria-hidden="true">
+                ▲
+              </span>
+              <span>{rejection.detail}</span>
+            </p>
+          ) : dropError ? (
+            <div className="reject-notice reject-notice--plain" role="alert">
+              <LoadError
+                what="The certificate"
+                error={dropError}
+                onRetry={() => {
+                  upload.reset();
+                  sample.reset();
+                }}
+              />
+            </div>
+          ) : null}
+
+          {/* A div, not a p: this holds Loading (a <p>) and LoadError (a <div>),
               and isPending is true during SSR — so the server always emitted a
               <p> inside a <p> and hydration could never match. */}
-            <div className="samples">
-              <span className="samples-lead">Haven't got one to hand?</span>
-              {samples.isPending ? <Loading what="the samples" /> : null}
-              {samples.isError ? (
-                <LoadError
-                  what="The samples"
-                  error={samples.error}
-                  onRetry={() => void samples.refetch()}
-                />
-              ) : null}
-              {(samples.data ?? []).map((s) => (
-                <button
-                  key={s.key}
-                  type="button"
-                  className="btn btn--ghost"
-                  disabled={sample.isPending}
-                  onClick={() => sample.mutate(s.key)}
-                >
-                  {s.label}
-                </button>
-              ))}
-            </div>
-          </section>
+          <div className="samples">
+            <span className="samples-lead">Haven't got one to hand?</span>
+            {samples.isPending ? <Loading what="the samples" /> : null}
+            {samples.isError ? (
+              <LoadError
+                what="The samples"
+                error={samples.error}
+                onRetry={() => void samples.refetch()}
+              />
+            ) : null}
+            {(samples.data ?? []).map((s) => (
+              <button
+                key={s.key}
+                type="button"
+                className="btn btn--ghost"
+                disabled={sample.isPending}
+                onClick={() => sample.mutate(s.key)}
+              >
+                {s.label}
+              </button>
+            ))}
+          </div>
+        </section>
 
+        {/* 2 — Her cases, only once there are any. A first visit gets no
+            empty "Your cases" heading to explain away. */}
+        {hasCases ? (
           <section className="section home-cases" aria-labelledby="cases-title">
             <h2 className="section-title" id="cases-title">
               Your cases
             </h2>
-            {cases.isPending ? <Loading what="your cases" /> : null}
             {cases.isError ? (
               <LoadError
                 what="Your cases"
@@ -295,7 +290,7 @@ function Index() {
               })}
             </ul>
           </section>
-        </div>
+        ) : null}
 
         {/* 3 — Measured */}
         <section className="section" aria-labelledby="measured-title">
