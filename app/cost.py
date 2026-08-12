@@ -34,8 +34,9 @@ STAGES: dict[str, tuple[str, str]] = {
     "header":        ("Reading the header", "1M tokens"),
     "entries":       ("Reading the entries", "1M tokens"),
     "transliterate": ("Names into English", "character"),
+    "speak":         ("Explaining aloud", "character"),
 }
-STAGE_ORDER = ["digitise", "header", "entries", "transliterate"]
+STAGE_ORDER = ["digitise", "header", "entries", "transliterate", "speak"]
 
 # Fallback medians, used only for the ESTIMATE and only when this machine has no
 # history to measure. Derived from the three staged sample certificates, and
@@ -106,7 +107,7 @@ class Line:
     def quantity(self) -> str:
         if self.stage == "digitise":
             return f"{self.pages} page{'' if self.pages == 1 else 's'}"
-        if self.stage == "transliterate":
+        if self.stage in ("transliterate", "speak"):
             return f"{self.chars:,} chars"
         return f"{self.tokens:,} tokens"
 
@@ -140,6 +141,9 @@ def _price(line: Line, rates: RateCard) -> Optional[float]:
         return None if rate is None else round(line.pages * rate, 4)
     if line.stage == "transliterate":
         rate = rates.per_character.get("mayura") or rates.per_character.get("default")
+        return None if rate is None else round(line.chars * rate, 4)
+    if line.stage == "speak":
+        rate = rates.per_character.get("bulbul") or rates.per_character.get("default")
         return None if rate is None else round(line.chars * rate, 4)
     # token stages are billed per model, so an unpriced model makes the line unpriced
     total = 0.0

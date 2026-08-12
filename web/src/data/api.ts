@@ -368,6 +368,32 @@ export function saveCorrection(input: { entry_id: number; field: string; value: 
   return post<{ ok: boolean; case_id: number }>("/api/correct", undefined, input);
 }
 
+/* Explain aloud. The JSON carries the script — the words ARE the trust
+ * artifact, so they are always shown, never audio alone — and names its own
+ * audio URL. That URL carries a content-hash `v`, so a correction that changes
+ * the script changes the URL and no cache ever replays yesterday's sentence. */
+
+export interface Explanation {
+  entry_id: number | null;
+  sr_no?: number | null;
+  lang: "en" | "ta";
+  text: string;
+  audio_url: string;
+}
+
+export type ExplainTarget = { entryId: number } | { caseId: string };
+
+export function fetchExplanation(target: ExplainTarget, lang: "en" | "ta") {
+  const path =
+    "entryId" in target
+      ? `/api/entry/${target.entryId}/explain?lang=${lang}`
+      : `/api/case/${encodeURIComponent(target.caseId)}/explain?lang=${lang}`;
+  return get<Explanation>(path);
+}
+
+/** The audio URL an explanation names, made absolute when the API is. */
+export const explainAudioUrl = (e: Explanation) => at(e.audio_url);
+
 /* Images are plain URLs, not JSON. */
 
 export const pageImageUrl = (ecId: number, pageNum: number) => at(`/page/${ecId}/${pageNum}.png`);
