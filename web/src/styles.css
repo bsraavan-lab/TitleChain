@@ -1848,6 +1848,62 @@ a.wordmark:focus-visible {
   padding: 20px 0;
 }
 
+.loadline--wait {
+  display: flex;
+  align-items: center;
+  gap: var(--s3);
+}
+
+/* The one "still working" mark: a 3×3 pixel grid, chevron wavefront driving
+   right. It sits wherever the product is reading something — the load line
+   and the working screen's live row — so waiting always looks the same. */
+.pixelwait {
+  display: grid;
+  grid-template-columns: repeat(3, 5px);
+  gap: 2px;
+  flex: none;
+}
+
+.pixelwait-cell {
+  width: 5px;
+  height: 5px;
+  border-radius: 1px;
+  background: var(--ink-1);
+  opacity: 0.15;
+  animation: pixel-on 650ms ease-in-out infinite;
+}
+
+@keyframes pixel-on {
+  0%,
+  100% {
+    opacity: 0.15;
+  }
+  35% {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pixelwait-cell {
+    animation: none;
+  }
+}
+
+/* Inside a row's glyph column the grid sits where the glyph character would:
+   centered, dropped to the title's first line. */
+.row-glyph .pixelwait {
+  margin: 4px auto 0;
+}
+
+/* How long she has been watching. Tabular figures so the line does not
+   wobble as the digits change. */
+.wait-elapsed {
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--ink-3);
+  font-variant-numeric: tabular-nums;
+}
+
 .loaderr {
   border-left: 3px solid var(--seal);
   padding: 12px 0 12px 16px;
