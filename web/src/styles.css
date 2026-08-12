@@ -2655,3 +2655,52 @@ a.wordmark:hover .chainmark {
 .case-grid {
   grid-template-columns: minmax(0, 58fr) minmax(0, 42fr);
 }
+
+/* ── explain aloud ───────────────────────────────────────────────────────────
+   The trigger is a .link like every other quiet affordance; open, it becomes a
+   sunk card carrying the script. The words render before the voice starts and
+   survive it failing — the paragraph is the artifact, the audio is a reading. */
+
+.explain {
+  margin: var(--s3) 0 var(--s2);
+  padding: var(--s4);
+  background: var(--sunk);
+  border: 1px solid var(--rule);
+  border-radius: var(--r-card);
+  display: grid;
+  gap: var(--s3);
+}
+
+.explain-head {
+  display: flex;
+  align-items: center;
+  gap: var(--s3);
+  flex-wrap: wrap;
+}
+
+.explain-head .kicker {
+  margin: 0 auto 0 0;
+}
+
+.explain-text {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.65;
+  color: var(--ink-1);
+  max-width: var(--measure);
+}
+
+.explain-text.tamil {
+  font-family: var(--tamil);
+}
+
+.explain-problem {
+  margin: 0;
+  font-size: 13px;
+  color: var(--blocking);
+}
+
+.explain-actions {
+  display: flex;
+  gap: var(--s2);
+}

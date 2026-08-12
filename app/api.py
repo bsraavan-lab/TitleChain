@@ -17,10 +17,11 @@ import threading
 from typing import Any
 
 from fastapi import APIRouter, Form, Request, UploadFile
+from fastapi.responses import Response
 from pydantic import BaseModel
 
 from . import cost as cost_mod
-from . import db, derive as derive_mod, layout, pipeline, store
+from . import db, derive as derive_mod, explain, layout, pipeline, speak, store
 from .fixtures import SAMPLES
 from .models import DerivedView
 
@@ -254,6 +255,103 @@ async def add_document(request: Request, case_id: int, file: UploadFile,
                      args=(case_id, path, request_key or None),
                      daemon=True).start()
     return {"case_id": case_id}
+
+
+# ── explain aloud ─────────────────────────────────────────────────────────────
+# Two surfaces per subject: the JSON carries the script (the text IS the trust
+# artifact — what was said must be readable), and a .wav sibling carries the
+# same script spoken. Both rebuild the script from the derivation on every
+# request, which is what guarantees they can never disagree: there is no stored
+# explanation to drift. The audio URL carries a content-hash `v`, so a
+# correction that changes the script changes the URL and no browser ever
+# replays yesterday's sentence over today's data.
+
+
+def _derived(case_id: int) -> DerivedView | None:
+    docs = store.load_case(case_id)
+    if not any(d.entries for d in docs):
+        return None
+    return derive_mod.derive_case(docs, reviewed=store.reviewed_keys(case_id))
+
+
+def _entry_script(entry_id: int, lang: str) -> tuple[int, Any, str] | None:
+    """(case_id, entry, script) — or None when the entry does not resolve."""
+    case_id = store.case_of_entry(entry_id)
+    if case_id is None:
+        return None
+    view = _derived(case_id)
+    if view is None:
+        return None
+    entry = next((e for e in view.entries if e.db_id == entry_id), None)
+    if entry is None:
+        return None
+    return case_id, entry, explain.entry_script(entry, view, lang)
+
+
+def _speak_response(case_id: int, ec_id: int | None, text: str,
+                    lang: str) -> Response:
+    try:
+        spoken = speak.synthesise(text, lang)
+    except Exception:
+        # The <audio> element cannot render a sentence, so the sentence lives in
+        # the front end; this only has to be honestly not-a-WAV.
+        return Response(status_code=502)
+    db.insert("api_calls", case_id=case_id, ec_id=ec_id, stage="speak",
+              model=speak.MODEL, chars=spoken.chars, cached=int(spoken.cached),
+              ms=spoken.ms, created_at=db.now())
+    # Safe to cache hard: the URL is content-addressed by `v`, so a changed
+    # script is a changed URL, never a stale hit.
+    return Response(spoken.audio, media_type="audio/wav",
+                    headers={"Cache-Control": "public, max-age=86400"})
+
+
+@router.get("/entry/{entry_id}/explain")
+def entry_explain(entry_id: int, lang: str = "en") -> dict[str, Any]:
+    lang = lang if lang in explain.LANGS else "en"
+    hit = _entry_script(entry_id, lang)
+    if hit is None:
+        return {"error": "not_found", "entry_id": entry_id}
+    _, entry, text = hit
+    v = speak.cache_key(text, lang)[:12]
+    return {"entry_id": entry_id, "sr_no": entry.sr_no, "lang": lang,
+            "text": text,
+            "audio_url": f"/api/entry/{entry_id}/explain.wav?lang={lang}&v={v}"}
+
+
+@router.get("/entry/{entry_id}/explain.wav")
+def entry_explain_wav(entry_id: int, lang: str = "en") -> Response:
+    lang = lang if lang in explain.LANGS else "en"
+    hit = _entry_script(entry_id, lang)
+    if hit is None:
+        return Response(status_code=404)
+    case_id, entry, text = hit
+    ec_row = db.one("SELECT ec_id FROM entries WHERE id = ?", (entry_id,))
+    return _speak_response(case_id, ec_row["ec_id"] if ec_row else None,
+                           text, lang)
+
+
+@router.get("/case/{case_id}/explain")
+def case_explain(case_id: int, lang: str = "en") -> dict[str, Any]:
+    lang = lang if lang in explain.LANGS else "en"
+    if not db.one("SELECT id FROM cases WHERE id = ?", (case_id,)):
+        return {"error": "not_found", "case_id": case_id}
+    view = _derived(case_id)
+    if view is None:
+        return {"error": "rejected",
+                "detail": "Nothing has been read from this case yet."}
+    text = explain.case_script(view, lang)
+    v = speak.cache_key(text, lang)[:12]
+    return {"entry_id": None, "lang": lang, "text": text,
+            "audio_url": f"/api/case/{case_id}/explain.wav?lang={lang}&v={v}"}
+
+
+@router.get("/case/{case_id}/explain.wav")
+def case_explain_wav(case_id: int, lang: str = "en") -> Response:
+    lang = lang if lang in explain.LANGS else "en"
+    view = _derived(case_id)
+    if view is None:
+        return Response(status_code=404)
+    return _speak_response(case_id, None, explain.case_script(view, lang), lang)
 
 
 class ReviewIn(BaseModel):

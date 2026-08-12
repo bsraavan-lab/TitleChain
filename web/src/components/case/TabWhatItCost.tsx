@@ -34,7 +34,7 @@ const group = (n: number) => n.toLocaleString("en-US");
 /** cost.py Line.quantity — the unit the step is billed in, not a generic count. */
 function quantity(l: CostLine) {
   if (l.stage === "digitise") return plural(l.pages, "page");
-  if (l.stage === "transliterate") return `${group(l.chars)} chars`;
+  if (l.stage === "transliterate" || l.stage === "speak") return `${group(l.chars)} chars`;
   return `${group(tokens(l))} tokens`;
 }
 
@@ -44,8 +44,7 @@ const configured = (r: CostReport["rates"]) =>
   Object.keys(r.per_million_tokens).length > 0 ||
   Object.keys(r.per_character).length > 0;
 
-const money = (n: number, currency: string) =>
-  `${currency === "INR" ? "₹" : ""}${n.toFixed(2)}`;
+const money = (n: number, currency: string) => `${currency === "INR" ? "₹" : ""}${n.toFixed(2)}`;
 
 /** Signed percentage, and only where both sides have a figure to compare. */
 function delta(actual: CostLine, est: CostLine) {
@@ -97,10 +96,7 @@ export function TabWhatItCost({
             {act.lines.map((a, i) => {
               const e = est.lines[i];
               return (
-                <tr
-                  key={a.stage}
-                  className={!ran(a) && !(e && ran(e)) ? "row-idle" : undefined}
-                >
+                <tr key={a.stage} className={!ran(a) && !(e && ran(e)) ? "row-idle" : undefined}>
                   <td>
                     {a.label}
                     {a.models.filter(Boolean).length > 0 ? (
@@ -206,8 +202,8 @@ export function TabWhatItCost({
 
       {!priced ? (
         <p className="rate-warning">
-          <strong>No rates set yet</strong> — so we leave the rupee columns out rather than
-          guess at them. Add your per-unit rates from dashboard.sarvam.ai → Billing to{" "}
+          <strong>No rates set yet</strong> — so we leave the rupee columns out rather than guess at
+          them. Add your per-unit rates from dashboard.sarvam.ai → Billing to{" "}
           <code>config/rates.yml</code> and this table prices itself.
         </p>
       ) : (
@@ -218,9 +214,9 @@ export function TabWhatItCost({
       )}
 
       <p className="meta">
-        Where the estimate comes from: {est.basis}. The actual figures are one row per real
-        request, retries included. A case that needed eleven requests for four blocks cost
-        eleven requests — we would rather show you that than round it off.
+        Where the estimate comes from: {est.basis}. The actual figures are one row per real request,
+        retries included. A case that needed eleven requests for four blocks cost eleven requests —
+        we would rather show you that than round it off.
       </p>
 
       {ledger.length > 0 ? (

@@ -80,7 +80,7 @@ CREATE TABLE IF NOT EXISTS api_calls (
   id          INTEGER PRIMARY KEY AUTOINCREMENT,
   case_id     INTEGER,
   ec_id       INTEGER,
-  stage       TEXT,                     -- digitise | header | entries | transliterate
+  stage       TEXT,                     -- digitise | header | entries | transliterate | speak
   model       TEXT,
   ladder_rung TEXT,                     -- "105b/low+s1" — retries stay visible
   pages       INTEGER DEFAULT 0,

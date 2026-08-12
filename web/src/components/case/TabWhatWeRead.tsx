@@ -1,5 +1,6 @@
 import type { DerivedView, Entry, Party } from "../../data/types";
 import { EditableCell } from "./EditableCell";
+import { ExplainControl } from "./ExplainControl";
 import { SourceButton } from "./rail";
 
 function Names({ parties }: { parties: Party[] }) {
@@ -76,17 +77,31 @@ function EntryCard({ entry, caseId }: { entry: Entry; caseId: string }) {
         <span className="mono entry-doc">{entry.doc_no}</span>
         {entry.db_id !== null ? <SourceButton entryId={entry.db_id} /> : null}
       </header>
+      {/* Its own block, not a header link: when it opens it is a paragraph and
+          a voice, and a paragraph does not belong inside a header row. */}
+      {entry.db_id !== null ? <ExplainControl target={{ entryId: entry.db_id }} /> : null}
       <dl className="entry-grid">
         <Field label="Nature">
-          <EditableCell caseId={caseId} entryId={entry.db_id} field="nature"
-                        label="Nature" value={entry.nature} mono={false} />
+          <EditableCell
+            caseId={caseId}
+            entryId={entry.db_id}
+            field="nature"
+            label="Nature"
+            value={entry.nature}
+            mono={false}
+          />
         </Field>
         <Field label="Document year">
           <Cell value={entry.doc_year === null ? null : String(entry.doc_year)} mono />
         </Field>
         <Field label="Executed">
-          <EditableCell caseId={caseId} entryId={entry.db_id} field="date_execution"
-                        label="Executed" value={entry.date_execution} />
+          <EditableCell
+            caseId={caseId}
+            entryId={entry.db_id}
+            field="date_execution"
+            label="Executed"
+            value={entry.date_execution}
+          />
         </Field>
         <Field label="Presented">
           <Cell value={entry.date_presentation} mono />
@@ -94,8 +109,13 @@ function EntryCard({ entry, caseId }: { entry: Entry; caseId: string }) {
         <Field label="Registered">
           {/* The field R9 fires on when the reader could not make it out. It is
               a control, not a blank: absence is a task. */}
-          <EditableCell caseId={caseId} entryId={entry.db_id} field="date_registration"
-                        label="Registered" value={entry.date_registration} />
+          <EditableCell
+            caseId={caseId}
+            entryId={entry.db_id}
+            field="date_registration"
+            label="Registered"
+            value={entry.date_registration}
+          />
         </Field>
         <Field label="Volume / page">
           <Cell value={entry.volume_page} mono />

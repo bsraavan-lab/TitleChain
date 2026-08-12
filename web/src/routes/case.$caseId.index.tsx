@@ -1,6 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect } from "react";
 import { Masthead } from "../components/Masthead";
+import { ExplainControl } from "../components/case/ExplainControl";
 import { TabWhatToCheck } from "../components/case/TabWhatToCheck";
 import { TabHowItConnects } from "../components/case/TabHowItConnects";
 import { TabWhatsMissing } from "../components/case/TabWhatsMissing";
@@ -128,8 +129,7 @@ function CaseScreen({
 
   // Nothing is read yet on a fresh case, so every denominator here can be 0.
   // Unguarded this rendered `NaN%` and `style={{ width: "NaN%" }}`.
-  const pct = (done: number, total: number) =>
-    total > 0 ? Math.round((done / total) * 100) : 0;
+  const pct = (done: number, total: number) => (total > 0 ? Math.round((done / total) * 100) : 0);
 
   const meters = [
     {
@@ -151,96 +151,97 @@ function CaseScreen({
 
   return (
     <RailProvider>
-    <div className="case">
-      <Masthead bar>
-        <span className="case-bar-meta">
-          Case <span className="mono">{caseId}</span>
-          {doc ? (
-            <>
-              {" · Certificate "}
-              <span className="mono">{doc.label}</span>
-            </>
-          ) : null}
-        </span>
-      </Masthead>
+      <div className="case">
+        <Masthead bar>
+          <span className="case-bar-meta">
+            Case <span className="mono">{caseId}</span>
+            {doc ? (
+              <>
+                {" · Certificate "}
+                <span className="mono">{doc.label}</span>
+              </>
+            ) : null}
+          </span>
+        </Masthead>
 
-      <div className="case-grid">
-        <main className="case-main">
-          <section className="section answer" aria-labelledby="answer-title">
-            <p className="kicker">The finding</p>
-            <h1 className="answer-title" id="answer-title">
-              {c.headline}
-            </h1>
-            <p className="answer-detail">{c.detail}</p>
-          </section>
+        <div className="case-grid">
+          <main className="case-main">
+            <section className="section answer" aria-labelledby="answer-title">
+              <p className="kicker">The finding</p>
+              <h1 className="answer-title" id="answer-title">
+                {c.headline}
+              </h1>
+              <p className="answer-detail">{c.detail}</p>
+              <ExplainControl target={{ caseId }} label="Hear where this case stands" />
+            </section>
 
-          <section className="section meters" aria-label="Coverage">
-            {meters.map((m) => (
-              <div className="meter" key={m.label}>
-                <p className="kicker">{m.label}</p>
-                <div className="meter-bar">
-                  <span className="meter-fill" style={{ width: `${m.pct}%` }} />
+            <section className="section meters" aria-label="Coverage">
+              {meters.map((m) => (
+                <div className="meter" key={m.label}>
+                  <p className="kicker">{m.label}</p>
+                  <div className="meter-bar">
+                    <span className="meter-fill" style={{ width: `${m.pct}%` }} />
+                  </div>
+                  <p className="meter-pct mono">{m.pct}%</p>
+                  <p className="meter-detail">{m.detail}</p>
                 </div>
-                <p className="meter-pct mono">{m.pct}%</p>
-                <p className="meter-detail">{m.detail}</p>
-              </div>
-            ))}
-          </section>
+              ))}
+            </section>
 
-          {/* Never a percentage: a file is signable or it is not, and the gate
+            {/* Never a percentage: a file is signable or it is not, and the gate
               chips beside this say which condition is in the way. Derived from
               the gates — this line read a hardcoded "FAIL … Not ready to sign
               off yet" until 2026-07-31, so a certificate that passed every check
               still told her it had failed. */}
-          <section className="section verdict" aria-label="Readiness">
-            <p className="verdict-line">
-              <span className={ready ? "glyph--fee" : "glyph--seal"} aria-hidden="true">
-                {ready ? "✓" : "▲"}
-              </span>{" "}
-              {ready ? "Ready to sign off" : "Not ready to sign off yet"}
-            </p>
-            <ul className="chips">
-              {view.readiness.gates.map((g) => (
-                <li className={`chip chip--${g.passed ? "fee" : "stamp"}`} key={g.id}>
-                  <span aria-hidden="true">{g.passed ? "✓ " : "⚑ "}</span>
-                  {g.label}
-                </li>
-              ))}
-            </ul>
-          </section>
+            <section className="section verdict" aria-label="Readiness">
+              <p className="verdict-line">
+                <span className={ready ? "glyph--fee" : "glyph--seal"} aria-hidden="true">
+                  {ready ? "✓" : "▲"}
+                </span>{" "}
+                {ready ? "Ready to sign off" : "Not ready to sign off yet"}
+              </p>
+              <ul className="chips">
+                {view.readiness.gates.map((g) => (
+                  <li className={`chip chip--${g.passed ? "fee" : "stamp"}`} key={g.id}>
+                    <span aria-hidden="true">{g.passed ? "✓ " : "⚑ "}</span>
+                    {g.label}
+                  </li>
+                ))}
+              </ul>
+            </section>
 
-          {/* Links, not buttons: a tab is an address now, so it should middle-
+            {/* Links, not buttons: a tab is an address now, so it should middle-
               click into a new window and copy from the context menu like any
               other. `replace` keeps the back button meaning "out of this case"
               rather than a walk through every tab visited on the way. */}
-          <nav className="tabs" aria-label="Case sections">
-            {TABS.map((t) => (
-              <Link
-                key={t.key}
-                to="/case/$caseId"
-                params={{ caseId }}
-                search={{ tab: t.key }}
-                replace
-                className={`tab${t.key === tab ? " tab--active" : ""}`}
-                aria-current={t.key === tab ? "page" : undefined}
-              >
-                {t.label}
-              </Link>
-            ))}
-          </nav>
+            <nav className="tabs" aria-label="Case sections">
+              {TABS.map((t) => (
+                <Link
+                  key={t.key}
+                  to="/case/$caseId"
+                  params={{ caseId }}
+                  search={{ tab: t.key }}
+                  replace
+                  className={`tab${t.key === tab ? " tab--active" : ""}`}
+                  aria-current={t.key === tab ? "page" : undefined}
+                >
+                  {t.label}
+                </Link>
+              ))}
+            </nav>
 
-          {tab === "review" ? <TabWhatToCheck view={view} caseId={caseId} /> : null}
-          {tab === "chain" ? <TabHowItConnects view={view} graph={graph} /> : null}
-          {tab === "missing" ? <TabWhatsMissing view={view} caseId={caseId} /> : null}
-          {tab === "entries" ? <TabWhatWeRead view={view} caseId={caseId} /> : null}
-          {tab === "cost" ? <TabWhatItCost view={view} cost={cost} meta={meta} /> : null}
-        </main>
+            {tab === "review" ? <TabWhatToCheck view={view} caseId={caseId} /> : null}
+            {tab === "chain" ? <TabHowItConnects view={view} graph={graph} /> : null}
+            {tab === "missing" ? <TabWhatsMissing view={view} caseId={caseId} /> : null}
+            {tab === "entries" ? <TabWhatWeRead view={view} caseId={caseId} /> : null}
+            {tab === "cost" ? <TabWhatItCost view={view} cost={cost} meta={meta} /> : null}
+          </main>
 
-        <aside className="case-rail" aria-label="Source document">
-          <Rail doc={doc} />
-        </aside>
+          <aside className="case-rail" aria-label="Source document">
+            <Rail doc={doc} />
+          </aside>
+        </div>
       </div>
-    </div>
     </RailProvider>
   );
 }
