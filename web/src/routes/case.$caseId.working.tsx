@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect } from "react";
-import { Loading, LoadError } from "../components/LoadState";
+import { Loading, LoadError, PixelWait, Elapsed } from "../components/LoadState";
 import { Masthead } from "../components/Masthead";
 import { ChainMark } from "../components/ChainMark";
 import { caseStatusQuery } from "../data/api";
@@ -83,14 +83,14 @@ function WorkingPage() {
                     className={`row-glyph ${q.data.processing ? "glyph--stamp is-working" : "glyph--fee"}`}
                     aria-hidden="true"
                   >
-                    {q.data.processing ? "●" : "✓"}
+                    {q.data.processing ? <PixelWait /> : "✓"}
                   </span>
                   <div className="row-body">
                     <h3 className="row-title">
                       <span className="sr-only">
                         {q.data.processing ? "Running — " : "Done — "}
                       </span>
-                      {q.data.status}
+                      {q.data.status} {q.data.processing ? <Elapsed /> : null}
                     </h3>
                     <p className="row-detail">
                       {q.data.status_detail ?? "No further detail has been recorded."}
