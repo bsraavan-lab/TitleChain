@@ -19,10 +19,37 @@ import { useRail } from "./rail";
  * element per gesture, and an element created after an `await` never unlocks. */
 
 type Phase = "idle" | "fetching" | "speaking" | "error";
-type Lang = "en" | "ta";
+type Lang = "en" | "ta" | "hi";
+
+const LANGS: { key: Lang; label: string }[] = [
+  { key: "en", label: "English" },
+  { key: "ta", label: "தமிழ்" },
+  { key: "hi", label: "हिन्दी" },
+];
 
 const VOICE_DOWN =
   "The voice did not answer. The words above still stand — try the sound again in a moment.";
+
+/* The product's one speaker mark — monoline, currentColor, like ChainMark. */
+function SpeakerIcon() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      width="15"
+      height="15"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M11 5 6 9H3v6h3l5 4z" />
+      <path d="M15.5 8.5a5 5 0 0 1 0 7" />
+      <path d="M18.5 5.5a9.5 9.5 0 0 1 0 13" />
+    </svg>
+  );
+}
 
 export function ExplainControl({
   target,
@@ -85,7 +112,8 @@ export function ExplainControl({
 
   if (!open) {
     return (
-      <button className="link" type="button" onClick={() => void speakIn(lang)}>
+      <button className="explain-trigger" type="button" onClick={() => void speakIn(lang)}>
+        <SpeakerIcon />
         {label}
       </button>
     );
@@ -94,24 +122,22 @@ export function ExplainControl({
   return (
     <div className="explain" role="region" aria-label="Explained in plain words">
       <div className="explain-head">
-        <p className="kicker">Said plainly</p>
+        <p className="kicker explain-kicker">
+          <SpeakerIcon />
+          Said plainly
+        </p>
         <div className="seg" role="group" aria-label="Language">
-          <button
-            type="button"
-            className={`seg-btn${lang === "en" ? " seg-on" : ""}`}
-            aria-pressed={lang === "en"}
-            onClick={() => void speakIn("en")}
-          >
-            English
-          </button>
-          <button
-            type="button"
-            className={`seg-btn${lang === "ta" ? " seg-on" : ""}`}
-            aria-pressed={lang === "ta"}
-            onClick={() => void speakIn("ta")}
-          >
-            தமிழ்
-          </button>
+          {LANGS.map((l) => (
+            <button
+              key={l.key}
+              type="button"
+              className={`seg-btn${lang === l.key ? " seg-on" : ""}`}
+              aria-pressed={lang === l.key}
+              onClick={() => void speakIn(l.key)}
+            >
+              {l.label}
+            </button>
+          ))}
         </div>
         <button
           type="button"
@@ -127,8 +153,10 @@ export function ExplainControl({
 
       {script ? (
         <p
-          className={`explain-text${script.lang === "ta" ? " tamil" : ""}`}
-          lang={script.lang === "ta" ? "ta" : "en"}
+          className={`explain-text${
+            script.lang === "ta" ? " tamil" : script.lang === "hi" ? " hindi" : ""
+          }`}
+          lang={script.lang}
         >
           {script.text}
         </p>
