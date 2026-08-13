@@ -36,7 +36,7 @@ TTS_URL = "https://api.sarvam.ai/text-to-speech"
 MODEL = "bulbul:v3"
 SPEAKER = "shreya"                  # calm narration — findings, not a jingle
 SAMPLE_RATE = 24000
-LANG_CODES = {"en": "en-IN", "ta": "ta-IN"}
+LANG_CODES = {"en": "en-IN", "ta": "ta-IN", "hi": "hi-IN"}
 
 # Comfortably under bulbul's per-input ceiling, and short enough that the first
 # chunk of a long script starts synthesising fast.

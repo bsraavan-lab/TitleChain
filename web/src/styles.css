@@ -2661,6 +2661,37 @@ a.wordmark:hover .chainmark {
    sunk card carrying the script. The words render before the voice starts and
    survive it failing — the paragraph is the artifact, the audio is a reading. */
 
+/* The closed state: a chip that reads as a control, not a footnote. The
+   speaker mark is the affordance — "this row can talk". */
+.explain-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  margin: var(--s2) 0;
+  padding: 5px 12px;
+  font: inherit;
+  font-size: 13px;
+  color: var(--ink-1);
+  background: var(--paper);
+  border: 1px solid var(--rule);
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.explain-trigger:hover {
+  background: var(--sunk);
+}
+
+.explain-trigger svg {
+  flex: none;
+}
+
+.explain-kicker {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
 .explain {
   margin: var(--s3) 0 var(--s2);
   padding: var(--s4);
@@ -2692,6 +2723,10 @@ a.wordmark:hover .chainmark {
 
 .explain-text.tamil {
   font-family: var(--tamil);
+}
+
+.explain-text.hindi {
+  font-family: "Noto Sans Devanagari", "Nirmala UI", Mangal, sans-serif;
 }
 
 .explain-problem {

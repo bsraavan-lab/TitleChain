@@ -373,17 +373,19 @@ export function saveCorrection(input: { entry_id: number; field: string; value: 
  * audio URL. That URL carries a content-hash `v`, so a correction that changes
  * the script changes the URL and no cache ever replays yesterday's sentence. */
 
+export type ExplainLang = "en" | "ta" | "hi";
+
 export interface Explanation {
   entry_id: number | null;
   sr_no?: number | null;
-  lang: "en" | "ta";
+  lang: ExplainLang;
   text: string;
   audio_url: string;
 }
 
 export type ExplainTarget = { entryId: number } | { caseId: string };
 
-export function fetchExplanation(target: ExplainTarget, lang: "en" | "ta") {
+export function fetchExplanation(target: ExplainTarget, lang: ExplainLang) {
   const path =
     "entryId" in target
       ? `/api/entry/${target.entryId}/explain?lang=${lang}`

@@ -89,6 +89,15 @@ def test_a_lease_entry_is_explained_in_both_languages(view):
     assert "குத்தகை" in ta and "2520/2019" in ta
 
 
+def test_the_same_entry_is_explained_in_hindi(view):
+    from app import explain
+
+    hi = explain.entry_script(view.entries[0], view, "hi")
+    assert "प्रविष्टि 1" in hi and "2520/2019" in hi
+    assert "पट्टे" in hi                # lease, in the Hindi register
+    assert "அருள்ஜோதி" in hi          # names keep their one true form here too
+
+
 def test_the_parents_sentence_counts_the_missing(view):
     from app import explain
 
@@ -123,7 +132,7 @@ def test_the_blank_date_entry_carries_its_flag(view):
 def test_scripts_are_deterministic(view):
     from app import explain
 
-    for lang in ("en", "ta"):
+    for lang in ("en", "ta", "hi"):
         first = explain.entry_script(view.entries[0], view, lang)
         second = explain.entry_script(view.entries[0], view, lang)
         assert first == second
@@ -136,6 +145,8 @@ def test_the_case_script_states_verdict_and_readiness(view):
     assert "sign off" in en
     ta = explain.case_script(view, "ta")
     assert "கையெழுத்" in ta
+    hi = explain.case_script(view, "hi")
+    assert "दस्तख़त" in hi
 
 
 # ── chunking and stitching ────────────────────────────────────────────────────
@@ -206,6 +217,20 @@ def test_tamil_is_one_query_param_away(seeded, client):
     body = client.get(f"/api/entry/{entry_id}/explain?lang=ta").json()
     assert body["lang"] == "ta"
     assert "குத்தகை" in body["text"]
+
+
+def test_hindi_is_one_query_param_away(seeded, client):
+    _, entry_id = seeded
+    body = client.get(f"/api/entry/{entry_id}/explain?lang=hi").json()
+    assert body["lang"] == "hi"
+    assert "पट्टे" in body["text"]
+
+
+def test_an_unknown_lang_clamps_to_english(seeded, client):
+    _, entry_id = seeded
+    body = client.get(f"/api/entry/{entry_id}/explain?lang=fr").json()
+    assert body["lang"] == "en"
+    assert "lease" in body["text"]
 
 
 def test_a_correction_changes_the_audio_url(seeded, client):
